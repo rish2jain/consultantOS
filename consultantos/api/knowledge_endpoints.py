@@ -13,10 +13,10 @@ from consultantos.models import (
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
 from consultantos.knowledge.personal_kb import PersonalKnowledgeBase
-from consultantos.monitoring import get_logger
+import logging
 
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @router.post("/search", response_model=List[KnowledgeItem])

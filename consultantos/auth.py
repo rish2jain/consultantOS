@@ -283,13 +283,13 @@ async def get_api_key(
 async def verify_api_key(api_key: Optional[str] = Security(get_api_key)) -> Dict:
     """
     Verify API key and return user info
-    
+
     Args:
         api_key: API key to verify (required)
-    
+
     Returns:
         User info dict
-    
+
     Raises:
         HTTPException if key is missing or invalid
     """
@@ -298,16 +298,59 @@ async def verify_api_key(api_key: Optional[str] = Security(get_api_key)) -> Dict
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="API key required. Provide via X-API-Key header or api_key query parameter."
         )
-    
+
     user_info = validate_api_key(api_key)
-    
+
     if not user_info:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or inactive API key"
         )
-    
+
     return user_info
+
+
+async def get_current_user(api_key: Optional[str] = Security(get_api_key)) -> str:
+    """
+    Get current authenticated user ID from API key
+
+    This is a dependency function for FastAPI endpoints that require authentication.
+
+    Args:
+        api_key: API key from header or query parameter
+
+    Returns:
+        User ID string
+
+    Raises:
+        HTTPException if authentication fails
+
+    Example:
+        @router.get("/my-endpoint")
+        async def my_endpoint(user_id: str = Depends(get_current_user)):
+            # user_id is the authenticated user's ID
+            pass
+    """
+    user_info = await verify_api_key(api_key)
+    return user_info["user_id"]
+
+
+async def get_current_user_id(api_key: Optional[str] = Security(get_api_key)) -> str:
+    """
+    Get current authenticated user ID from API key (alias for get_current_user)
+
+    This is an alias for get_current_user for backward compatibility.
+
+    Args:
+        api_key: API key from header or query parameter
+
+    Returns:
+        User ID string
+
+    Raises:
+        HTTPException if authentication fails
+    """
+    return await get_current_user(api_key)
 
 
 def get_user_api_keys(user_id: str) -> list:

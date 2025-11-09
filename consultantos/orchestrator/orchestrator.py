@@ -3,6 +3,7 @@ Multi-agent orchestrator for ConsultantOS
 """
 import asyncio
 import logging
+from contextlib import contextmanager
 from typing import Dict, Any, Optional
 from datetime import datetime
 from consultantos_core import models as core_models
@@ -23,8 +24,9 @@ try:
     log_cache_miss = monitoring_module.log_cache_miss
 except (ImportError, AttributeError):
     # Fallback to no-op functions for hackathon demo
+    @contextmanager
     def track_operation(operation_name: str, **context):
-        pass
+        yield None
     def log_cache_hit(cache_key: str, cache_type: str = "disk"):
         pass
     def log_cache_miss(cache_key: str):

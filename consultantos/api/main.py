@@ -88,14 +88,16 @@ from consultantos.api.visualization_endpoints import router as visualization_rou
 from consultantos.api.auth_endpoints import router as auth_router
 from consultantos.api.health_endpoints import router as health_router, mark_startup_complete
 from consultantos.api.notifications_endpoints import router as notifications_router
-# Disabled for hackathon demo - missing get_current_user/get_current_user_id functions
+# Advanced features (now enabled with authentication implementation)
+from consultantos.api.knowledge_endpoints import router as knowledge_router
+from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
+from consultantos.api.saved_searches_endpoints import router as saved_searches_router
+
+# Disabled for hackathon demo - require additional dependencies
 # from consultantos.api.dashboard_endpoints import router as dashboard_router
 # from consultantos.api.monitoring_endpoints import router as monitoring_router
 # from consultantos.api.feedback_endpoints import router as feedback_router
-# from consultantos.api.saved_searches_endpoints import router as saved_searches_router
 # from consultantos.api.teams_endpoints import router as teams_router
-# from consultantos.api.knowledge_endpoints import router as knowledge_router
-# from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
 # from consultantos.api.history_endpoints import router as history_router
 # from consultantos.api.digest_endpoints import router as digest_router
 from consultantos.api.jobs_endpoints import router as jobs_router
@@ -261,12 +263,14 @@ app.include_router(analytics_router)
 app.include_router(visualization_router)
 app.include_router(auth_router)
 app.include_router(notifications_router)
+# Advanced features (now enabled)
+app.include_router(knowledge_router)
+app.include_router(custom_frameworks_router)
+app.include_router(saved_searches_router)
+# Disabled for hackathon demo - require additional dependencies
 # app.include_router(dashboard_router)
 # app.include_router(monitoring_router)
-# app.include_router(saved_searches_router)
 # app.include_router(teams_router)
-# app.include_router(knowledge_router)
-# app.include_router(custom_frameworks_router)
 # app.include_router(history_router)
 # app.include_router(digest_router)
 app.include_router(jobs_router)  # Job processing and status

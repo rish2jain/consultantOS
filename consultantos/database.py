@@ -450,6 +450,169 @@ class InMemoryDatabaseService:
             if framework:
                 patterns = [p for p in patterns if p.framework == framework]
             return patterns
+    
+    # Knowledge Base stub methods
+    async def list_knowledge_items(self, user_id: str):
+        """Get all knowledge items for a user (stub)"""
+        with self._lock:
+            if not hasattr(self, '_knowledge_items'):
+                self._knowledge_items = {}
+            return [item for item in self._knowledge_items.values() if item.get("user_id") == user_id]
+    
+    # Custom Frameworks stub methods
+    async def create_custom_framework(self, framework):
+        """Create custom framework (stub)"""
+        with self._lock:
+            if not hasattr(self, '_custom_frameworks'):
+                self._custom_frameworks = {}
+            self._custom_frameworks[framework.id] = framework.dict()
+        return True
+    
+    async def list_custom_frameworks(self, user_id: str, category: Optional[str] = None):
+        """List custom frameworks for user (stub)"""
+        from consultantos.models import CustomFramework
+        with self._lock:
+            if not hasattr(self, '_custom_frameworks'):
+                return []
+            frameworks = [
+                CustomFramework(**v) for v in self._custom_frameworks.values()
+                if v.get("user_id") == user_id
+            ]
+            if category:
+                frameworks = [f for f in frameworks if f.category == category]
+            return frameworks
+    
+    async def list_public_frameworks(self, category: Optional[str] = None):
+        """List public custom frameworks (stub)"""
+        from consultantos.models import CustomFramework
+        with self._lock:
+            if not hasattr(self, '_custom_frameworks'):
+                return []
+            frameworks = [
+                CustomFramework(**v) for v in self._custom_frameworks.values()
+                if v.get("is_public", False)
+            ]
+            if category:
+                frameworks = [f for f in frameworks if f.category == category]
+            return frameworks
+    
+    async def get_custom_framework(self, framework_id: str):
+        """Get custom framework by ID (stub)"""
+        from consultantos.models import CustomFramework
+        with self._lock:
+            if not hasattr(self, '_custom_frameworks'):
+                return None
+            if framework_id in self._custom_frameworks:
+                return CustomFramework(**self._custom_frameworks[framework_id])
+        return None
+    
+    async def update_custom_framework(self, framework):
+        """Update custom framework (stub)"""
+        with self._lock:
+            if not hasattr(self, '_custom_frameworks'):
+                return False
+            if framework.id in self._custom_frameworks:
+                self._custom_frameworks[framework.id] = framework.dict()
+                return True
+        return False
+    
+    async def delete_custom_framework(self, framework_id: str):
+        """Delete custom framework (stub)"""
+        with self._lock:
+            if not hasattr(self, '_custom_frameworks'):
+                return False
+            if framework_id in self._custom_frameworks:
+                del self._custom_frameworks[framework_id]
+                return True
+        return False
+    
+    async def add_framework_rating(self, framework_id: str, user_id: str, rating: float, review: Optional[str] = None):
+        """Add rating to framework (stub)"""
+        with self._lock:
+            if not hasattr(self, '_framework_ratings'):
+                self._framework_ratings = {}
+            rating_id = f"{framework_id}_{user_id}"
+            self._framework_ratings[rating_id] = {
+                "framework_id": framework_id,
+                "user_id": user_id,
+                "rating": rating,
+                "review": review
+            }
+        return True
+    
+    async def get_framework_ratings(self, framework_id: str):
+        """Get all ratings for a framework (stub)"""
+        with self._lock:
+            if not hasattr(self, '_framework_ratings'):
+                return []
+            return [
+                v for v in self._framework_ratings.values()
+                if v.get("framework_id") == framework_id
+            ]
+    
+    # Saved Searches stub methods
+    async def create_saved_search(self, search):
+        """Create saved search (stub)"""
+        with self._lock:
+            if not hasattr(self, '_saved_searches'):
+                self._saved_searches = {}
+            self._saved_searches[search.id] = search.dict()
+        return True
+    
+    async def list_saved_searches(self, user_id: str, auto_run_only: bool = False):
+        """List saved searches for user (stub)"""
+        from consultantos.models import SavedSearch
+        with self._lock:
+            if not hasattr(self, '_saved_searches'):
+                return []
+            searches = [
+                SavedSearch(**v) for v in self._saved_searches.values()
+                if v.get("user_id") == user_id
+            ]
+            if auto_run_only:
+                searches = [s for s in searches if s.auto_run]
+            return searches
+    
+    async def get_saved_search(self, search_id: str):
+        """Get saved search by ID (stub)"""
+        from consultantos.models import SavedSearch
+        with self._lock:
+            if not hasattr(self, '_saved_searches'):
+                return None
+            if search_id in self._saved_searches:
+                return SavedSearch(**self._saved_searches[search_id])
+        return None
+    
+    async def update_saved_search(self, search):
+        """Update saved search (stub)"""
+        with self._lock:
+            if not hasattr(self, '_saved_searches'):
+                return False
+            if search.id in self._saved_searches:
+                self._saved_searches[search.id] = search.dict()
+                return True
+        return False
+    
+    async def delete_saved_search(self, search_id: str):
+        """Delete saved search (stub)"""
+        with self._lock:
+            if not hasattr(self, '_saved_searches'):
+                return False
+            if search_id in self._saved_searches:
+                del self._saved_searches[search_id]
+                return True
+        return False
+    
+    async def get_saved_search_history(self, search_id: str, limit: int = 10):
+        """Get execution history for saved search (stub)"""
+        with self._lock:
+            if not hasattr(self, '_search_history'):
+                return []
+            history = [
+                h for h in self._search_history.values()
+                if h.get("search_id") == search_id
+            ]
+            return sorted(history, key=lambda x: x.get("created_at", ""), reverse=True)[:limit]
 
 
 class DatabaseService:
