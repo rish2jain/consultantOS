@@ -7,9 +7,14 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 import yfinance as yf
 from consultantos.utils.circuit_breaker import CircuitBreaker, CircuitState
-from consultantos.monitoring import metrics
 
-logger = logging.getLogger(__name__)
+# Import metrics from monitoring module (not package)
+# For hackathon demo, make metrics optional to avoid import issues
+try:
+    from consultantos import monitoring as monitoring_module
+    metrics = monitoring_module.metrics
+except (ImportError, AttributeError):
+    metrics = None
 
 # Optional import for SEC EDGAR
 try:
@@ -90,16 +95,18 @@ def yfinance_tool(ticker: str) -> Dict[str, Any]:
         duration = time.time() - start_time
         
         # Track metrics
-        metrics.track_api_call("yfinance", success=True, duration=duration)
-        metrics.track_circuit_breaker_state("yfinance_api", "closed")
+        if metrics:
+            metrics.track_api_call("yfinance", success=True, duration=duration)
+            metrics.track_circuit_breaker_state("yfinance_api", "closed")
         
         return response
     except Exception as e:
         duration = time.time() - start_time
         
         # Track metrics
-        metrics.track_api_call("yfinance", success=False, duration=duration)
-        metrics.track_circuit_breaker_state("yfinance_api", _yfinance_circuit_breaker.state.value)
+        if metrics:
+            metrics.track_api_call("yfinance", success=False, duration=duration)
+            metrics.track_circuit_breaker_state("yfinance_api", _yfinance_circuit_breaker.state.value)
         
         logger.error(f"yfinance tool failed: {e}", exc_info=True)
         return {
@@ -192,4 +199,3 @@ def sec_edgar_tool(ticker: str) -> Optional[Dict[str, Any]]:
             "error": f"Failed to fetch SEC filings: {str(e)}",
             "ticker": ticker
         }
-

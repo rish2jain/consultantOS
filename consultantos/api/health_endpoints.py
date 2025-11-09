@@ -6,7 +6,10 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
 from consultantos_core import config, database, storage
-from consultantos.monitoring import logger, metrics
+import logging
+
+logger = logging.getLogger(__name__)
+
 from consultantos.cache import get_cache_stats
 
 router = APIRouter(prefix="/health", tags=["health"])

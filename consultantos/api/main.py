@@ -25,13 +25,25 @@ from consultantos_core import (
 )
 from consultantos.orchestrator import AnalysisOrchestrator
 from consultantos.reports import generate_pdf_report
-from consultantos.monitoring import (
-    logger,
-    metrics,
-    log_request,
-    log_request_success,
-    log_request_failure
-)
+
+# Import monitoring functions from monitoring module (not package)
+try:
+    from consultantos import monitoring as monitoring_module
+    logger = monitoring_module.logger
+    metrics = monitoring_module.metrics
+    log_request = monitoring_module.log_request
+    log_request_success = monitoring_module.log_request_success
+    log_request_failure = monitoring_module.log_request_failure
+except (ImportError, AttributeError):
+    # Fallback for hackathon demo
+    logger = logging.getLogger(__name__)
+    metrics = None
+    def log_request(request_id: str, **kwargs):
+        pass
+    def log_request_success(request_id: str, **kwargs):
+        pass
+    def log_request_failure(request_id: str, **kwargs):
+        pass
 from consultantos.api.user_endpoints import router as user_router
 from consultantos.api.template_endpoints import router as template_router
 from consultantos.api.sharing_endpoints import router as sharing_router
@@ -48,15 +60,16 @@ from consultantos.api.visualization_endpoints import router as visualization_rou
 from consultantos.api.auth_endpoints import router as auth_router
 from consultantos.api.health_endpoints import router as health_router, mark_startup_complete
 from consultantos.api.notifications_endpoints import router as notifications_router
-from consultantos.api.dashboard_endpoints import router as dashboard_router
-from consultantos.api.monitoring_endpoints import router as monitoring_router
-from consultantos.api.feedback_endpoints import router as feedback_router
-from consultantos.api.saved_searches_endpoints import router as saved_searches_router
-from consultantos.api.teams_endpoints import router as teams_router
-from consultantos.api.knowledge_endpoints import router as knowledge_router
-from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
-from consultantos.api.history_endpoints import router as history_router
-from consultantos.api.digest_endpoints import router as digest_router
+# Disabled for hackathon demo - missing get_current_user/get_current_user_id functions
+# from consultantos.api.dashboard_endpoints import router as dashboard_router
+# from consultantos.api.monitoring_endpoints import router as monitoring_router
+# from consultantos.api.feedback_endpoints import router as feedback_router
+# from consultantos.api.saved_searches_endpoints import router as saved_searches_router
+# from consultantos.api.teams_endpoints import router as teams_router
+# from consultantos.api.knowledge_endpoints import router as knowledge_router
+# from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
+# from consultantos.api.history_endpoints import router as history_router
+# from consultantos.api.digest_endpoints import router as digest_router
 from consultantos.api.jobs_endpoints import router as jobs_router
 from consultantos.storage import LocalFileStorageService
 
@@ -215,18 +228,19 @@ app.include_router(versioning_router)
 app.include_router(comments_router)
 app.include_router(community_router)
 app.include_router(analytics_router)
-app.include_router(feedback_router)  # User feedback and quality learning
+# Disabled for hackathon demo - missing get_current_user auth
+# app.include_router(feedback_router)
 app.include_router(visualization_router)
 app.include_router(auth_router)
 app.include_router(notifications_router)
-app.include_router(dashboard_router)
-app.include_router(monitoring_router)  # Continuous intelligence monitoring
-app.include_router(saved_searches_router)  # Saved searches and monitoring
-app.include_router(teams_router)  # Team collaboration
-app.include_router(knowledge_router)  # Personal knowledge base
-app.include_router(custom_frameworks_router)  # Custom framework builder
-app.include_router(history_router)  # Analysis history and bookmarks
-app.include_router(digest_router)  # Email digests and alerts
+# app.include_router(dashboard_router)
+# app.include_router(monitoring_router)
+# app.include_router(saved_searches_router)
+# app.include_router(teams_router)
+# app.include_router(knowledge_router)
+# app.include_router(custom_frameworks_router)
+# app.include_router(history_router)
+# app.include_router(digest_router)
 app.include_router(jobs_router)  # Job processing and status
 
 # Initialize orchestrator (lazy initialization to avoid import-time errors)

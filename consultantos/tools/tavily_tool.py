@@ -8,7 +8,14 @@ from typing import Dict, Any, List, Optional
 from tavily import TavilyClient
 from consultantos.config import settings
 from consultantos.utils.circuit_breaker import CircuitBreaker, CircuitState
-from consultantos.monitoring import metrics
+
+# Import metrics from monitoring module (not package)
+# For hackathon demo, make metrics optional to avoid import issues
+try:
+    from consultantos import monitoring as monitoring_module
+    metrics = monitoring_module.metrics
+except (ImportError, AttributeError):
+    metrics = None
 
 logger = logging.getLogger(__name__)
 
@@ -98,10 +105,11 @@ def tavily_search_tool(query: str, max_results: int = 10) -> Dict[str, Any]:
         try:
             response = _search_with_retry()
             duration = time.time() - start_time
-            
-            # Track metrics
-            metrics.track_api_call("tavily", success=True, duration=duration)
-            metrics.track_circuit_breaker_state("tavily_api", "closed")
+
+            # Track metrics (optional)
+            if metrics:
+                metrics.track_api_call("tavily", success=True, duration=duration)
+                metrics.track_circuit_breaker_state("tavily_api", "closed")
             
             # Success - reset circuit breaker
             if _tavily_circuit_breaker.state == CircuitState.HALF_OPEN:
@@ -113,10 +121,11 @@ def tavily_search_tool(query: str, max_results: int = 10) -> Dict[str, Any]:
             return response
         except Exception as e:
             duration = time.time() - start_time
-            
-            # Track metrics
-            metrics.track_api_call("tavily", success=False, duration=duration)
-            metrics.track_circuit_breaker_state("tavily_api", _tavily_circuit_breaker.state.value)
+
+            # Track metrics (optional)
+            if metrics:
+                metrics.track_api_call("tavily", success=False, duration=duration)
+                metrics.track_circuit_breaker_state("tavily_api", _tavily_circuit_breaker.state.value)
             
             # Failure - update circuit breaker
             _tavily_circuit_breaker.failure_count += 1

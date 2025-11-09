@@ -8,7 +8,14 @@ from typing import Dict, Any, List
 from pytrends.request import TrendReq
 import pandas as pd
 from consultantos.utils.circuit_breaker import CircuitBreaker, CircuitState
-from consultantos.monitoring import metrics
+
+# Import metrics from monitoring module (not package)
+# For hackathon demo, make metrics optional to avoid import issues
+try:
+    from consultantos import monitoring as monitoring_module
+    metrics = monitoring_module.metrics
+except (ImportError, AttributeError):
+    metrics = None
 
 logger = logging.getLogger(__name__)
 
@@ -102,8 +109,9 @@ def google_trends_tool(keywords: List[str], timeframe: str = 'today 12-m') -> Di
             duration = time.time() - start_time
             
             # Track metrics
-            metrics.track_api_call("google_trends", success=True, duration=duration)
-            metrics.track_circuit_breaker_state("google_trends_api", "closed")
+            if metrics:
+                metrics.track_api_call("google_trends", success=True, duration=duration)
+                metrics.track_circuit_breaker_state("google_trends_api", "closed")
             
             # Success
             if _trends_circuit_breaker.state == CircuitState.HALF_OPEN:
@@ -116,8 +124,9 @@ def google_trends_tool(keywords: List[str], timeframe: str = 'today 12-m') -> Di
             duration = time.time() - start_time
             
             # Track metrics
-            metrics.track_api_call("google_trends", success=False, duration=duration)
-            metrics.track_circuit_breaker_state("google_trends_api", _trends_circuit_breaker.state.value)
+            if metrics:
+                metrics.track_api_call("google_trends", success=False, duration=duration)
+                metrics.track_circuit_breaker_state("google_trends_api", _trends_circuit_breaker.state.value)
             
             # Failure
             _trends_circuit_breaker.failure_count += 1
@@ -135,4 +144,3 @@ def google_trends_tool(keywords: List[str], timeframe: str = 'today 12-m') -> Di
             "related_queries": {},
             "keywords_analyzed": keywords
         }
-

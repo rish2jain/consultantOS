@@ -8,8 +8,11 @@ context-aware alerts for users.
 import asyncio
 import hashlib
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import Any, List, Optional, TYPE_CHECKING
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from consultantos.orchestrator import AnalysisOrchestrator
 
 from consultantos.models.monitoring import (
     Alert,
@@ -21,11 +24,12 @@ from consultantos.models.monitoring import (
     MonitoringFrequency,
     MonitorStatus,
 )
-from consultantos.orchestrator.analysis_orchestrator import AnalysisOrchestrator
 from consultantos.database import DatabaseService
-from consultantos.cache import CacheService
-from consultantos.monitoring import logger
 from consultantos.utils.validators import AnalysisRequestValidator
+
+# Import logger from the monitoring module (not package)
+import logging
+logger = logging.getLogger(__name__)
 
 
 class IntelligenceMonitor:
@@ -38,9 +42,9 @@ class IntelligenceMonitor:
 
     def __init__(
         self,
-        orchestrator: AnalysisOrchestrator,
+        orchestrator: "AnalysisOrchestrator",
         db_service: DatabaseService,
-        cache_service: Optional[CacheService] = None,
+        cache_service: Optional[Any] = None,
     ):
         """
         Initialize intelligence monitor.
@@ -53,7 +57,7 @@ class IntelligenceMonitor:
         self.orchestrator = orchestrator
         self.db = db_service
         self.cache = cache_service
-        self.logger = logger.bind(component="intelligence_monitor")
+        self.logger = logger  # Standard logging, no .bind() method
 
     async def create_monitor(
         self,

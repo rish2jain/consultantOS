@@ -5,7 +5,8 @@ from typing import Dict, Any
 from consultantos.agents.base_agent import BaseAgent
 from consultantos.models import ExecutiveSummary
 from consultantos.prompts import SYNTHESIS_PROMPT_TEMPLATE
-from consultantos.monitoring import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 class SynthesisAgent(BaseAgent):

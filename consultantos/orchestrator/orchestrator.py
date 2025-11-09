@@ -14,7 +14,21 @@ from consultantos.agents import (
     SynthesisAgent
 )
 from consultantos.cache import cache_key, semantic_cache_lookup, semantic_cache_store
-from consultantos.monitoring import track_operation, log_cache_hit, log_cache_miss
+
+# Import monitoring functions from monitoring module (not package)
+try:
+    from consultantos import monitoring as monitoring_module
+    track_operation = monitoring_module.track_operation
+    log_cache_hit = monitoring_module.log_cache_hit
+    log_cache_miss = monitoring_module.log_cache_miss
+except (ImportError, AttributeError):
+    # Fallback to no-op functions for hackathon demo
+    def track_operation(operation_name: str, **context):
+        pass
+    def log_cache_hit(cache_key: str, cache_type: str = "disk"):
+        pass
+    def log_cache_miss(cache_key: str):
+        pass
 
 logger = logging.getLogger(__name__)
 
