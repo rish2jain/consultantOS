@@ -1,0 +1,4 @@
+# Billing and subscription dependencies for ConsultantOS
+# Add these to your main requirements.txt
+
+stripe>=7.0.0

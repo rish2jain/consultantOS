@@ -135,21 +135,20 @@ export const Input: React.FC<InputProps> = ({
           </button>
         )}
 
-        {rightIcon && type !== 'password' && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-            {rightIcon}
-          </div>
-        )}
-
+        {/* Render icons with precedence: error > success > custom rightIcon (only when not password) */}
         {hasError && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 pointer-events-none">
             <AlertCircle className="w-5 h-5" />
           </div>
         )}
-
-        {hasSuccess && (
+        {!hasError && hasSuccess && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 pointer-events-none">
             <CheckCircle className="w-5 h-5" />
+          </div>
+        )}
+        {!hasError && !hasSuccess && rightIcon && type !== 'password' && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            {rightIcon}
           </div>
         )}
       </div>

@@ -248,10 +248,19 @@ export const ShareSettings: React.FC<ShareSettingsProps> = ({
     );
   }
 
+  // Normalize expiration for comparison (handle Date objects and strings)
+  const currentExpiration = expiration instanceof Date 
+    ? expiration.getTime() 
+    : (expiration ? new Date(expiration).getTime() : null);
+  const settingsExpiration = settings.expiration instanceof Date
+    ? settings.expiration.getTime()
+    : (settings.expiration ? new Date(settings.expiration).getTime() : null);
+  
   const hasChanges =
     passwordProtected !== settings.password_protected ||
     permissions !== settings.permissions ||
-    (passwordProtected && newPassword.trim() !== '');
+    (passwordProtected && newPassword.trim() !== '') ||
+    currentExpiration !== settingsExpiration;
 
   return (
     <>

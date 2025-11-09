@@ -74,6 +74,25 @@ export const Modal: React.FC<ModalProps> = ({
       const focusableElements = modalRef.current.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
+      
+      if (focusableElements.length === 0) {
+        // No focusable elements, make modal itself focusable
+        modalRef.current.tabIndex = -1;
+        modalRef.current.focus();
+        
+        const handleTab = (event: KeyboardEvent) => {
+          if (event.key === 'Tab') {
+            event.preventDefault();
+            modalRef.current?.focus();
+          }
+        };
+        
+        document.addEventListener('keydown', handleTab);
+        return () => {
+          document.removeEventListener('keydown', handleTab);
+        };
+      }
+      
       const firstElement = focusableElements[0] as HTMLElement;
       const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 

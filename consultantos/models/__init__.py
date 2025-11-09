@@ -47,6 +47,58 @@ from consultantos.models.sharing import (
     ShareListResponse,
     SharePermission
 )
+from consultantos.models.subscription import (
+    PricingTier,
+    SubscriptionStatus,
+    TierLimits,
+    Subscription,
+    UsageSummary,
+    PromoCode,
+    BillingEvent,
+    UpgradeRequest,
+    CheckoutSession,
+    TIER_CONFIGS,
+    TIER_PRICING
+)
+from consultantos.models.switching_costs import (
+    # Saved Searches
+    SavedSearch,
+    CreateSavedSearchRequest,
+    UpdateSavedSearchRequest,
+    # Teams
+    Team,
+    TeamMember,
+    TeamRole,
+    TeamPlan,
+    CreateTeamRequest,
+    InviteMemberRequest,
+    Comment,
+    CreateCommentRequest,
+    # Personal KB
+    KnowledgeItem,
+    Timeline,
+    KnowledgeGraph,
+    ConnectionNode,
+    ConnectionEdge,
+    SearchKBRequest,
+    # Custom Frameworks
+    CustomFramework,
+    CreateCustomFrameworkRequest,
+    UpdateCustomFrameworkRequest,
+    RateFrameworkRequest,
+    # History & Bookmarks
+    AnalysisVersion,
+    CompanyHistory,
+    AnalysisComparison,
+    Bookmark,
+    CreateBookmarkRequest,
+    # Digest & Alerts
+    DigestPreferences,
+    DigestContent,
+    DigestFrequency,
+    Alert,
+    CreateAlertRequest,
+)
 
 __all__ = [
     # Core models from models.py
@@ -79,5 +131,49 @@ __all__ = [
     "CreateShareRequest",
     "ShareListResponse",
     "SharePermission",
+    # Subscription
+    "PricingTier",
+    "SubscriptionStatus",
+    "TierLimits",
+    "Subscription",
+    "UsageSummary",
+    "PromoCode",
+    "BillingEvent",
+    "UpgradeRequest",
+    "CheckoutSession",
+    "TIER_CONFIGS",
+    "TIER_PRICING",
+    # Switching Costs
+    "SavedSearch",
+    "CreateSavedSearchRequest",
+    "UpdateSavedSearchRequest",
+    "Team",
+    "TeamMember",
+    "TeamRole",
+    "TeamPlan",
+    "CreateTeamRequest",
+    "InviteMemberRequest",
+    "Comment",
+    "CreateCommentRequest",
+    "KnowledgeItem",
+    "Timeline",
+    "KnowledgeGraph",
+    "ConnectionNode",
+    "ConnectionEdge",
+    "SearchKBRequest",
+    "CustomFramework",
+    "CreateCustomFrameworkRequest",
+    "UpdateCustomFrameworkRequest",
+    "RateFrameworkRequest",
+    "AnalysisVersion",
+    "CompanyHistory",
+    "AnalysisComparison",
+    "Bookmark",
+    "CreateBookmarkRequest",
+    "DigestPreferences",
+    "DigestContent",
+    "DigestFrequency",
+    "Alert",
+    "CreateAlertRequest",
 ]
 

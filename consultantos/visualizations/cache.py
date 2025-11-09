@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-import json
+import logging
 from typing import Any, Optional
 
 from consultantos.cache import get_disk_cache
 from consultantos.config import settings
+
+logger = logging.getLogger(__name__)
 
 _NAMESPACE = "viz_json"
 
@@ -18,10 +20,15 @@ def _key(name: str) -> str:
 def get_cached_figure(name: str) -> Optional[Any]:
     cache = get_disk_cache()
     if cache is None:
+        logger.debug(f"Cache unavailable, cache miss for figure: {name}")
         return None
     try:
-        return cache.get(_key(name))
-    except Exception:
+        result = cache.get(_key(name))
+        if result is None:
+            logger.debug(f"Cache miss for figure: {name}")
+        return result
+    except Exception as e:
+        logger.error(f"Error retrieving cached figure '{name}': {e}", exc_info=True)
         return None
 
 

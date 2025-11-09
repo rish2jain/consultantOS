@@ -48,6 +48,16 @@ from consultantos.api.visualization_endpoints import router as visualization_rou
 from consultantos.api.auth_endpoints import router as auth_router
 from consultantos.api.health_endpoints import router as health_router, mark_startup_complete
 from consultantos.api.notifications_endpoints import router as notifications_router
+from consultantos.api.dashboard_endpoints import router as dashboard_router
+from consultantos.api.monitoring_endpoints import router as monitoring_router
+from consultantos.api.feedback_endpoints import router as feedback_router
+from consultantos.api.saved_searches_endpoints import router as saved_searches_router
+from consultantos.api.teams_endpoints import router as teams_router
+from consultantos.api.knowledge_endpoints import router as knowledge_router
+from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
+from consultantos.api.history_endpoints import router as history_router
+from consultantos.api.digest_endpoints import router as digest_router
+from consultantos.api.jobs_endpoints import router as jobs_router
 from consultantos.storage import LocalFileStorageService
 
 
@@ -78,20 +88,16 @@ app = FastAPI(
 )
 
 # CORS middleware - MUST be added FIRST before other middleware
-allowed_origins = [
-    "http://localhost:3000",
-    "http://localhost:8080",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8080",
-]
+# Get allowed origins from config (comma-separated string)
+allowed_origins = [origin.strip() for origin in settings.cors_origins.split(",")]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key"],
+    expose_headers=["Content-Length", "Content-Type"],
     max_age=3600,
 )
 
@@ -209,9 +215,19 @@ app.include_router(versioning_router)
 app.include_router(comments_router)
 app.include_router(community_router)
 app.include_router(analytics_router)
+app.include_router(feedback_router)  # User feedback and quality learning
 app.include_router(visualization_router)
 app.include_router(auth_router)
 app.include_router(notifications_router)
+app.include_router(dashboard_router)
+app.include_router(monitoring_router)  # Continuous intelligence monitoring
+app.include_router(saved_searches_router)  # Saved searches and monitoring
+app.include_router(teams_router)  # Team collaboration
+app.include_router(knowledge_router)  # Personal knowledge base
+app.include_router(custom_frameworks_router)  # Custom framework builder
+app.include_router(history_router)  # Analysis history and bookmarks
+app.include_router(digest_router)  # Email digests and alerts
+app.include_router(jobs_router)  # Job processing and status
 
 # Initialize orchestrator (lazy initialization to avoid import-time errors)
 _orchestrator: Optional[AnalysisOrchestrator] = None
@@ -244,6 +260,10 @@ async def startup():
     except Exception as e:
         logger.warning(f"Failed to start background worker: {e}. Async jobs will not be processed.")
         logger.warning("To process async jobs, start the worker separately or restart the API server.")
+    
+    # Mark startup as complete for health checks
+    mark_startup_complete()
+    logger.info("Application startup complete")
 
 
 @app.on_event("shutdown")
@@ -269,10 +289,6 @@ async def shutdown():
                 logger.info("Background worker task cancelled")
 
     logger.info("Application shutdown complete")
-    
-    # Mark startup as complete for health checks
-    mark_startup_complete()
-    logger.info("Application startup complete")
 
 
 

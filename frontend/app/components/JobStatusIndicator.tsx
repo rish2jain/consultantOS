@@ -97,17 +97,28 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
 
       if (data.status === 'completed') {
         setIsPolling(false);
-        onComplete?.(data.result);
       } else if (data.status === 'failed') {
         setIsPolling(false);
-        onError?.(data.error || 'Job failed');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
       setIsPolling(false);
     }
-  }, [jobId, apiUrl, onStatusChange, onComplete, onError]);
+  }, [jobId, apiUrl]);
+  
+  // Separate effect to handle callbacks when status changes
+  useEffect(() => {
+    if (!status) return;
+    
+    onStatusChange?.(status);
+    
+    if (status.status === 'completed') {
+      onComplete?.(status.result);
+    } else if (status.status === 'failed') {
+      onError?.(status.error || 'Job failed');
+    }
+  }, [status, onStatusChange, onComplete, onError]);
 
   // Initial fetch and polling
   useEffect(() => {

@@ -52,11 +52,37 @@ class CachingMiddleware(BaseHTTPMiddleware):
 
             # Only process successful JSON responses
             if response.status_code == 200 and "application/json" in response.headers.get("content-type", ""):
-                # Generate ETag from response body
+                # Generate ETag from response body with size limit to prevent OOM
+                MAX_ETAG_SIZE = 10 * 1024 * 1024  # 10MB limit
                 response_body = b""
+                body_size = 0
+                chunks = []
+                
                 async for chunk in response.body_iterator:
-                    response_body += chunk
-
+                    chunks.append(chunk)
+                    body_size += len(chunk)
+                    if body_size > MAX_ETAG_SIZE:
+                        # Body too large, skip ETag generation
+                        # Rebuild response stream from collected chunks
+                        from starlette.responses import StreamingResponse
+                        async def stream_chunks():
+                            for c in chunks:
+                                yield c
+                            async for c in response.body_iterator:
+                                yield c
+                        
+                        duration_ms = (time.time() - start_time) * 1000
+                        headers = MutableHeaders(response.headers)
+                        headers["X-Response-Time"] = f"{duration_ms:.2f}ms"
+                        return StreamingResponse(
+                            stream_chunks(),
+                            status_code=response.status_code,
+                            headers=headers,
+                            media_type=response.media_type
+                        )
+                
+                # Combine all chunks
+                response_body = b"".join(chunks)
                 etag = self._generate_etag(response_body)
 
                 # Check if client has the same version

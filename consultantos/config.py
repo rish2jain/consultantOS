@@ -20,35 +20,51 @@ except ImportError:
 
 class Settings(BaseSettings):
     """Application settings"""
-    
-    # API Keys
+
+    # API Keys - Research Tools
     tavily_api_key: Optional[str] = None
+
+    # API Keys - LLM Providers
     gemini_api_key: Optional[str] = None
-    
+    gemini_model: Optional[str] = "gemini-1.5-flash-002"
+
+    # API Keys - Billing
+    stripe_secret_key: Optional[str] = None
+    stripe_publishable_key: Optional[str] = None
+    stripe_webhook_secret: Optional[str] = None
+
     # Google Cloud
     gcp_project_id: Optional[str] = None
-    
+
+    # Frontend Configuration
+    frontend_url: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080"
+
+    # Stripe Price IDs (configure these with actual Stripe Price IDs from dashboard)
+    stripe_price_id_pro: str = "price_pro_monthly"
+    stripe_price_id_enterprise: str = "price_enterprise_monthly"
+
     # Application
     environment: str = "development"
     log_level: str = "INFO"
-    
+
     # Rate Limiting
     rate_limit_per_hour: int = 10
-    
+
     # Caching
     cache_ttl_seconds: int = 3600  # 1 hour
     cache_dir: str = ""  # Empty string means use default temp directory
-    
+
     # Observability
     enable_metrics: bool = True
     enable_tracing: bool = False
     metrics_port: int = 9090
-    
+
     # Operational
     health_check_timeout: int = 5
     graceful_shutdown_timeout: int = 30
     request_timeout: int = 300
-    
+
     # Security
     session_secret: Optional[str] = None  # Secret key for session management
 
