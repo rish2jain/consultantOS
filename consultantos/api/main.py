@@ -49,7 +49,6 @@ from consultantos.api.auth_endpoints import router as auth_router
 from consultantos.api.health_endpoints import router as health_router, mark_startup_complete
 from consultantos.api.notifications_endpoints import router as notifications_router
 from consultantos.api.dashboard_endpoints import router as dashboard_router
-from consultantos.api.provider_endpoints import router as provider_router
 from consultantos.api.monitoring_endpoints import router as monitoring_router
 from consultantos.api.feedback_endpoints import router as feedback_router
 from consultantos.api.saved_searches_endpoints import router as saved_searches_router
@@ -224,7 +223,6 @@ app.include_router(visualization_router)
 app.include_router(auth_router)
 app.include_router(notifications_router)
 app.include_router(dashboard_router)
-app.include_router(provider_router)  # LLM provider management
 app.include_router(monitoring_router)  # Continuous intelligence monitoring
 app.include_router(saved_searches_router)  # Saved searches and monitoring
 app.include_router(teams_router)  # Team collaboration
