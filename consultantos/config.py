@@ -26,22 +26,12 @@ class Settings(BaseSettings):
 
     # API Keys - LLM Providers
     gemini_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
+    gemini_model: Optional[str] = "gemini-1.5-flash-002"
 
     # API Keys - Billing
     stripe_secret_key: Optional[str] = None
     stripe_publishable_key: Optional[str] = None
     stripe_webhook_secret: Optional[str] = None
-
-    # LLM Provider Configuration
-    primary_llm_provider: str = "gemini"  # Primary provider (gemini, openai, anthropic)
-    enable_llm_fallback: bool = True  # Enable automatic fallback on provider failure
-    llm_routing_strategy: str = "fallback"  # Routing strategy: fallback, cost, capability, load_balance
-
-    # LLM Cost Management
-    llm_daily_budget: Optional[float] = None  # Daily LLM cost budget in USD
-    llm_monthly_budget: Optional[float] = None  # Monthly LLM cost budget in USD
 
     # Google Cloud
     gcp_project_id: Optional[str] = None
@@ -158,24 +148,6 @@ if not settings.tavily_api_key:
             _config_logger.warning("TAVILY_API_KEY is not configured. Some features may be unavailable.")
     except ValueError as e:
         _config_logger.warning(f"TAVILY_API_KEY not found in Secret Manager or environment variables: {e}. Some features may be unavailable.")
-
-# Optional key: openai_api_key
-if not settings.openai_api_key:
-    try:
-        settings.openai_api_key = get_secret("openai-api-key", "OPENAI_API_KEY")
-        if not settings.openai_api_key:
-            _config_logger.info("OPENAI_API_KEY is not configured. OpenAI provider will be unavailable.")
-    except ValueError as e:
-        _config_logger.info(f"OPENAI_API_KEY not found: {e}. OpenAI provider will be unavailable.")
-
-# Optional key: anthropic_api_key
-if not settings.anthropic_api_key:
-    try:
-        settings.anthropic_api_key = get_secret("anthropic-api-key", "ANTHROPIC_API_KEY")
-        if not settings.anthropic_api_key:
-            _config_logger.info("ANTHROPIC_API_KEY is not configured. Anthropic provider will be unavailable.")
-    except ValueError as e:
-        _config_logger.info(f"ANTHROPIC_API_KEY not found: {e}. Anthropic provider will be unavailable.")
 
 # Session secret (required for security)
 if not settings.session_secret:
