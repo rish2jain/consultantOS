@@ -38,6 +38,7 @@ class Settings(BaseSettings):
 
     # Frontend Configuration
     frontend_url: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080"
 
     # Stripe Price IDs (configure these with actual Stripe Price IDs from dashboard)
     stripe_price_id_pro: str = "price_pro_monthly"
