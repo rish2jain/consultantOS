@@ -1,20 +1,36 @@
-# ConsultantOS - Business Intelligence Research Engine
+# ConsultantOS - Continuous Competitive Intelligence Platform
 
-Multi-agent AI system for generating McKinsey-grade business framework analyses in 30 minutes instead of 32 hours.
+**Transform from one-time reports to continuous intelligence monitoring**
 
-## Features
+Multi-agent AI platform that continuously monitors companies and industries, detects material changes, and delivers real-time competitive intelligence. Get McKinsey-grade strategic analyses updated automatically instead of manual report generation.
 
+## Core Features
+
+### Continuous Intelligence Monitoring
+- **Dashboard-First Experience**: Real-time monitoring dashboard with live updates
+- **Automated Change Detection**: Track competitors, market trends, and strategic shifts
+- **Smart Alerts**: Only notify on material changes above confidence thresholds
+- **Multiple Monitors**: Track 100+ companies simultaneously per user
+- **Flexible Scheduling**: Hourly, daily, weekly, or monthly checks
+- **User Feedback Loop**: Learn from alert relevance to improve quality
+
+### Strategic Analysis Engine
 - **5 Specialized Agents**: Research, Market, Financial, Framework, and Synthesis agents
 - **4 Business Frameworks**: Porter's Five Forces, SWOT, PESTEL, and Blue Ocean Strategy
-- **Professional PDF Reports**: Auto-generated reports with charts and visualizations
 - **Real-time Data**: Integrates with Tavily, Google Trends, SEC EDGAR, and yfinance
-- **User Dashboard**: Next.js/React dashboard for report management and analytics
+- **Change Detection**: Competitive forces, market trends, financial metrics, strategic shifts
+
+### Dashboard & Collaboration
+- **Live Dashboard**: Real-time status of all monitors and alerts
+- **Alert Management**: Mark as read, provide feedback, track actions taken
+- **Export Options**: PDF reports available on-demand (no longer default)
 - **Report Sharing**: Link-based sharing with permissions and expiration
 - **Template Library**: Custom framework templates and best practices
-- **Report Versioning**: Track changes, compare versions, and rollback
-- **Comments & Collaboration**: Comment threads and reactions on reports
-- **Community Features**: Case study library and best practices sharing
-- **Async Processing**: Background job queue for long-running analyses
+
+### Platform Infrastructure
+- **Background Workers**: Automated scheduled monitoring checks
+- **Async Processing**: Non-blocking job queue for analyses
+- **Multi-level Caching**: Disk + semantic caching for performance
 - **Cloud Run Deployment**: Serverless, auto-scaling deployment on Google Cloud
 
 ## Quick Start
@@ -57,7 +73,62 @@ gcloud run deploy consultantos \
 
 ## API Usage
 
-### Analyze a Company
+### Continuous Monitoring (Primary Use Case)
+
+**Create a Monitor** (recommended approach):
+```bash
+curl -X POST "http://localhost:8080/monitors" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_api_key" \
+  -d '{
+    "company": "Tesla",
+    "industry": "Electric Vehicles",
+    "config": {
+      "frequency": "daily",
+      "frameworks": ["porter", "swot"],
+      "alert_threshold": 0.7,
+      "notification_channels": ["email", "in_app"]
+    }
+  }'
+```
+
+**List Your Monitors**:
+```bash
+curl "http://localhost:8080/monitors" \
+  -H "X-API-Key: your_api_key"
+```
+
+**Get Monitor Alerts**:
+```bash
+curl "http://localhost:8080/monitors/{monitor_id}/alerts" \
+  -H "X-API-Key: your_api_key"
+```
+
+**Trigger Manual Check**:
+```bash
+curl -X POST "http://localhost:8080/monitors/{monitor_id}/check" \
+  -H "X-API-Key: your_api_key"
+```
+
+**Mark Alert as Read**:
+```bash
+curl -X POST "http://localhost:8080/monitors/alerts/{alert_id}/read" \
+  -H "X-API-Key: your_api_key"
+```
+
+**Provide Alert Feedback** (improves future alerts):
+```bash
+curl -X POST "http://localhost:8080/monitors/alerts/{alert_id}/feedback" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_api_key" \
+  -d '{
+    "feedback": "helpful",
+    "action_taken": "scheduled_deep_dive",
+    "notes": "Detected competitor pricing change early"
+  }'
+```
+
+### One-Time Analysis (Legacy Mode)
 
 **Synchronous** (for quick analyses):
 ```bash

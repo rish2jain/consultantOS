@@ -56,11 +56,19 @@ export const PasswordResetForm: React.FC<PasswordResetFormProps> = ({
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to send reset email');
+        // Check Content-Type before parsing JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          throw new Error(data.detail || 'Failed to send reset email');
+        } else {
+          const text = await response.text();
+          throw new Error(text || 'Failed to send reset email');
+        }
       }
+
+      const data = await response.json();
 
       setSuccessMessage('Password reset instructions sent! Please check your email.');
       onSuccess?.(email);

@@ -22,10 +22,24 @@ export async function fetchNotifications(
   userId: string,
   apiBaseUrl: string = DEFAULT_API_BASE
 ): Promise<Notification[]> {
-  const response = await fetch(`${apiBaseUrl}/notifications?user_id=${userId}`, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  // URL-encode userId to prevent injection
+  const encodedUserId = encodeURIComponent(userId);
+  
+  // Get auth token from secure storage
+  const token = typeof window !== 'undefined' 
+    ? localStorage.getItem('token') || sessionStorage.getItem('token')
+    : null;
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(`${apiBaseUrl}/notifications?user_id=${encodedUserId}`, {
+    headers,
   });
 
   if (!response.ok) {

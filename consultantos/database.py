@@ -128,12 +128,15 @@ class UserAccount:
 
 class InMemoryDatabaseService:
     """In-memory database service for development/testing"""
-    
+
     def __init__(self):
         self._api_keys: Dict[str, Dict] = {}
         self._reports: Dict[str, Dict] = {}
         self._users: Dict[str, Dict] = {}
         self._passwords: Dict[str, str] = {}
+        self._subscriptions: Dict[str, Dict] = {}
+        self._promo_codes: Dict[str, Dict] = {}
+        self._billing_events: Dict[str, Dict] = {}
         self._lock = threading.Lock()
         logger.info("Using in-memory database (Firestore not available)")
     
@@ -229,6 +232,225 @@ class InMemoryDatabaseService:
                 return True
         return False
 
+    # Subscription Operations
+    async def create_subscription(self, subscription) -> bool:
+        """Create subscription record"""
+        with self._lock:
+            self._subscriptions[subscription.user_id] = subscription.dict()
+        return True
+
+    async def get_subscription(self, user_id: str):
+        """Get subscription for user"""
+        from consultantos.models.subscription import Subscription
+        with self._lock:
+            data = self._subscriptions.get(user_id)
+            return Subscription(**data) if data else None
+
+    async def update_subscription(self, subscription) -> bool:
+        """Update subscription"""
+        with self._lock:
+            if subscription.user_id in self._subscriptions:
+                self._subscriptions[subscription.user_id] = subscription.dict()
+                return True
+        return False
+
+    async def delete_subscription(self, user_id: str) -> bool:
+        """Delete subscription"""
+        with self._lock:
+            if user_id in self._subscriptions:
+                del self._subscriptions[user_id]
+                return True
+        return False
+
+    # Promo Code Operations
+    async def create_promo_code(self, promo_code) -> bool:
+        """Create promo code"""
+        with self._lock:
+            self._promo_codes[promo_code.code] = promo_code.dict()
+        return True
+
+    async def get_promo_code(self, code: str):
+        """Get promo code"""
+        from consultantos.models.subscription import PromoCode
+        with self._lock:
+            data = self._promo_codes.get(code)
+            return PromoCode(**data) if data else None
+
+    async def update_promo_code(self, promo_code) -> bool:
+        """Update promo code"""
+        with self._lock:
+            if promo_code.code in self._promo_codes:
+                self._promo_codes[promo_code.code] = promo_code.dict()
+                return True
+        return False
+
+    # Billing Event Operations
+    async def create_billing_event(self, event) -> bool:
+        """Create billing event"""
+        with self._lock:
+            self._billing_events[event.id] = event.dict()
+        return True
+
+    async def list_billing_events(self, subscription_id: str, limit: int = 50):
+        """List billing events for subscription"""
+        from consultantos.models.subscription import BillingEvent
+        with self._lock:
+            events = [
+                BillingEvent(**v) for v in self._billing_events.values()
+                if v.get("subscription_id") == subscription_id
+            ]
+            events.sort(key=lambda e: e.created_at, reverse=True)
+            return events[:limit]
+
+    # Feedback Operations
+    async def store_rating(self, rating) -> bool:
+        """Store insight rating"""
+        with self._lock:
+            if not hasattr(self, '_ratings'):
+                self._ratings = {}
+            self._ratings[rating.id] = rating.dict()
+        return True
+
+    async def get_ratings_for_report(self, report_id: str):
+        """Get all ratings for a report"""
+        from consultantos.models.feedback import InsightRating
+        with self._lock:
+            if not hasattr(self, '_ratings'):
+                return []
+            return [
+                InsightRating(**v) for v in self._ratings.values()
+                if v.get("report_id") == report_id
+            ]
+
+    async def get_ratings_since(self, start_date: datetime):
+        """Get all ratings since a date"""
+        from consultantos.models.feedback import InsightRating
+        with self._lock:
+            if not hasattr(self, '_ratings'):
+                return []
+            return [
+                InsightRating(**v) for v in self._ratings.values()
+                if datetime.fromisoformat(v.get("created_at", "1970-01-01")) >= start_date
+            ]
+
+    async def store_correction(self, correction) -> bool:
+        """Store insight correction"""
+        with self._lock:
+            if not hasattr(self, '_corrections'):
+                self._corrections = {}
+            self._corrections[correction.id] = correction.dict()
+        return True
+
+    async def get_corrections_for_report(self, report_id: str):
+        """Get all corrections for a report"""
+        from consultantos.models.feedback import InsightCorrection
+        with self._lock:
+            if not hasattr(self, '_corrections'):
+                return []
+            return [
+                InsightCorrection(**v) for v in self._corrections.values()
+                if v.get("report_id") == report_id
+            ]
+
+    async def get_corrections_since(self, start_date: datetime):
+        """Get all corrections since a date"""
+        from consultantos.models.feedback import InsightCorrection
+        with self._lock:
+            if not hasattr(self, '_corrections'):
+                return []
+            return [
+                InsightCorrection(**v) for v in self._corrections.values()
+                if datetime.fromisoformat(v.get("created_at", "1970-01-01")) >= start_date
+            ]
+
+    async def get_pending_corrections(self, limit: int = 50):
+        """Get pending corrections awaiting validation"""
+        from consultantos.models.feedback import InsightCorrection
+        with self._lock:
+            if not hasattr(self, '_corrections'):
+                return []
+            corrections = [
+                InsightCorrection(**v) for v in self._corrections.values()
+                if not v.get("validated", False)
+            ]
+            corrections.sort(key=lambda c: c.created_at, reverse=True)
+            return corrections[:limit]
+
+    async def get_validated_corrections(self, framework: Optional[str] = None, limit: int = 100):
+        """Get validated corrections, optionally filtered by framework"""
+        from consultantos.models.feedback import InsightCorrection
+        with self._lock:
+            if not hasattr(self, '_corrections'):
+                return []
+            corrections = [
+                InsightCorrection(**v) for v in self._corrections.values()
+                if v.get("validated", False)
+            ]
+            if framework:
+                corrections = [c for c in corrections if c.section == framework]
+            corrections.sort(key=lambda c: c.created_at, reverse=True)
+            return corrections[:limit]
+
+    async def update_correction(self, correction_id: str, **updates) -> bool:
+        """Update correction fields"""
+        with self._lock:
+            if not hasattr(self, '_corrections'):
+                return False
+            if correction_id in self._corrections:
+                self._corrections[correction_id].update(updates)
+                return True
+        return False
+
+    async def get_high_rated_insights(self, framework: Optional[str] = None, min_rating: float = 4.5, limit: int = 20):
+        """Get high-rated insights for positive examples"""
+        from consultantos.models.feedback import InsightRating
+        with self._lock:
+            if not hasattr(self, '_ratings'):
+                return []
+            ratings = [
+                InsightRating(**v) for v in self._ratings.values()
+                if v.get("rating", 0) >= min_rating
+            ]
+            if framework:
+                ratings = [
+                    r for r in ratings
+                    if "_" in r.insight_id and r.insight_id.split("_")[1] == framework
+                ]
+            ratings.sort(key=lambda r: r.rating, reverse=True)
+            return ratings[:limit]
+
+    async def store_learning_pattern(self, pattern) -> bool:
+        """Store learning pattern"""
+        with self._lock:
+            if not hasattr(self, '_learning_patterns'):
+                self._learning_patterns = {}
+            self._learning_patterns[pattern.pattern_id] = pattern.dict()
+        return True
+
+    async def update_learning_pattern(self, pattern) -> bool:
+        """Update learning pattern"""
+        with self._lock:
+            if not hasattr(self, '_learning_patterns'):
+                return False
+            if pattern.pattern_id in self._learning_patterns:
+                self._learning_patterns[pattern.pattern_id] = pattern.dict()
+                return True
+        return False
+
+    async def get_learning_patterns(self, framework: Optional[str] = None, min_confidence: float = 0.0):
+        """Get learning patterns"""
+        from consultantos.models.feedback import LearningPattern
+        with self._lock:
+            if not hasattr(self, '_learning_patterns'):
+                return []
+            patterns = [
+                LearningPattern(**v) for v in self._learning_patterns.values()
+                if v.get("confidence", 0) >= min_confidence
+            ]
+            if framework:
+                patterns = [p for p in patterns if p.framework == framework]
+            return patterns
+
 
 class DatabaseService:
     """Service for database operations"""
@@ -241,6 +463,9 @@ class DatabaseService:
         self.api_keys_collection = self.db.collection("api_keys")
         self.reports_collection = self.db.collection("reports")
         self.users_collection = self.db.collection("users")
+        self.subscriptions_collection = self.db.collection("subscriptions")
+        self.promo_codes_collection = self.db.collection("promo_codes")
+        self.billing_events_collection = self.db.collection("billing_events")
     
     # API Key Operations
     def create_api_key(self, key_record: APIKeyRecord) -> bool:
@@ -457,6 +682,290 @@ class DatabaseService:
             logger.error(f"Failed to update user: {e}")
             return False
 
+    # Subscription Operations
+    async def create_subscription(self, subscription) -> bool:
+        """Create subscription record"""
+        try:
+            doc_ref = self.subscriptions_collection.document(subscription.user_id)
+            doc_ref.set(subscription.dict())
+            logger.info(f"Created subscription for user: {subscription.user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create subscription: {e}")
+            return False
+
+    async def get_subscription(self, user_id: str):
+        """Get subscription for user"""
+        from consultantos.models.subscription import Subscription
+        try:
+            doc_ref = self.subscriptions_collection.document(user_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                return Subscription(**doc.to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get subscription: {e}")
+            return None
+
+    async def update_subscription(self, subscription) -> bool:
+        """Update subscription"""
+        try:
+            doc_ref = self.subscriptions_collection.document(subscription.user_id)
+            doc_ref.update(subscription.dict())
+            logger.info(f"Updated subscription for user: {subscription.user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update subscription: {e}")
+            return False
+
+    async def delete_subscription(self, user_id: str) -> bool:
+        """Delete subscription"""
+        try:
+            doc_ref = self.subscriptions_collection.document(user_id)
+            doc_ref.delete()
+            logger.info(f"Deleted subscription for user: {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete subscription: {e}")
+            return False
+
+    # Promo Code Operations
+    async def create_promo_code(self, promo_code) -> bool:
+        """Create promo code"""
+        try:
+            doc_ref = self.promo_codes_collection.document(promo_code.code)
+            doc_ref.set(promo_code.dict())
+            logger.info(f"Created promo code: {promo_code.code}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create promo code: {e}")
+            return False
+
+    async def get_promo_code(self, code: str):
+        """Get promo code"""
+        from consultantos.models.subscription import PromoCode
+        try:
+            doc_ref = self.promo_codes_collection.document(code)
+            doc = doc_ref.get()
+            if doc.exists:
+                return PromoCode(**doc.to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get promo code: {e}")
+            return None
+
+    async def update_promo_code(self, promo_code) -> bool:
+        """Update promo code"""
+        try:
+            doc_ref = self.promo_codes_collection.document(promo_code.code)
+            doc_ref.update(promo_code.dict())
+            logger.info(f"Updated promo code: {promo_code.code}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update promo code: {e}")
+            return False
+
+    # Billing Event Operations
+    async def create_billing_event(self, event) -> bool:
+        """Create billing event"""
+        try:
+            doc_ref = self.billing_events_collection.document(event.id)
+            doc_ref.set(event.dict())
+            logger.info(f"Created billing event: {event.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create billing event: {e}")
+            return False
+
+    async def list_billing_events(self, subscription_id: str, limit: int = 50):
+        """List billing events for subscription"""
+        from consultantos.models.subscription import BillingEvent
+        try:
+            query = self.billing_events_collection.where("subscription_id", "==", subscription_id)
+            query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
+            query = query.limit(limit)
+            docs = query.stream()
+            return [BillingEvent(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to list billing events: {e}")
+            return []
+
+    # Feedback Operations
+    async def store_rating(self, rating) -> bool:
+        """Store insight rating"""
+        try:
+            ratings_collection = self.db.collection("insight_ratings")
+            doc_ref = ratings_collection.document(rating.id)
+            doc_ref.set(rating.dict())
+            logger.info(f"Stored insight rating: {rating.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to store rating: {e}")
+            return False
+
+    async def get_ratings_for_report(self, report_id: str):
+        """Get all ratings for a report"""
+        from consultantos.models.feedback import InsightRating
+        try:
+            ratings_collection = self.db.collection("insight_ratings")
+            query = ratings_collection.where("report_id", "==", report_id)
+            docs = query.stream()
+            return [InsightRating(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get ratings for report: {e}")
+            return []
+
+    async def get_ratings_since(self, start_date: datetime):
+        """Get all ratings since a date"""
+        from consultantos.models.feedback import InsightRating
+        try:
+            ratings_collection = self.db.collection("insight_ratings")
+            query = ratings_collection.where("created_at", ">=", start_date.isoformat())
+            docs = query.stream()
+            return [InsightRating(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get ratings since date: {e}")
+            return []
+
+    async def store_correction(self, correction) -> bool:
+        """Store insight correction"""
+        try:
+            corrections_collection = self.db.collection("insight_corrections")
+            doc_ref = corrections_collection.document(correction.id)
+            doc_ref.set(correction.dict())
+            logger.info(f"Stored insight correction: {correction.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to store correction: {e}")
+            return False
+
+    async def get_corrections_for_report(self, report_id: str):
+        """Get all corrections for a report"""
+        from consultantos.models.feedback import InsightCorrection
+        try:
+            corrections_collection = self.db.collection("insight_corrections")
+            query = corrections_collection.where("report_id", "==", report_id)
+            docs = query.stream()
+            return [InsightCorrection(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get corrections for report: {e}")
+            return []
+
+    async def get_corrections_since(self, start_date: datetime):
+        """Get all corrections since a date"""
+        from consultantos.models.feedback import InsightCorrection
+        try:
+            corrections_collection = self.db.collection("insight_corrections")
+            query = corrections_collection.where("created_at", ">=", start_date.isoformat())
+            docs = query.stream()
+            return [InsightCorrection(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get corrections since date: {e}")
+            return []
+
+    async def get_pending_corrections(self, limit: int = 50):
+        """Get pending corrections awaiting validation"""
+        from consultantos.models.feedback import InsightCorrection
+        try:
+            corrections_collection = self.db.collection("insight_corrections")
+            query = corrections_collection.where("validated", "==", False)
+            query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
+            query = query.limit(limit)
+            docs = query.stream()
+            return [InsightCorrection(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get pending corrections: {e}")
+            return []
+
+    async def get_validated_corrections(self, framework: Optional[str] = None, limit: int = 100):
+        """Get validated corrections, optionally filtered by framework"""
+        from consultantos.models.feedback import InsightCorrection
+        try:
+            corrections_collection = self.db.collection("insight_corrections")
+            query = corrections_collection.where("validated", "==", True)
+            if framework:
+                query = query.where("section", "==", framework)
+            query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
+            query = query.limit(limit)
+            docs = query.stream()
+            return [InsightCorrection(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get validated corrections: {e}")
+            return []
+
+    async def update_correction(self, correction_id: str, **updates) -> bool:
+        """Update correction fields"""
+        try:
+            corrections_collection = self.db.collection("insight_corrections")
+            doc_ref = corrections_collection.document(correction_id)
+            doc_ref.update(updates)
+            logger.info(f"Updated correction: {correction_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update correction: {e}")
+            return False
+
+    async def get_high_rated_insights(self, framework: Optional[str] = None, min_rating: float = 4.5, limit: int = 20):
+        """Get high-rated insights for positive examples"""
+        from consultantos.models.feedback import InsightRating
+        try:
+            ratings_collection = self.db.collection("insight_ratings")
+            query = ratings_collection.where("rating", ">=", int(min_rating))
+            query = query.order_by("rating", direction=firestore.Query.DESCENDING)
+            query = query.limit(limit * 2)  # Get extra in case of filtering
+            docs = query.stream()
+            ratings = [InsightRating(**doc.to_dict()) for doc in docs]
+            
+            # Filter by framework if specified
+            if framework:
+                ratings = [
+                    r for r in ratings
+                    if "_" in r.insight_id and r.insight_id.split("_")[1] == framework
+                ]
+            
+            return ratings[:limit]
+        except Exception as e:
+            logger.error(f"Failed to get high-rated insights: {e}")
+            return []
+
+    async def store_learning_pattern(self, pattern) -> bool:
+        """Store learning pattern"""
+        try:
+            patterns_collection = self.db.collection("learning_patterns")
+            doc_ref = patterns_collection.document(pattern.pattern_id)
+            doc_ref.set(pattern.dict())
+            logger.info(f"Stored learning pattern: {pattern.pattern_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to store learning pattern: {e}")
+            return False
+
+    async def update_learning_pattern(self, pattern) -> bool:
+        """Update learning pattern"""
+        try:
+            patterns_collection = self.db.collection("learning_patterns")
+            doc_ref = patterns_collection.document(pattern.pattern_id)
+            doc_ref.update(pattern.dict())
+            logger.info(f"Updated learning pattern: {pattern.pattern_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update learning pattern: {e}")
+            return False
+
+    async def get_learning_patterns(self, framework: Optional[str] = None, min_confidence: float = 0.0):
+        """Get learning patterns"""
+        from consultantos.models.feedback import LearningPattern
+        try:
+            patterns_collection = self.db.collection("learning_patterns")
+            query = patterns_collection.where("confidence", ">=", min_confidence)
+            if framework:
+                query = query.where("framework", "==", framework)
+            docs = query.stream()
+            return [LearningPattern(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get learning patterns: {e}")
+            return []
+
 
 # Global database service instance
 _db_service: Optional[Union[DatabaseService, InMemoryDatabaseService]] = None
@@ -479,4 +988,3 @@ def get_db_service() -> Union[DatabaseService, InMemoryDatabaseService]:
                     logger.info("Using in-memory database (Firestore not available or in test mode)")
                     _db_service = InMemoryDatabaseService()
     return _db_service
-

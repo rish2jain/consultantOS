@@ -120,15 +120,18 @@ export default function ReportsPage() {
         limit: pageSize,
         sort_by: sortConfig.key,
         order: sortConfig.direction,
+        search: debouncedSearch || undefined,
       }) as ReportsListResponse;
 
-      let filteredReports = response.reports || [];
       const allReports = response.reports || [];
-
-      // Apply client-side search filter
-      if (debouncedSearch) {
+      
+      // If backend supports search, use server-side filtering
+      // Otherwise fall back to client-side filtering
+      let filteredReports = allReports;
+      if (debouncedSearch && !response.total) {
+        // Backend doesn't support search, filter client-side
         const search = debouncedSearch.toLowerCase();
-        filteredReports = filteredReports.filter(report =>
+        filteredReports = allReports.filter(report =>
           report.company.toLowerCase().includes(search) ||
           report.industry.toLowerCase().includes(search)
         );
@@ -136,17 +139,23 @@ export default function ReportsPage() {
 
       setReports(filteredReports);
       
-      // Use filtered count for pagination when search is active
-      const total = debouncedSearch 
-        ? filteredReports.length 
-        : (response.total ?? response.count ?? allReports.length);
-      setTotalReports(total);
+      // Use server-provided total if available, otherwise use filtered count
+      // Ensure total is a number, defaulting to 0 if missing
+      const total = typeof response.total === 'number' 
+        ? response.total 
+        : (debouncedSearch && !response.total 
+            ? filteredReports.length 
+            : (typeof response.count === 'number' ? response.count : allReports.length));
+      const safeTotal = Math.max(0, total || 0);
+      setTotalReports(safeTotal);
       
       // Calculate total pages safely, ensuring it's never NaN
-      const calculatedTotalPages = debouncedSearch
-        ? Math.ceil(filteredReports.length / pageSize)
-        : (response.total_pages ?? Math.ceil(total / pageSize));
-      const safeTotalPages = isNaN(calculatedTotalPages) || calculatedTotalPages < 1 ? 1 : calculatedTotalPages;
+      // Guard against pageSize being 0 or undefined
+      const safePageSize = Math.max(1, pageSize || 25);
+      const calculatedTotalPages = safePageSize > 0 
+        ? Math.ceil(safeTotal / safePageSize)
+        : 0;
+      const safeTotalPages = isNaN(calculatedTotalPages) || calculatedTotalPages < 1 ? 1 : Math.max(1, calculatedTotalPages);
       setTotalPages(safeTotalPages);
       
       // Clear error if data loaded successfully

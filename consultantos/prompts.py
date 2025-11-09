@@ -164,3 +164,239 @@ Requirements:
 Format as professional executive summary suitable for C-suite presentation.
 """
 
+
+# ============================================================================
+# FEEDBACK-BASED LEARNING SYSTEM
+# ============================================================================
+
+def get_feedback_enhanced_prompt(base_prompt: str, framework: str, feedback_data: dict = None) -> str:
+    """
+    Enhance base prompt with feedback-based learning examples.
+    
+    Args:
+        base_prompt: Original framework prompt template
+        framework: Framework name (porter, swot, pestel, blue_ocean)
+        feedback_data: Dict with 'negative_examples' and 'positive_examples' keys
+        
+    Returns:
+        Enhanced prompt with learning examples
+    """
+    if not feedback_data:
+        return base_prompt
+    
+    enhancements = []
+    
+    # Add negative examples (common errors to avoid)
+    negative_examples = feedback_data.get('negative_examples', [])
+    if negative_examples:
+        neg_section = "\n**AVOID THESE COMMON ERRORS** (Based on user corrections):\n"
+        for i, example in enumerate(negative_examples[:5], 1):  # Top 5
+            neg_section += f"{i}. ❌ **{example['category'].upper()}**: {example['explanation']}\n"
+            neg_section += f"   Bad: \"{example['original'][:100]}...\"\n"
+            neg_section += f"   Better: \"{example['corrected'][:100]}...\"\n\n"
+        enhancements.append(neg_section)
+    
+    # Add positive examples (high-quality insights)
+    positive_examples = feedback_data.get('positive_examples', [])
+    if positive_examples:
+        pos_section = "\n**EXCELLENT INSIGHT EXAMPLES** (Highly rated by users):\n"
+        for i, example in enumerate(positive_examples[:3], 1):  # Top 3
+            pos_section += f"{i}. ✅ **Rating: {example['rating']}/5**\n"
+            pos_section += f"   \"{example['text']}\"\n\n"
+        enhancements.append(pos_section)
+    
+    # Add pattern-based recommendations
+    recommendations = feedback_data.get('recommendations', [])
+    if recommendations:
+        rec_section = "\n**QUALITY GUIDELINES** (From feedback analysis):\n"
+        for rec in recommendations[:5]:
+            rec_section += f"• {rec}\n"
+        enhancements.append(rec_section)
+    
+    # Combine base prompt with enhancements
+    if enhancements:
+        enhanced = base_prompt + "\n\n" + "".join(enhancements)
+        return enhanced
+    
+    return base_prompt
+
+
+# Negative examples template - populated by FeedbackProcessor
+NEGATIVE_EXAMPLES_SECTION = """
+**AVOID THESE COMMON ERRORS** (Based on user corrections):
+{corrections_summary}
+
+These are real mistakes identified by users in previous analyses.
+Learn from these patterns and ensure your analysis avoids similar issues.
+"""
+
+# Positive examples template - populated by FeedbackProcessor
+POSITIVE_EXAMPLES_SECTION = """
+**EXCELLENT INSIGHT EXAMPLES** (Highly rated by users):
+{high_rated_examples}
+
+These insights received 4.5-5 star ratings. Use them as quality benchmarks.
+Notice the specificity, evidence-based reasoning, and strategic relevance.
+"""
+
+# Quality guidelines template - populated by FeedbackProcessor
+QUALITY_GUIDELINES_SECTION = """
+**QUALITY GUIDELINES** (From feedback analysis):
+{quality_guidelines}
+
+These guidelines emerged from analyzing thousands of user feedback submissions.
+Following these will significantly improve insight quality and user satisfaction.
+"""
+
+
+def build_corrections_summary(corrections: list) -> str:
+    """
+    Build formatted summary of common corrections.
+    
+    Args:
+        corrections: List of InsightCorrection objects
+        
+    Returns:
+        Formatted string for prompt injection
+    """
+    if not corrections:
+        return "No corrections data available yet."
+    
+    summary_lines = []
+    for i, correction in enumerate(corrections[:5], 1):  # Top 5 most common
+        summary_lines.append(
+            f"{i}. ❌ **{correction.error_category.value.upper()}** in {correction.section.upper()}:\n"
+            f"   Problem: {correction.original_text[:150]}...\n"
+            f"   Fix: {correction.corrected_text[:150]}...\n"
+            f"   Lesson: {correction.explanation}\n"
+        )
+    
+    return "\n".join(summary_lines)
+
+
+def build_positive_examples(ratings: list) -> str:
+    """
+    Build formatted summary of high-rated insights.
+    
+    Args:
+        ratings: List of InsightRating objects with high scores
+        
+    Returns:
+        Formatted string for prompt injection
+    """
+    if not ratings:
+        return "No high-rated examples available yet."
+    
+    examples = []
+    for i, rating in enumerate(ratings[:3], 1):  # Top 3
+        framework = rating.insight_id.split("_")[1] if "_" in rating.insight_id else "unknown"
+        examples.append(
+            f"{i}. ✅ **{framework.upper()}** - {rating.rating}/5 stars\n"
+            f"   \"{rating.feedback_text}\"\n"
+        )
+    
+    return "\n".join(examples)
+
+
+def build_quality_guidelines(patterns: list) -> str:
+    """
+    Build quality guidelines from learning patterns.
+    
+    Args:
+        patterns: List of LearningPattern objects
+        
+    Returns:
+        Formatted string for prompt injection
+    """
+    if not patterns:
+        return "• Provide specific, evidence-based insights\n• Include quantitative data where possible\n• Focus on strategic implications"
+    
+    guidelines = []
+    
+    # Categorize patterns by type
+    factual_patterns = [p for p in patterns if "factual" in p.description.lower()]
+    depth_patterns = [p for p in patterns if "depth" in p.description.lower()]
+    relevance_patterns = [p for p in patterns if "relevance" in p.description.lower()]
+    
+    if factual_patterns:
+        guidelines.append("• **Factual Accuracy**: Verify all data points against source material. Cross-check numerical claims.")
+    
+    if depth_patterns:
+        guidelines.append("• **Analysis Depth**: Provide 3-4 supporting points for each major insight. Don't just state facts—explain implications.")
+    
+    if relevance_patterns:
+        guidelines.append("• **Strategic Relevance**: Focus on insights that directly impact business strategy. Avoid tangential observations.")
+    
+    # Add general best practices
+    guidelines.extend([
+        "• **Specificity**: Use concrete examples and metrics rather than vague statements",
+        "• **Comparisons**: Benchmark against competitors and industry averages",
+        "• **Actionability**: Connect insights to strategic decisions or actions"
+    ])
+    
+    return "\n".join(guidelines)
+
+
+# Framework-specific enhancement functions
+async def get_enhanced_porter_prompt(company: str, industry: str, research: str, market: str, financial: str, feedback_processor=None) -> str:
+    """Get Porter's Five Forces prompt enhanced with feedback learning"""
+    base_prompt = PORTER_PROMPT_TEMPLATE.format(
+        company_name=company,
+        industry=industry,
+        research_summary=research,
+        market_summary=market,
+        financial_summary=financial
+    )
+    
+    if not feedback_processor:
+        return base_prompt
+    
+    # Get feedback-based improvements
+    improvements = await feedback_processor.improve_prompts(framework="porter")
+    
+    return get_feedback_enhanced_prompt(base_prompt, "porter", improvements)
+
+
+async def get_enhanced_swot_prompt(company: str, research: str, market: str, financial: str, feedback_processor=None) -> str:
+    """Get SWOT prompt enhanced with feedback learning"""
+    base_prompt = SWOT_PROMPT_TEMPLATE.format(
+        company_name=company,
+        research_summary=research,
+        market_summary=market,
+        financial_summary=financial
+    )
+    
+    if not feedback_processor:
+        return base_prompt
+    
+    improvements = await feedback_processor.improve_prompts(framework="swot")
+    
+    return get_feedback_enhanced_prompt(base_prompt, "swot", improvements)
+
+
+async def get_enhanced_pestel_prompt(company: str, feedback_processor=None) -> str:
+    """Get PESTEL prompt enhanced with feedback learning"""
+    base_prompt = PESTEL_PROMPT_TEMPLATE.format(company_name=company)
+    
+    if not feedback_processor:
+        return base_prompt
+    
+    improvements = await feedback_processor.improve_prompts(framework="pestel")
+    
+    return get_feedback_enhanced_prompt(base_prompt, "pestel", improvements)
+
+
+async def get_enhanced_blue_ocean_prompt(company: str, industry: str, competitors: str, feedback_processor=None) -> str:
+    """Get Blue Ocean prompt enhanced with feedback learning"""
+    base_prompt = BLUE_OCEAN_PROMPT_TEMPLATE.format(
+        company_name=company,
+        industry=industry,
+        competitors=competitors
+    )
+    
+    if not feedback_processor:
+        return base_prompt
+    
+    improvements = await feedback_processor.improve_prompts(framework="blue_ocean")
+    
+    return get_feedback_enhanced_prompt(base_prompt, "blue_ocean", improvements)

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, Check, X, ExternalLink } from "lucide-react";
 import { Badge } from "./Badge";
 import { Button } from "./Button";
@@ -72,7 +72,7 @@ export const CommentNotifications: React.FC<CommentNotificationsProps> = ({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Fetch notifications
-  const fetchNotificationsData = async () => {
+  const fetchNotificationsData = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -90,13 +90,13 @@ export const CommentNotifications: React.FC<CommentNotificationsProps> = ({
         err instanceof Error ? err.message : "Failed to load notifications"
       );
     }
-  };
+  }, [userId, apiBaseUrl]);
 
   // Initial fetch
   useEffect(() => {
     setIsLoading(true);
     fetchNotificationsData().finally(() => setIsLoading(false));
-  }, [userId]);
+  }, [fetchNotificationsData]);
 
   // Set up polling
   useEffect(() => {

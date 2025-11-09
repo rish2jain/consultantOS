@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Link from 'next/link'
 import './globals.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryProvider } from './providers'
@@ -34,15 +35,15 @@ export default function RootLayout({
                     © {new Date().getFullYear()} ConsultantOS. All rights reserved.
                   </p>
                   <div className="flex space-x-6">
-                    <a href="/terms" className="text-sm text-gray-500 hover:text-gray-900">
+                    <Link href="/terms" className="text-sm text-gray-500 hover:text-gray-900">
                       Terms
-                    </a>
-                    <a href="/privacy" className="text-sm text-gray-500 hover:text-gray-900">
+                    </Link>
+                    <Link href="/privacy" className="text-sm text-gray-500 hover:text-gray-900">
                       Privacy
-                    </a>
-                    <a href="/help" className="text-sm text-gray-500 hover:text-gray-900">
+                    </Link>
+                    <Link href="/help" className="text-sm text-gray-500 hover:text-gray-900">
                       Help
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>

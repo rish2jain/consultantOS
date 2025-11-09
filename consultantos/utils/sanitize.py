@@ -23,11 +23,12 @@ def sanitize_input(text: str, max_length: int = 1000) -> str:
     # Remove HTML tags and escape HTML entities
     text = html.escape(text)
     
-    # Remove SQL comment markers ('--') only
+    # Remove SQL injection patterns: statement terminators, comment markers, and quotes
     # Note: Proper SQL injection protection must come from parameterized/prepared
     # statements at the database layer, not from ad-hoc string stripping.
-    # This removal is a minimal defense-in-depth measure for SQL comment sequences.
-    text = re.sub(r'--', '', text)
+    # This removal is a minimal defense-in-depth measure.
+    text = re.sub(r'[;\'"]', '', text)  # Remove semicolons, single quotes, double quotes
+    text = re.sub(r'--', '', text)  # Remove SQL comment markers
     
     # Remove script tags and javascript: protocols
     text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.IGNORECASE | re.DOTALL)

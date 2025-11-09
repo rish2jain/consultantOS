@@ -156,7 +156,7 @@ export const ShareList: React.FC<ShareListProps> = ({
     });
 
     setFilteredShares(filtered);
-    handlePageChange(0); // Reset to first page when filters change
+    handlePageChange(1); // Reset to first page when filters change (1-based indexing)
   };
 
   const isExpired = (expiresAt?: string): boolean => {

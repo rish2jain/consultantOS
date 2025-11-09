@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
 import { Spinner } from "./Spinner";
@@ -57,11 +57,7 @@ const VersionComparison: React.FC<VersionComparisonProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
-  useEffect(() => {
-    fetchComparison();
-  }, [reportId, versionA, versionB]);
-
-  const fetchComparison = async () => {
+  const fetchComparison = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -82,7 +78,11 @@ const VersionComparison: React.FC<VersionComparisonProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [reportId, versionA, versionB]);
+
+  useEffect(() => {
+    fetchComparison();
+  }, [fetchComparison]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
