@@ -57,6 +57,7 @@ from consultantos.api.knowledge_endpoints import router as knowledge_router
 from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
 from consultantos.api.history_endpoints import router as history_router
 from consultantos.api.digest_endpoints import router as digest_router
+from consultantos.api.jobs_endpoints import router as jobs_router
 from consultantos.storage import LocalFileStorageService
 
 
@@ -230,6 +231,7 @@ app.include_router(knowledge_router)  # Personal knowledge base
 app.include_router(custom_frameworks_router)  # Custom framework builder
 app.include_router(history_router)  # Analysis history and bookmarks
 app.include_router(digest_router)  # Email digests and alerts
+app.include_router(jobs_router)  # Job processing and status
 
 # Initialize orchestrator (lazy initialization to avoid import-time errors)
 _orchestrator: Optional[AnalysisOrchestrator] = None
