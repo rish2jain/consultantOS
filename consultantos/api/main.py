@@ -37,7 +37,35 @@ try:
 except (ImportError, AttributeError):
     # Fallback for hackathon demo
     logger = logging.getLogger(__name__)
-    metrics = None
+    
+    # No-op metrics object to prevent AttributeErrors
+    class NoOpMetrics:
+        """Lightweight no-op metrics object that implements all metrics methods"""
+        def record_error(self, error_type: str, error_message: str) -> None:
+            pass
+        
+        def get_metrics(self) -> Dict[str, Any]:
+            return {"timestamp": datetime.now().isoformat()}
+        
+        def get_summary(self) -> Dict[str, Any]:
+            return {
+                "total_requests": 0,
+                "success_rate": 0.0,
+                "cache_hit_rate": 0.0,
+                "average_execution_times": {},
+                "error_count_by_type": {},
+                "api_success_rates": {},
+                "total_cost": 0.0
+            }
+        
+        def track_job_status(self, status: str, increment: int = 1) -> None:
+            pass
+        
+        def track_user_activity(self, user_id: str, action: str) -> None:
+            pass
+    
+    metrics = NoOpMetrics()
+    
     def log_request(request_id: str, **kwargs):
         pass
     def log_request_success(request_id: str, **kwargs):

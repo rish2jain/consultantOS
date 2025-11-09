@@ -8,11 +8,22 @@ context-aware alerts for users.
 import asyncio
 import hashlib
 from datetime import datetime, timedelta
-from typing import Any, List, Optional, TYPE_CHECKING
+from typing import Any, List, Optional, Protocol, TYPE_CHECKING
 from uuid import uuid4
 
 if TYPE_CHECKING:
     from consultantos.orchestrator import AnalysisOrchestrator
+
+
+class CacheProtocol(Protocol):
+    """Protocol for cache service interface"""
+    async def get(self, key: str) -> Any:
+        """Get value from cache"""
+        ...
+    
+    async def set(self, key: str, value: Any, ttl: int) -> None:
+        """Set value in cache with TTL"""
+        ...
 
 from consultantos.models.monitoring import (
     Alert,
@@ -44,7 +55,7 @@ class IntelligenceMonitor:
         self,
         orchestrator: "AnalysisOrchestrator",
         db_service: DatabaseService,
-        cache_service: Optional[Any] = None,
+        cache_service: Optional[CacheProtocol] = None,
     ):
         """
         Initialize intelligence monitor.
@@ -116,10 +127,8 @@ class IntelligenceMonitor:
             await self._run_baseline_analysis(monitor)
         except Exception as e:
             self.logger.error(
-                "baseline_analysis_failed",
-                monitor_id=monitor_id,
-                company=company,
-                error=str(e),
+                f"baseline_analysis_failed: monitor_id={monitor_id}, company={company}, error={str(e)}",
+                exc_info=True
             )
             # Don't fail monitor creation, just log error
             monitor.error_count = 1
@@ -127,10 +136,7 @@ class IntelligenceMonitor:
             await self.db.update_monitor(monitor)
 
         self.logger.info(
-            "monitor_created",
-            monitor_id=monitor_id,
-            company=company,
-            user_id=user_id,
+            f"monitor_created: monitor_id={monitor_id}, company={company}, user_id={user_id}"
         )
 
         return monitor
@@ -155,16 +161,12 @@ class IntelligenceMonitor:
 
         if monitor.status != MonitorStatus.ACTIVE:
             self.logger.info(
-                "monitor_not_active",
-                monitor_id=monitor_id,
-                status=monitor.status,
+                f"monitor_not_active: monitor_id={monitor_id}, status={monitor.status}"
             )
             return []
 
         self.logger.info(
-            "checking_monitor",
-            monitor_id=monitor_id,
-            company=monitor.company,
+            f"checking_monitor: monitor_id={monitor_id}, company={monitor.company}"
         )
 
         try:
@@ -201,10 +203,7 @@ class IntelligenceMonitor:
             await self.db.update_monitor(monitor)
 
             self.logger.info(
-                "monitor_check_completed",
-                monitor_id=monitor_id,
-                changes_detected=len(changes),
-                alerts_generated=len(alerts),
+                f"monitor_check_completed: monitor_id={monitor_id}, changes_detected={len(changes)}, alerts_generated={len(alerts)}"
             )
 
             return alerts
@@ -218,17 +217,14 @@ class IntelligenceMonitor:
             if monitor.error_count >= 5:
                 monitor.status = MonitorStatus.ERROR
                 self.logger.error(
-                    "monitor_paused_due_to_errors",
-                    monitor_id=monitor_id,
-                    error_count=monitor.error_count,
+                    f"monitor_paused_due_to_errors: monitor_id={monitor_id}, error_count={monitor.error_count}"
                 )
 
             await self.db.update_monitor(monitor)
 
             self.logger.error(
-                "monitor_check_failed",
-                monitor_id=monitor_id,
-                error=str(e),
+                f"monitor_check_failed: monitor_id={monitor_id}, error={str(e)}",
+                exc_info=True
             )
 
             raise
@@ -262,17 +258,13 @@ class IntelligenceMonitor:
                     await self._send_webhook_alert(monitor, alert)
 
                 self.logger.info(
-                    "alert_sent",
-                    alert_id=alert.id,
-                    channel=channel.value,
+                    f"alert_sent: alert_id={alert.id}, channel={channel.value}"
                 )
 
             except Exception as e:
                 self.logger.error(
-                    "alert_delivery_failed",
-                    alert_id=alert.id,
-                    channel=channel.value,
-                    error=str(e),
+                    f"alert_delivery_failed: alert_id={alert.id}, channel={channel.value}, error={str(e)}",
+                    exc_info=True
                 )
 
     async def update_monitor(
@@ -310,10 +302,7 @@ class IntelligenceMonitor:
         await self.db.update_monitor(monitor)
 
         self.logger.info(
-            "monitor_updated",
-            monitor_id=monitor_id,
-            config_updated=config is not None,
-            status_updated=status is not None,
+            f"monitor_updated: monitor_id={monitor_id}, config_updated={config is not None}, status_updated={status is not None}"
         )
 
         return monitor
@@ -335,7 +324,7 @@ class IntelligenceMonitor:
         monitor.status = MonitorStatus.DELETED
         await self.db.update_monitor(monitor)
 
-        self.logger.info("monitor_deleted", monitor_id=monitor_id)
+        self.logger.info(f"monitor_deleted: monitor_id={monitor_id}")
 
     # Private helper methods
 
