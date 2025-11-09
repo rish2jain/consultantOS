@@ -5,6 +5,7 @@ Includes registration, login, email verification, password management
 import hashlib
 import secrets
 import logging
+import re
 from typing import Optional, Dict
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status
@@ -22,6 +23,47 @@ _verification_tokens: Dict[str, Dict] = {}
 _password_reset_tokens: Dict[str, Dict] = {}
 
 
+def validate_password(password: str) -> None:
+    """
+    Validate password meets security requirements
+
+    Requirements:
+    - At least 8 characters long
+    - Contains at least one uppercase letter
+    - Contains at least one lowercase letter
+    - Contains at least one digit
+    - Contains at least one special character
+
+    Args:
+        password: Password to validate
+
+    Raises:
+        HTTPException: If password doesn't meet requirements
+    """
+    errors = []
+
+    if len(password) < 8:
+        errors.append("Password must be at least 8 characters long")
+
+    if not re.search(r'[A-Z]', password):
+        errors.append("Password must contain at least one uppercase letter")
+
+    if not re.search(r'[a-z]', password):
+        errors.append("Password must contain at least one lowercase letter")
+
+    if not re.search(r'\d', password):
+        errors.append("Password must contain at least one digit")
+
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{};:\'",.<>?/\\|`~]', password):
+        errors.append("Password must contain at least one special character")
+
+    if errors:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "Password does not meet security requirements", "errors": errors}
+        )
+
+
 def hash_password(password: str) -> str:
     """Hash a password"""
     return pwd_context.hash(password)
@@ -35,28 +77,31 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_user(email: str, password: str, name: Optional[str] = None) -> Dict:
     """
     Create a new user account
-    
+
     Args:
         email: User email
         password: Plain text password
         name: Optional user name
-    
+
     Returns:
         User account dict with user_id
     """
+    # Validate password strength
+    validate_password(password)
+
     # Check if user already exists
     db_service = get_db_service()
     existing_user = db_service.get_user_by_email(email)
-    
+
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exists"
         )
-    
+
     # Generate user ID
     user_id = f"user_{secrets.token_urlsafe(16)}"
-    
+
     # Hash password
     password_hash = hash_password(password)
     
@@ -220,7 +265,10 @@ def reset_password(token: str, new_password: str) -> bool:
     if datetime.now() > expires_at:
         del _password_reset_tokens[token]
         return False
-    
+
+    # Validate new password
+    validate_password(new_password)
+
     # Update password
     user_id = token_info["user_id"]
     password_hash = hash_password(new_password)
