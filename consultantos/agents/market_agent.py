@@ -22,7 +22,29 @@ class MarketAgent(BaseAgent):
         """
     
     async def _execute_internal(self, input_data: Dict[str, Any]) -> MarketTrends:
-        """Execute market analysis task"""
+        """
+        Execute market trend analysis using Google Trends data.
+
+        Analyzes search interest trends, regional patterns, and competitive dynamics
+        using pytrends library to gather Google Trends data.
+
+        Args:
+            input_data: Dictionary containing:
+                - company: Company name to analyze (required, non-empty)
+                - industry: Industry for comparative analysis (optional)
+
+        Returns:
+            MarketTrends object containing:
+                - growth_trajectory: Trend direction (growing, stable, declining)
+                - interest_over_time: Time series data of search interest
+                - regional_interest: Geographic distribution of interest
+                - competitive_landscape: Comparison with competitors
+                - insights: Key market insights and patterns
+
+        Raises:
+            ValueError: If company name is empty
+            Exception: If trends data fetch or LLM analysis fails
+        """
         company = input_data.get("company", "").strip()
         
         # Validate company is not empty
@@ -71,8 +93,7 @@ class MarketAgent(BaseAgent):
         """
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=MarketTrends,
                 messages=[{
                     "role": "user",

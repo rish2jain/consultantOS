@@ -37,7 +37,21 @@ class Settings(BaseSettings):
     
     # Caching
     cache_ttl_seconds: int = 3600  # 1 hour
+    cache_dir: str = ""  # Empty string means use default temp directory
     
+    # Observability
+    enable_metrics: bool = True
+    enable_tracing: bool = False
+    metrics_port: int = 9090
+    
+    # Operational
+    health_check_timeout: int = 5
+    graceful_shutdown_timeout: int = 30
+    request_timeout: int = 300
+    
+    # Security
+    session_secret: Optional[str] = None  # Secret key for session management
+
     class Config:
         env_file = ".env"
         case_sensitive = False
@@ -120,3 +134,15 @@ if not settings.tavily_api_key:
     except ValueError as e:
         _config_logger.warning(f"TAVILY_API_KEY not found in Secret Manager or environment variables: {e}. Some features may be unavailable.")
 
+# Session secret (required for security)
+if not settings.session_secret:
+    try:
+        settings.session_secret = get_secret("session-secret", "SESSION_SECRET")
+    except ValueError:
+        # Generate a random session secret if not configured (development only)
+        if settings.environment == "development" or settings.environment == "test":
+            import secrets
+            settings.session_secret = secrets.token_urlsafe(32)
+            _config_logger.warning("SESSION_SECRET not configured. Generated temporary session secret for development. Set SESSION_SECRET for production.")
+        else:
+            raise RuntimeError("SESSION_SECRET is required for production. Set it via environment variable or Secret Manager.")

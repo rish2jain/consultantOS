@@ -32,7 +32,28 @@ export default function RegisterPage() {
       alert('Registration successful! Please login.')
       router.push('/')
     } catch (error: any) {
-      setError(error.response?.data?.detail || 'Registration failed')
+      let errorMessage = 'Registration failed';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        // Handle FastAPI validation errors (array of error objects)
+        if (Array.isArray(detail)) {
+          errorMessage = detail
+            .map((err: any) => {
+              const field = err.loc?.slice(1).join('.') || 'field';
+              return `${field}: ${err.msg}`;
+            })
+            .join('; ');
+        } else if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else {
+          errorMessage = JSON.stringify(detail);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false)
     }

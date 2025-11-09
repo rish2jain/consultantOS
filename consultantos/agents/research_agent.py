@@ -28,7 +28,30 @@ class ResearchAgent(BaseAgent):
         """
     
     async def _execute_internal(self, input_data: Dict[str, Any]) -> CompanyResearch:
-        """Execute research task"""
+        """
+        Execute research task to gather comprehensive company intelligence.
+
+        Uses Tavily web search to gather company information including overview,
+        products/services, market position, competitors, and recent news.
+
+        Args:
+            input_data: Dictionary containing:
+                - company: Name of the company to research
+                - industry: (optional) Industry for context
+
+        Returns:
+            CompanyResearch object containing:
+                - company_name: Official company name
+                - description: 2-3 sentence company overview
+                - products_services: List of products and services
+                - target_market: Target market description
+                - key_competitors: List of main competitors
+                - recent_news: List of recent news items
+                - sources: List of source URLs
+
+        Raises:
+            Exception: If search fails completely or LLM extraction fails
+        """
         company = input_data.get("company", "")
         
         # Search for company information
@@ -71,8 +94,7 @@ class ResearchAgent(BaseAgent):
         """
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=CompanyResearch,
                 messages=[{
                     "role": "user",

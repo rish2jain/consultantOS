@@ -3,17 +3,28 @@ FastAPI application for ConsultantOS
 """
 import asyncio
 import logging
+import traceback
+import uuid
+from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Security
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from consultantos.models import AnalysisRequest, StrategicReport
+from consultantos_core import (
+    auth as core_auth,
+    config as core_config,
+    database as core_db,
+    models as core_models,
+    storage as core_storage,
+)
 from consultantos.orchestrator import AnalysisOrchestrator
 from consultantos.reports import generate_pdf_report
-from consultantos.config import settings
 from consultantos.monitoring import (
     logger,
     metrics,
@@ -21,9 +32,6 @@ from consultantos.monitoring import (
     log_request_success,
     log_request_failure
 )
-from consultantos.storage import get_storage_service
-from consultantos.auth import verify_api_key, get_api_key, create_api_key
-from consultantos.database import get_db_service, ReportMetadata
 from consultantos.api.user_endpoints import router as user_router
 from consultantos.api.template_endpoints import router as template_router
 from consultantos.api.sharing_endpoints import router as sharing_router
@@ -36,6 +44,26 @@ from consultantos.api.versioning_endpoints import router as versioning_router
 from consultantos.api.comments_endpoints import router as comments_router
 from consultantos.api.community_endpoints import router as community_router
 from consultantos.api.analytics_endpoints import router as analytics_router
+from consultantos.api.visualization_endpoints import router as visualization_router
+from consultantos.api.auth_endpoints import router as auth_router
+from consultantos.api.health_endpoints import router as health_router, mark_startup_complete
+from consultantos.api.notifications_endpoints import router as notifications_router
+from consultantos.storage import LocalFileStorageService
+
+
+# Shared core aliases
+settings = core_config.settings
+AnalysisRequest = core_models.AnalysisRequest
+StrategicReport = core_models.StrategicReport
+get_storage_service = core_storage.get_storage_service
+verify_api_key = core_auth.verify_api_key
+get_api_key = core_auth.get_api_key
+create_api_key = core_auth.create_api_key
+get_db_service = core_db.get_db_service
+ReportMetadata = core_db.ReportMetadata
+
+# Request ID tracking via ContextVar
+request_id_var: ContextVar[str] = ContextVar('request_id', default='')
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.log_level))
@@ -49,34 +77,131 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
-# Read allowed origins from settings (default to empty list for security)
-allowed_origins = getattr(settings, 'allowed_origins', [])
-if not allowed_origins:
-    # If no origins configured, disable credentials for security
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=False,  # Cannot use credentials with wildcard
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-else:
-    # Use configured origins with credentials enabled
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=allowed_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# CORS middleware - MUST be added FIRST before other middleware
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
+)
+
+# Security headers middleware
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Add security headers to all responses"""
+    response = await call_next(request)
+
+    # Prevent MIME type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # Prevent clickjacking attacks
+    response.headers["X-Frame-Options"] = "DENY"
+
+    # Enable XSS protection (legacy browsers)
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # Force HTTPS in production
+    if settings.environment == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+    # Content Security Policy (adjust based on your needs)
+    # Note: Relaxed for development to allow localhost connections
+    csp_directives = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  # Adjust for your frontend
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "font-src 'self' data:",
+        "connect-src 'self' http://localhost:* http://127.0.0.1:*",  # Allow localhost connections
+        "frame-ancestors 'none'"
+    ]
+    response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
+
+    # Referrer policy
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # Permissions policy (restrict browser features)
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+
+    return response
+
+# Request ID middleware
+@app.middleware("http")
+async def add_request_id_middleware(request: Request, call_next):
+    """Add unique request ID to all requests for tracing"""
+    request_id = request.headers.get('X-Request-ID', str(uuid.uuid4()))
+    request_id_var.set(request_id)
+    request.state.request_id = request_id
+
+    response = await call_next(request)
+    response.headers['X-Request-ID'] = request_id
+    return response
+
+# Session middleware with secure configuration
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.session_secret,
+    session_cookie="consultantos_session",
+    max_age=3600,  # 1 hour session lifetime
+    same_site="strict",  # Prevent CSRF attacks
+    https_only=(settings.environment == "production"),  # HTTPS-only in production
+    # Note: httponly is set automatically by SessionMiddleware for session cookies
+)
+
+# GZip compression middleware (must be added after SessionMiddleware)
+app.add_middleware(
+    GZipMiddleware,
+    minimum_size=1000,  # Only compress responses larger than 1KB
+    compresslevel=6  # Balance between compression ratio and speed
+)
 
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler with detailed error tracking"""
+    request_id = getattr(request.state, 'request_id', 'unknown')
+    
+    logger.error(
+        "unhandled_exception",
+        request_id=request_id,
+        path=request.url.path,
+        method=request.method,
+        error_type=type(exc).__name__,
+        error_message=str(exc),
+        stack_trace=traceback.format_exc(),
+        exc_info=True
+    )
+    
+    # Track error in metrics
+    metrics.record_error(type(exc).__name__, str(exc))
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "request_id": request_id,
+            "message": str(exc) if settings.environment == "development" else "An unexpected error occurred"
+        },
+        headers={"X-Request-ID": request_id}
+    )
+
 # Register routers
+app.include_router(health_router)  # Health endpoints first for monitoring
 app.include_router(user_router)
 app.include_router(template_router)
 app.include_router(sharing_router)
@@ -84,6 +209,9 @@ app.include_router(versioning_router)
 app.include_router(comments_router)
 app.include_router(community_router)
 app.include_router(analytics_router)
+app.include_router(visualization_router)
+app.include_router(auth_router)
+app.include_router(notifications_router)
 
 # Initialize orchestrator (lazy initialization to avoid import-time errors)
 _orchestrator: Optional[AnalysisOrchestrator] = None
@@ -96,11 +224,55 @@ def get_orchestrator() -> AnalysisOrchestrator:
     return _orchestrator
 
 
+# Global reference to worker task to prevent garbage collection
+_worker_task: Optional[asyncio.Task] = None
+
 @app.on_event("startup")
 async def startup():
     """Application startup"""
     logger.info("ConsultantOS API starting up")
     logger.info(f"Rate limit: {settings.rate_limit_per_hour} requests/hour per IP")
+
+    # Start background worker for async job processing
+    global _worker_task
+    try:
+        from consultantos.jobs.worker import get_worker
+        worker = get_worker()
+        # Start worker in background task and store reference
+        _worker_task = asyncio.create_task(worker.start(poll_interval=10))
+        logger.info("Background worker started for async job processing")
+    except Exception as e:
+        logger.warning(f"Failed to start background worker: {e}. Async jobs will not be processed.")
+        logger.warning("To process async jobs, start the worker separately or restart the API server.")
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Application shutdown - gracefully stop background tasks"""
+    logger.info("ConsultantOS API shutting down")
+
+    # Stop background worker if running
+    global _worker_task
+    if _worker_task and not _worker_task.done():
+        try:
+            from consultantos.jobs.worker import get_worker
+            worker = get_worker()
+            await worker.stop()
+            logger.info("Background worker stopped gracefully")
+        except Exception as e:
+            logger.warning(f"Error stopping background worker: {e}")
+            # Cancel the task if stop() failed
+            _worker_task.cancel()
+            try:
+                await _worker_task
+            except asyncio.CancelledError:
+                logger.info("Background worker task cancelled")
+
+    logger.info("Application shutdown complete")
+    
+    # Mark startup as complete for health checks
+    mark_startup_complete()
+    logger.info("Application startup complete")
 
 
 
@@ -165,7 +337,7 @@ async def analyze_company(
         
         # Log request with structured logging
         log_request(
-            report_id=report_id,
+            request_id=report_id,
             company=analysis_request.company,
             frameworks=analysis_request.frameworks,
             user_ip=request.client.host or "unknown"
@@ -191,7 +363,7 @@ async def analyze_company(
         
         # Generate PDF with error handling
         try:
-            pdf_bytes = generate_pdf_report(report)
+            pdf_bytes = generate_pdf_report(report, report_id=report_id)
         except Exception as e:
             logger.error(f"PDF generation failed: {str(e)}", exc_info=True)
             # Return JSON response even if PDF fails
@@ -200,7 +372,7 @@ async def analyze_company(
                 "report_id": report_id,
                 "report_url": None,
                 "error": "PDF generation failed, but analysis completed",
-                "executive_summary": report.executive_summary.dict(),
+                "executive_summary": report.executive_summary.model_dump(),
                 "confidence": report.executive_summary.confidence_score,
                 "generated_at": datetime.now().isoformat()
             }
@@ -234,6 +406,16 @@ async def analyze_company(
         # Store report metadata (synchronously for immediate access)
         try:
             db_service = get_db_service()
+            # Convert framework_analysis to dict for storage
+            framework_analysis_dict = None
+            if report.framework_analysis:
+                try:
+                    # Use Pydantic v2 model_dump() for serialization
+                    framework_analysis_dict = report.framework_analysis.model_dump()
+                except Exception as e:
+                    logger.warning(f"Failed to serialize framework_analysis: {e}", exc_info=True)
+                    framework_analysis_dict = None
+            
             report_metadata = ReportMetadata(
                 report_id=report_id,
                 user_id=user_id,
@@ -242,7 +424,8 @@ async def analyze_company(
                 frameworks=analysis_request.frameworks,
                 status="completed",
                 confidence_score=report.executive_summary.confidence_score,
-                execution_time_seconds=execution_time
+                execution_time_seconds=execution_time,
+                framework_analysis=framework_analysis_dict
             )
             db_service.create_report_metadata(report_metadata)
         except Exception as e:
@@ -257,7 +440,7 @@ async def analyze_company(
             "status": "success",
             "report_id": report_id,
             "report_url": report_url,
-            "executive_summary": report.executive_summary.dict(),
+            "executive_summary": report.executive_summary.model_dump(),
             "confidence": report.executive_summary.confidence_score,
             "generated_at": datetime.now().isoformat(),
             "execution_time_seconds": execution_time
@@ -266,18 +449,26 @@ async def analyze_company(
     except HTTPException:
         raise
     except Exception as e:
+        error_message = str(e)
         logger.error(
-            f"Unexpected error: {str(e)}",
+            f"Unexpected error: {error_message}",
             exc_info=True,
             extra={
                 "report_id": report_id,
                 "company": analysis_request.company if analysis_request else None
             }
         )
-        raise HTTPException(
-            status_code=500,
-            detail="An unexpected error occurred. Please try again later."
-        )
+        # In development, show actual error for debugging
+        if settings.environment == "development":
+            raise HTTPException(
+                status_code=500,
+                detail=f"Analysis failed: {error_message}"
+            )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="An unexpected error occurred. Please try again later."
+            )
 
 
 async def upload_and_store_metadata(
@@ -325,6 +516,51 @@ async def upload_and_store_metadata(
         # Don't raise - background task failures shouldn't crash the app
 
 
+@app.get("/reports/{report_id}/download")
+async def download_report_pdf(report_id: str):
+    """
+    Download PDF report file
+    
+    **Parameters:**
+    - `report_id`: Report identifier
+    
+    Returns the PDF file as a download.
+    """
+    try:
+        storage_service = get_storage_service()
+        
+        # Check if report exists
+        if not storage_service.report_exists(report_id):
+            raise HTTPException(status_code=404, detail="Report PDF not found")
+        
+        # For local file storage, read the file
+        if isinstance(storage_service, LocalFileStorageService):
+            from pathlib import Path
+            from fastapi.responses import FileResponse
+            
+            file_path = Path(storage_service.storage_dir) / f"{report_id}.pdf"
+            if not file_path.exists():
+                raise HTTPException(status_code=404, detail="Report PDF not found")
+            
+            return FileResponse(
+                path=str(file_path),
+                media_type="application/pdf",
+                filename=f"{report_id}.pdf",
+                headers={"Content-Disposition": f'attachment; filename="{report_id}.pdf"'}
+            )
+        else:
+            # For Cloud Storage, redirect to signed URL
+            signed_url = storage_service.generate_signed_url(report_id)
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url=signed_url)
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("pdf_download_failed", report_id=report_id, error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to download PDF")
+
+
 @app.get("/reports/{report_id}")
 async def get_report(
     report_id: str,
@@ -348,17 +584,32 @@ async def get_report(
     try:
         # Handle export formats
         if format and format.lower() in ['json', 'excel', 'word']:
-            # Need to retrieve the report data first
-            # For now, return metadata - full implementation would fetch report
             db_service = get_db_service()
             metadata = db_service.get_report_metadata(report_id)
             
             if not metadata:
                 raise HTTPException(status_code=404, detail="Report not found")
             
-            # Export format implementations require full report reconstruction from storage
-            # which is not yet implemented, so return 501 Not Implemented
             format_lower = format.lower()
+            
+            # JSON export - return metadata as JSON
+            if format_lower == 'json':
+                from fastapi.responses import JSONResponse
+                return JSONResponse(content={
+                    "report_id": report_id,
+                    "company": metadata.company,
+                    "industry": metadata.industry,
+                    "frameworks": metadata.frameworks or [],
+                    "status": metadata.status,
+                    "confidence_score": metadata.confidence_score,
+                    "created_at": metadata.created_at.isoformat() if hasattr(metadata.created_at, 'isoformat') else str(metadata.created_at),
+                    "execution_time_seconds": metadata.execution_time_seconds,
+                    "pdf_url": metadata.pdf_url,
+                    "framework_analysis": metadata.framework_analysis if hasattr(metadata, 'framework_analysis') else None
+                })
+            
+            # Excel and Word exports require full report reconstruction
+            # which is not yet implemented, so return 501 Not Implemented
             raise HTTPException(status_code=501, detail=f"Export format '{format_lower}' not implemented")
         
         # Try to get metadata from database
@@ -367,32 +618,65 @@ async def get_report(
         
         if metadata:
             storage_service = get_storage_service()
-            if signed and metadata.pdf_url:
-                # Generate signed URL
-                report_url = storage_service.generate_signed_url(report_id)
+            
+            # Get framework_analysis from metadata
+            framework_analysis = None
+            if hasattr(metadata, 'framework_analysis'):
+                framework_analysis = metadata.framework_analysis
+            elif isinstance(metadata, dict):
+                framework_analysis = metadata.get('framework_analysis')
+            
+            # Handle PDF URL - convert file:// URLs to download endpoint
+            report_url = None
+            if metadata.pdf_url:
+                if metadata.pdf_url.startswith('file://'):
+                    # Convert file:// URL to download endpoint
+                    report_url = f"/reports/{report_id}/download"
+                else:
+                    report_url = metadata.pdf_url
             else:
-                report_url = metadata.pdf_url or storage_service.get_report_url(report_id)
+                # Generate URL based on storage type
+                if isinstance(storage_service, LocalFileStorageService):
+                    report_url = f"/reports/{report_id}/download"
+                else:
+                    if signed:
+                        report_url = storage_service.generate_signed_url(report_id)
+                    else:
+                        report_url = storage_service.get_report_url(report_id)
+            
+            # Format created_at
+            created_at = metadata.created_at
+            if hasattr(created_at, 'isoformat'):
+                created_at = created_at.isoformat()
+            elif created_at is None:
+                created_at = datetime.now().isoformat()
             
             return {
                 "report_id": report_id,
                 "report_url": report_url,
+                "pdf_url": report_url,  # Alias for compatibility
                 "status": metadata.status,
                 "company": metadata.company,
                 "industry": metadata.industry,
-                "frameworks": metadata.frameworks,
+                "frameworks": metadata.frameworks or [],
                 "confidence_score": metadata.confidence_score,
-                "created_at": metadata.created_at,
+                "created_at": created_at,
                 "execution_time_seconds": metadata.execution_time_seconds,
+                "framework_analysis": framework_analysis,
                 "signed_url": signed
             }
         else:
             # Fallback to storage check
             storage_service = get_storage_service()
             if storage_service.report_exists(report_id):
-                report_url = storage_service.get_report_url(report_id, use_signed_url=signed)
+                if isinstance(storage_service, LocalFileStorageService):
+                    report_url = f"/reports/{report_id}/download"
+                else:
+                    report_url = storage_service.get_report_url(report_id, use_signed_url=signed)
                 return {
                     "report_id": report_id,
                     "report_url": report_url,
+                    "pdf_url": report_url,
                     "status": "available",
                     "signed_url": signed
                 }
@@ -421,42 +705,70 @@ async def list_reports(
         # Get user_id from API key if provided
         authenticated_user_id = None
         if api_key:
-            from consultantos.auth import validate_api_key
-            user_info = validate_api_key(api_key)
-            if user_info:
-                authenticated_user_id = user_info.get("user_id")
+            try:
+                from consultantos.auth import validate_api_key
+                user_info = validate_api_key(api_key)
+                if user_info:
+                    authenticated_user_id = user_info.get("user_id")
+            except Exception as auth_error:
+                logger.warning(f"Failed to validate API key: {auth_error}")
         
         # Use authenticated user_id if no explicit user_id provided
         if authenticated_user_id and not user_id:
             user_id = authenticated_user_id
         
         db_service = get_db_service()
+        if db_service is None:
+            logger.error("Database service is None")
+            raise HTTPException(status_code=500, detail="Database service not available")
+        
         reports = db_service.list_reports(
             user_id=user_id,
             company=company,
             limit=limit
         )
         
-        return {
-            "reports": [
-                {
-                    "report_id": r.report_id,
-                    "company": r.company,
+        # Ensure reports is a list
+        if not isinstance(reports, list):
+            logger.warning(f"list_reports returned non-list: {type(reports)}")
+            reports = []
+        
+        # Safely serialize reports
+        reports_list = []
+        for r in reports:
+            try:
+                # Safely read framework_analysis with fallback for older records
+                framework_analysis = None
+                if hasattr(r, 'framework_analysis'):
+                    framework_analysis = getattr(r, 'framework_analysis', None)
+                elif hasattr(r, 'metadata') and isinstance(r.metadata, dict):
+                    framework_analysis = r.metadata.get("framework_analysis")
+                
+                reports_list.append({
+                    "report_id": r.report_id or "",
+                    "company": r.company or "",
                     "industry": r.industry,
-                    "frameworks": r.frameworks,
-                    "status": r.status,
+                    "frameworks": r.frameworks or [],
+                    "status": r.status or "completed",
                     "confidence_score": r.confidence_score,
-                    "created_at": r.created_at,
+                    "created_at": r.created_at or datetime.now().isoformat(),
                     "execution_time_seconds": r.execution_time_seconds,
-                    "pdf_url": r.pdf_url
-                }
-                for r in reports
-            ],
-            "count": len(reports)
+                    "pdf_url": r.pdf_url,
+                    "framework_analysis": framework_analysis
+                })
+            except Exception as serialize_error:
+                logger.warning(f"Failed to serialize report {r.report_id if hasattr(r, 'report_id') else 'unknown'}: {serialize_error}")
+                continue
+        
+        return {
+            "reports": reports_list,
+            "count": len(reports_list)
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("list_reports_failed", error=str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to list reports")
+        raise HTTPException(status_code=500, detail=f"Failed to list reports: {str(e)}")
 
 
 @app.get("/metrics")
@@ -735,21 +1047,44 @@ async def list_jobs_endpoint(
                 user_id = user_info.get("user_id")
         
         job_queue = JobQueue()
-        job_status = None
+        job_statuses = None
         if status:
+            # Handle comma-separated status values
+            status_list = [s.strip() for s in status.split(',')]
+            # Map frontend status names to backend enum values
+            status_mapping = {
+                'running': 'processing',
+                'pending': 'pending',
+                'completed': 'completed',
+                'failed': 'failed',
+                'cancelled': 'cancelled'
+            }
             try:
-                job_status = JobStatus(status)
-            except ValueError:
+                # Map status names and create JobStatus objects
+                mapped_statuses = [status_mapping.get(s.lower(), s.lower()) for s in status_list]
+                job_statuses = [JobStatus(s) for s in mapped_statuses]
+            except ValueError as e:
                 raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
-        jobs = await job_queue.list_jobs(user_id=user_id, status=job_status, limit=limit)
+        jobs = await job_queue.list_jobs(user_id=user_id, statuses=job_statuses, limit=limit)
+        
+        # Ensure jobs is a list
+        if not isinstance(jobs, list):
+            logger.warning(f"list_jobs returned non-list: {type(jobs)}")
+            jobs = []
         
         return {
             "jobs": jobs,
             "count": len(jobs)
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to list jobs: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to list jobs")
+        logger.error(f"Failed to list jobs: {e}", exc_info=True, extra={"status_param": status})
+        # Return empty list instead of raising error for better UX
+        return {
+            "jobs": [],
+            "count": 0
+        }
 
 
 @app.get("/health")
@@ -775,6 +1110,10 @@ async def health_check():
         "database": {
             "available": true,
             "type": "firestore"
+        },
+        "worker": {
+            "running": true,
+            "task_exists": true
         }
     }
     ```
@@ -788,6 +1127,12 @@ async def health_check():
         db_available = True
     except Exception as e:
         logger.warning(f"Database health check failed: {e}")
+    
+    # Check worker status
+    worker_running = False
+    worker_task_exists = _worker_task is not None
+    if worker_task_exists:
+        worker_running = not _worker_task.done() if _worker_task else False
     
     return {
         "status": "healthy",
@@ -803,6 +1148,9 @@ async def health_check():
         "database": {
             "available": db_available,
             "type": "firestore"
+        },
+        "worker": {
+            "running": worker_running,
+            "task_exists": worker_task_exists
         }
     }
-

@@ -21,7 +21,7 @@ async def export_to_json(report: StrategicReport) -> Dict[str, Any]:
         Dictionary representation of the report
     """
     try:
-        return report.dict()
+        return report.model_dump()
     except Exception as e:
         logger.error(f"JSON export failed: {e}", exc_info=True)
         raise
@@ -125,4 +125,3 @@ async def export_to_word(report: StrategicReport) -> bytes:
     except Exception as e:
         logger.error(f"Word export failed: {e}", exc_info=True)
         raise
-

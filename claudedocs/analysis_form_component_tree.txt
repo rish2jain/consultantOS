@@ -1,0 +1,195 @@
+ConsultantOS Analysis Request Form - Component Architecture
+============================================================
+
+┌─────────────────────────────────────────────────────────────┐
+│                  AnalysisRequestForm.tsx                    │
+│                  (Main Form Component)                      │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Form State Management                                │  │
+│  │ - formData: AnalysisRequestData                      │  │
+│  │ - errors: FormErrors                                 │  │
+│  │ - isSubmitting: boolean                              │  │
+│  │ - submitSuccess: boolean                             │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Alert Components (Success/Error)                     │  │
+│  │ - Success: Submission complete notification          │  │
+│  │ - Error: Submission failure with details             │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Input: Company Name ⭐ Required                       │  │
+│  │ - Text input with Building2 icon                     │  │
+│  │ - 2-100 character validation                         │  │
+│  │ - Character counter                                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ IndustrySelector.tsx ⭐ Required                      │  │
+│  │ - Searchable dropdown                                │  │
+│  │ - 28 industry options                                │  │
+│  │ - Keyboard navigation                                │  │
+│  │ - Click-outside detection                            │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ FrameworkSelector.tsx ⭐ Required                     │  │
+│  │ ┌────────────────────────────────────────────────┐   │  │
+│  │ │ Porter's Five Forces                           │   │  │
+│  │ │ Icon: Target | Competitive Analysis            │   │  │
+│  │ └────────────────────────────────────────────────┘   │  │
+│  │ ┌────────────────────────────────────────────────┐   │  │
+│  │ │ SWOT Analysis                                  │   │  │
+│  │ │ Icon: TrendingUp | Strengths/Weaknesses       │   │  │
+│  │ └────────────────────────────────────────────────┘   │  │
+│  │ ┌────────────────────────────────────────────────┐   │  │
+│  │ │ PESTEL Analysis                                │   │  │
+│  │ │ Icon: Globe | Macro Environment                │   │  │
+│  │ └────────────────────────────────────────────────┘   │  │
+│  │ ┌────────────────────────────────────────────────┐   │  │
+│  │ │ Blue Ocean Strategy                            │   │  │
+│  │ │ Icon: Waves | Uncontested Markets             │   │  │
+│  │ └────────────────────────────────────────────────┘   │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ DepthSelector.tsx                                    │  │
+│  │ ┌────────────┬────────────┬────────────┐            │  │
+│  │ │ Quick      │ Standard   │ Deep       │            │  │
+│  │ │ ~10 min    │ ~20 min    │ ~30 min    │            │  │
+│  │ │ Icon: Zap  │ Icon: Gauge│ Icon: Scope│            │  │
+│  │ └────────────┴────────────┴────────────┘            │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Input: Region (Optional)                             │  │
+│  │ - Text input with MapPin icon                        │  │
+│  │ - Max 100 characters                                 │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Textarea: Additional Context (Optional)              │  │
+│  │ - Multi-line text with FileText icon                 │  │
+│  │ - Max 1000 characters with counter                   │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Form Actions                                         │  │
+│  │ ┌──────────┐  ┌─────────────────────────────┐       │  │
+│  │ │  Reset   │  │  Generate Analysis (Submit) │       │  │
+│  │ │ Outline  │  │  Primary with Send Icon     │       │  │
+│  │ └──────────┘  └─────────────────────────────┘       │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ API Integration                                      │  │
+│  │ - POST /analyze (sync) or /analyze/async            │  │
+│  │ - Headers: Content-Type, X-API-Key (optional)       │  │
+│  │ - Timeout: 5min sync / 30s async                    │  │
+│  │ - onSuccess / onError callbacks                     │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+
+Component Dependencies
+======================
+
+AnalysisRequestForm
+├── Card (Container)
+│   ├── CardHeader
+│   ├── CardTitle
+│   ├── CardDescription
+│   ├── CardContent
+│   └── CardFooter
+├── Alert (Success/Error notifications)
+├── Input (Company name, Region)
+├── Button (Reset, Submit)
+├── FrameworkSelector (Business frameworks)
+├── IndustrySelector (Industry dropdown)
+├── DepthSelector (Analysis depth)
+└── Textarea (Additional context)
+
+State Flow
+==========
+
+User Interaction → Form State Update → Validation
+                                          ↓
+                                     Valid? No → Show Errors
+                                          ↓ Yes
+                                     Clear Errors
+                                          ↓
+                                    API Request
+                                          ↓
+                            Success              Error
+                               ↓                  ↓
+                        Show Success Alert   Show Error Alert
+                               ↓                  ↓
+                         Call onSuccess      Call onError
+                               ↓
+                          Reset Form
+
+Accessibility Features
+======================
+
+✓ Keyboard Navigation
+  - Tab order follows visual hierarchy
+  - Enter/Space for selections
+  - Arrow keys for dropdown navigation
+  - Escape to dismiss dropdowns
+
+✓ Screen Reader Support
+  - ARIA labels on all interactive elements
+  - aria-describedby for error messages
+  - aria-required for required fields
+  - role="alert" for error announcements
+
+✓ Visual Accessibility
+  - 4.5:1 color contrast minimum
+  - Focus indicators on all elements
+  - Error states with icon + color + text
+  - Required field indicators (*)
+
+✓ Form Accessibility
+  - Labels associated with inputs
+  - Helper text for guidance
+  - Character counters
+  - Clear validation messages
+
+Responsive Breakpoints
+======================
+
+Mobile (< 640px)
+- Single column layout
+- Full width inputs
+- Stacked form actions
+- 1 column depth selector
+
+Tablet (640px - 1024px)
+- Optimized spacing
+- 2 column depth selector
+- Side-by-side optional
+
+Desktop (> 1024px)
+- Max width: 4xl (896px)
+- 3 column depth selector
+- Side-by-side form actions
+
+File Locations
+==============
+
+Components:
+/frontend/app/components/
+├── AnalysisRequestForm.tsx (11KB)
+├── FrameworkSelector.tsx (5.1KB)
+├── IndustrySelector.tsx (7.7KB)
+├── DepthSelector.tsx (5.9KB)
+└── index.ts (updated with exports)
+
+Documentation:
+/frontend/app/components/
+└── ANALYSIS_FORM_README.md (comprehensive guide)
+
+/claudedocs/
+├── analysis_form_components_summary.md
+└── analysis_form_component_tree.txt (this file)

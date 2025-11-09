@@ -5,6 +5,7 @@ from typing import Dict, Any
 from consultantos.agents.base_agent import BaseAgent
 from consultantos.models import ExecutiveSummary
 from consultantos.prompts import SYNTHESIS_PROMPT_TEMPLATE
+from consultantos.monitoring import logger
 
 
 class SynthesisAgent(BaseAgent):
@@ -22,7 +23,37 @@ class SynthesisAgent(BaseAgent):
         """
     
     async def _execute_internal(self, input_data: Dict[str, Any]) -> ExecutiveSummary:
-        """Execute synthesis task"""
+        """
+        Execute synthesis to create executive summary and strategic recommendations.
+
+        Combines insights from all previous analysis phases (research, market,
+        financial, frameworks) into a cohesive executive summary with actionable
+        recommendations.
+
+        Args:
+            input_data: Dictionary containing:
+                - company: Company name
+                - industry: Industry context
+                - research: CompanyResearch results (optional)
+                - market: MarketTrends results (optional)
+                - financial: FinancialSnapshot results (optional)
+                - frameworks: FrameworkAnalysis results (optional)
+
+        Returns:
+            ExecutiveSummary object containing:
+                - key_insights: Top 3-5 strategic insights
+                - opportunities: Identified growth opportunities
+                - risks: Key risk factors and threats
+                - next_steps: Prioritized actionable recommendations
+                - confidence_score: 0-1 confidence in analysis quality
+
+        Raises:
+            Exception: If synthesis fails or all input analyses are missing
+
+        Note:
+            Confidence score is adjusted based on completeness of input data.
+            Missing phases result in lower confidence but synthesis still proceeds.
+        """
         company = input_data.get("company", "")
         industry = input_data.get("industry", "")
         
@@ -48,8 +79,7 @@ class SynthesisAgent(BaseAgent):
         )
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=ExecutiveSummary,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -58,15 +88,63 @@ class SynthesisAgent(BaseAgent):
             result.industry = industry or "Unknown"
             return result
         except Exception as e:
-            # Fallback
+            # Log exception with full context and stacktrace
+            error_type = type(e).__name__
+            logger.error(
+                "synthesis_agent_execution_failed",
+                company=company,
+                industry=industry or "Unknown",
+                error_type=error_type,
+                error_message=str(e),
+                exc_info=True  # Includes full stacktrace
+            )
+            
+            # Determine if this is a critical error that should be re-raised
+            # Critical errors: network issues, authentication failures, model errors
+            critical_error_types = (
+                ConnectionError,
+                TimeoutError,
+                PermissionError,
+            )
+            
+            # Check if it's a critical error by type or message content
+            # Use a single lowercased message variable to avoid repeated calls
+            error_message_lower = str(e).lower()
+            is_critical = (
+                isinstance(e, critical_error_types) or
+                ("api" in error_message_lower and ("key" in error_message_lower or "auth" in error_message_lower)) or
+                ("model" in error_message_lower and ("not found" in error_message_lower or "invalid" in error_message_lower))
+            )
+            
+            if is_critical:
+                # Re-raise critical errors so they can be handled upstream
+                logger.error(
+                    "synthesis_agent_critical_error_re_raising",
+                    company=company,
+                    industry=industry or "Unknown",
+                    error_type=error_type,
+                    error_message=str(e)
+                )
+                raise
+            
+            # For non-critical errors (e.g., parsing issues, validation errors), return fallback
+            logger.warning(
+                "synthesis_agent_using_fallback",
+                company=company,
+                industry=industry or "Unknown",
+                error_type=error_type,
+                error_message=str(e)
+            )
+            
+            # Fallback - ensure minimum 3 items for validation
             return ExecutiveSummary(
                 company_name=company,
                 industry=industry or "Unknown",
-                key_findings=["Analysis completed", "Review recommended"],
+                key_findings=["Analysis completed", "Review recommended", "Data validation needed"],
                 strategic_recommendation="Further analysis recommended",
                 confidence_score=0.5,
-                supporting_evidence=[],
-                next_steps=["Review detailed analysis", "Validate findings"]
+                supporting_evidence=["Initial analysis completed"],
+                next_steps=["Review detailed analysis", "Validate findings", "Consult with stakeholders"]
             )
     
     def _format_research(self, research: Any) -> str:

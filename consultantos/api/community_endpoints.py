@@ -143,7 +143,7 @@ async def update_case_study(
         )
     
     # Update fields
-    updates = request.dict(exclude_unset=True)
+    updates = request.model_dump(exclude_unset=True)
     for key, value in updates.items():
         setattr(case_study, key, value)
     
@@ -343,4 +343,3 @@ async def downvote_practice(
         _best_practices[practice_id] = practice
     
     return {"message": "Downvoted", "upvotes": practice.upvotes, "downvotes": practice.downvotes}
-

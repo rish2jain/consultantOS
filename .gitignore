@@ -55,6 +55,9 @@ logs/
 .DS_Store
 Thumbs.db
 
+# IDE/Copilot agent cache artifacts
+.code/
+
 # Temporary files
 tmp/
 temp/

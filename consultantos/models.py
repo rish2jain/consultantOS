@@ -133,7 +133,7 @@ class StrategicReport(BaseModel):
     """Complete report structure"""
     executive_summary: ExecutiveSummary
     company_research: CompanyResearch
-    market_trends: MarketTrends
+    market_trends: Optional[MarketTrends] = None  # Optional for graceful degradation
     financial_snapshot: FinancialSnapshot
     framework_analysis: FrameworkAnalysis
     recommendations: List[str] = Field(..., min_length=3, description="Actionable recommendations")

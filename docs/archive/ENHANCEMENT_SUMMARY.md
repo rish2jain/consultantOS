@@ -66,7 +66,7 @@
     - **Why:** Limited visibility into system performance
     - **Impact:** Better operational awareness
     - **Effort:** 2-3 days
-    - **Files:** `consultantos/monitoring/` enhancements
+    
 
 ---
 

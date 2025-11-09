@@ -1,8 +1,9 @@
 # Core Framework
 fastapi==0.120.4
 uvicorn[standard]==0.35.0
-pydantic==2.12.5
-pydantic-settings==2.12.1
+pydantic==2.12.4
+pydantic-settings==2.11.0
+email-validator>=2.1.0
 
 # Google AI
 google-generativeai>=0.3.0
@@ -29,12 +30,15 @@ kaleido>=0.2.1
 # API and Security
 slowapi>=0.1.9
 python-multipart>=0.0.6
+starlette>=0.27.0
+itsdangerous>=2.1.0  # For secure session signing
 
 # Google Cloud
 google-cloud-storage>=2.10.0
 google-cloud-secret-manager>=2.16.0
 google-cloud-logging>=3.8.0
 google-cloud-firestore>=2.13.0
+google-cloud-tasks>=2.14.0
 
 # Utilities
 python-dotenv>=1.0.0
@@ -48,3 +52,5 @@ pytest>=7.4.0
 pytest-asyncio>=0.21.0
 pytest-cov>=4.1.0
 
+# Local packages
+# Note: consultantos_core is copied into Docker image, not installed as editable

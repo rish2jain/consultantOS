@@ -10,7 +10,7 @@ from consultantos.models.versioning import (
     VersionDiff,
     VersionStatus
 )
-from consultantos.auth import verify_api_key
+from consultantos.auth import verify_api_key, get_api_key
 from consultantos.database import get_db_service
 import secrets
 from datetime import datetime
@@ -145,9 +145,9 @@ async def create_version(
 @router.get("/report/{report_id}", response_model=VersionHistory)
 async def get_version_history(
     report_id: str,
-    user_info: dict = Security(verify_api_key)
+    api_key: Optional[str] = Security(get_api_key, use_cache=False)
 ):
-    """Get version history for a report"""
+    """Get version history for a report (authentication optional for read access)"""
     version_ids = _version_history.get(report_id, [])
     versions = [_versions[vid] for vid in version_ids if vid in _versions]
     
