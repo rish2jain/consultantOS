@@ -53,8 +53,11 @@ class TestResearchAgent:
                 sources=["https://example.com/tesla"]
             )
             
+            # Mock the structured client to return result directly
+            mock_chat = Mock()
+            mock_chat.completions.create = Mock(return_value=mock_result)
             agent.structured_client = Mock()
-            agent.structured_client.chat.completions.create = AsyncMock(return_value=mock_result)
+            agent.structured_client.chat = mock_chat
             
             result = await agent.execute({"company": "Tesla"})
             
@@ -69,15 +72,14 @@ class TestResearchAgent:
         with patch('consultantos.agents.research_agent.tavily_search_tool') as mock_search:
             mock_search.return_value = {"results": [], "query": "Tesla", "total_results": 0}
             
-            agent.structured_client = Mock()
-            # Use async function that actually awaits sleep to simulate timeout
-            async def timeout_side_effect(**kwargs):
-                await asyncio.sleep(2)
-                return None
+            # Mock the structured client to simulate timeout by making _execute_internal take too long
+            original_execute_internal = agent._execute_internal
             
-            agent.structured_client.chat.completions.create = AsyncMock(
-                side_effect=timeout_side_effect
-            )
+            async def slow_execute_internal(*args, **kwargs):
+                await asyncio.sleep(2)  # Sleep longer than timeout (1 second)
+                return original_execute_internal(*args, **kwargs)
+            
+            agent._execute_internal = slow_execute_internal
             
             with pytest.raises(asyncio.TimeoutError):  # Should timeout
                 await agent.execute({"company": "Tesla"})
@@ -118,8 +120,11 @@ class TestFinancialAgent:
                 risk_assessment="Low - Strong financials"
             )
             
+            # Mock the structured client to return result directly
+            mock_chat = Mock()
+            mock_chat.completions.create = Mock(return_value=mock_result)
             agent.structured_client = Mock()
-            agent.structured_client.chat.completions.create = AsyncMock(return_value=mock_result)
+            agent.structured_client.chat = mock_chat
             
             result = await agent.execute({"company": "Tesla", "ticker": "TSLA"})
             
@@ -154,8 +159,11 @@ class TestMarketAgent:
                 competitive_comparison={}
             )
             
+            # Mock the structured client to return result directly
+            mock_chat = Mock()
+            mock_chat.completions.create = Mock(return_value=mock_result)
             agent.structured_client = Mock()
-            agent.structured_client.chat.completions.create = AsyncMock(return_value=mock_result)
+            agent.structured_client.chat = mock_chat
             
             result = await agent.execute({"company": "Tesla", "industry": "Electric Vehicles"})
             
@@ -188,7 +196,8 @@ class TestOrchestrator:
                 recent_news=[],
                 sources=[]
             )
-            mock_market.return_value = None  # Simulate failure
+            # Market fails - return None to simulate failure
+            mock_market.return_value = None
             mock_financial.return_value = FinancialSnapshot(
                 ticker="TSLA",
                 market_cap=1000000,
@@ -205,14 +214,15 @@ class TestOrchestrator:
                  patch.object(orchestrator.synthesis_agent, 'execute', new_callable=AsyncMock) as mock_synthesis:
                 
                 mock_framework.return_value = FrameworkAnalysis()
+                # Provide at least 3 next_steps for recommendations
                 mock_synthesis.return_value = ExecutiveSummary(
                     company_name="Tesla",
                     industry="Electric Vehicles",
-                    key_findings=["Test finding"],
+                    key_findings=["Test finding 1", "Test finding 2", "Test finding 3"],
                     strategic_recommendation="Test recommendation",
                     confidence_score=0.8,
                     supporting_evidence=[],
-                    next_steps=[]
+                    next_steps=["Step 1", "Step 2", "Step 3", "Step 4"]
                 )
                 
                 request = AnalysisRequest(

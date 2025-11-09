@@ -26,7 +26,31 @@ class FinancialAgent(BaseAgent):
         """
     
     async def _execute_internal(self, input_data: Dict[str, Any]) -> FinancialSnapshot:
-        """Execute financial analysis task"""
+        """
+        Execute financial analysis using SEC filings and stock market data.
+
+        Gathers and analyzes financial performance metrics using yfinance for
+        market data and SEC EDGAR API for official filings.
+
+        Args:
+            input_data: Dictionary containing:
+                - company: Company name
+                - ticker: Stock ticker symbol (required)
+
+        Returns:
+            FinancialSnapshot object containing:
+                - revenue: Revenue figures and growth rates
+                - profitability: Profit margins and net income
+                - cash_flow: Operating cash flow metrics
+                - debt_equity_ratio: Leverage ratio
+                - valuation_metrics: P/E ratio, market cap, etc.
+                - growth_indicators: YoY growth rates
+                - risk_factors: Financial risk assessment
+
+        Raises:
+            ValueError: If ticker is not provided
+            Exception: If financial data fetch or analysis fails
+        """
         company = input_data.get("company", "")
         ticker = input_data.get("ticker")
         
@@ -64,8 +88,7 @@ class FinancialAgent(BaseAgent):
         """
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=FinancialSnapshot,
                 messages=[{
                     "role": "user",

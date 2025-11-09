@@ -1,0 +1,134 @@
+# ConsultantOS Requirements
+#
+# Strategy: All dependencies managed in root requirements.txt
+# Service-specific requirements files (services/*/requirements.txt) only
+# contain service entry points (fastapi, uvicorn) for Dockerfile clarity.
+#
+# This approach ensures:
+# 1. Single source of truth for dependency versions
+# 2. All services use identical dependency versions
+# 3. Easier to manage conflicts and updates
+# 4. All services can be easily swapped/scaled
+#
+# Version pinning strategy:
+# - Core dependencies: Pinned to tested versions (e.g., fastapi==0.120.4)
+# - Google Cloud: Use >=X.Y.Z for flexibility, explicit google-api-core pin
+# - Optional dependencies: See requirements-optional.txt
+#
+# If service-specific dependencies needed in future:
+# Add them to services/SERVICE_NAME/requirements.txt AND
+# Update that service's Dockerfile to install them separately
+
+# ============================================================================
+# Core Framework (Pinned - tested together)
+fastapi==0.120.4
+uvicorn[standard]==0.35.0
+pydantic==2.12.4
+pydantic-settings==2.11.0
+
+# ============================================================================
+# Google AI
+google-generativeai>=0.3.0
+instructor>=0.4.0
+
+# ============================================================================
+# Data Sources
+tavily-python>=0.3.0
+pytrends>=4.9.0
+yfinance>=0.2.0
+# edgartools>=2.0.0  # See requirements-optional.txt - has complex C dependencies
+finviz>=1.4.0
+pandas>=2.1.0
+pandas-datareader>=0.10.0
+
+# ============================================================================
+# Vector Store and Caching
+chromadb>=0.4.0
+diskcache>=5.6.0
+
+# ============================================================================
+# Report Generation
+reportlab>=4.0.0
+plotly>=5.18.0
+kaleido>=0.2.1
+
+# ============================================================================
+# API and Security
+slowapi>=0.1.9
+python-multipart>=0.0.6
+
+# ============================================================================
+# Google Cloud
+# CRITICAL: Pin google-api-core explicitly to avoid conflicts
+# Multiple google-cloud packages (storage, firestore, logging, tasks, secret-manager)
+# all depend on google-api-core. Without explicit pinning, pip may select
+# incompatible versions, causing runtime errors.
+google-api-core>=1.33.0,<2.0.0
+
+google-cloud-storage>=2.10.0
+google-cloud-secret-manager>=2.16.0
+google-cloud-logging>=3.8.0
+google-cloud-firestore>=2.13.0
+google-cloud-tasks>=2.14.0
+
+# ============================================================================
+# Utilities
+python-dotenv>=1.0.0
+structlog>=23.2.0
+httpx>=0.25.0
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+
+# ============================================================================
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# ============================================================================
+# Notes on Dependency Management
+#
+# PYDANTIC COMPATIBILITY:
+# - pydantic==2.12.4 and pydantic-settings==2.11.0 are compatible
+# - Both use major version 2.x (safe to update together within 2.x)
+# - FastAPI 0.120.4 requires pydantic>=2.0.0 (satisfied by 2.12.4)
+#
+# FASTAPI COMPATIBILITY:
+# - fastapi==0.120.4 requires starlette>=0.37.0 (auto-installed)
+# - Tested with Python 3.11 (our docker base image)
+#
+# GOOGLE CLOUD CONFLICTS:
+# These packages share google-api-core dependency:
+# - google-cloud-storage: requires google-api-core>=1.33.0
+# - google-cloud-secret-manager: requires google-api-core>=1.33.0
+# - google-cloud-logging: requires google-api-core>=1.33.0
+# - google-cloud-firestore: requires google-api-core>=1.33.0
+# - google-cloud-tasks: requires google-api-core>=1.33.0
+# - google-generativeai: requires google-api-core>=1.32.0
+#
+# Without explicit pinning, pip may select versions that satisfy
+# some but not all constraints, causing ImportError at runtime.
+# Pinning google-api-core>=1.33.0 ensures all packages can import it.
+#
+# SYSTEM DEPENDENCIES:
+# These packages require C compilation (see Dockerfile):
+# - reportlab: requires build-essential, python3-dev
+# - kaleido: requires libffi-dev, libssl-dev
+# - cryptography (via python-jose): requires libssl-dev, libffi-dev
+# - edgartools (optional): requires full build-essential
+#
+# The Dockerfile must include these system libraries:
+# RUN apt-get install -y build-essential python3-dev libffi-dev libssl-dev
+#
+# EDGARTOOLS:
+# - Heavy optional dependency with complex C extensions
+# - See requirements-optional.txt for installation
+# - Recommendation: Implement graceful degradation in FinancialAgent
+# - If financial data fails, fall back to yfinance
+#
+# VERSION UPDATE STRATEGY:
+# 1. Test new versions in development first
+# 2. Update one dependency at a time
+# 3. Run full test suite after each update
+# 4. Document any incompatibilities discovered
+# 5. Create separate branch for version upgrades

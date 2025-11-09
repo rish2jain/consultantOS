@@ -1,9 +1,10 @@
 """
 PDF report generation using ReportLab
 """
+import io
+import json
 import os
 import tempfile
-import io
 from typing import Optional
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -15,12 +16,34 @@ from reportlab.platypus import (
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib import colors
 from datetime import datetime
+import plotly.graph_objects as go
 import plotly.io as pio
-from consultantos.models import StrategicReport
-from consultantos.visualizations import create_porter_radar_figure, create_swot_matrix_figure
+from consultantos_core import models as core_models
+from consultantos.visualizations import (
+    create_porter_radar_figure,
+    create_swot_matrix_figure,
+    figure_to_json,
+    get_cached_figure,
+    set_cached_figure,
+)
 
 
-def generate_pdf_report(report: StrategicReport) -> bytes:
+def _load_cached_figure(cache_key: Optional[str]) -> Optional[go.Figure]:
+    if not cache_key:
+        return None
+    cached = get_cached_figure(cache_key)
+    if not cached:
+        return None
+    return pio.from_json(json.dumps(cached))
+
+
+def _cache_figure(cache_key: Optional[str], figure: go.Figure) -> None:
+    if not cache_key:
+        return
+    set_cached_figure(cache_key, figure_to_json(figure))
+
+
+def generate_pdf_report(report: core_models.StrategicReport, report_id: Optional[str] = None) -> bytes:
     """Generate professional PDF report using ReportLab"""
     
     # Create temporary PDF file
@@ -102,7 +125,11 @@ def generate_pdf_report(report: StrategicReport) -> bytes:
             
             # Try to add chart
             try:
-                porter_fig = create_porter_radar_figure(report.framework_analysis.porter_five_forces)
+                cache_key = f"porter:{report_id}" if report_id else None
+                porter_fig = _load_cached_figure(cache_key)
+                if porter_fig is None:
+                    porter_fig = create_porter_radar_figure(report.framework_analysis.porter_five_forces)
+                    _cache_figure(cache_key, porter_fig)
                 img_bytes = pio.to_image(porter_fig, format="png", width=600, height=500)
                 img_buffer = io.BytesIO(img_bytes)
                 porter_img = Image(img_buffer, width=5*inch, height=4*inch)
@@ -194,4 +221,3 @@ def generate_pdf_report(report: StrategicReport) -> bytes:
         # Cleanup
         if os.path.exists(pdf_path):
             os.unlink(pdf_path)
-

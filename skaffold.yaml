@@ -1,0 +1,24 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: consultantos
+build:
+  local:
+    push: false
+  artifacts:
+    - image: consultantos
+      docker:
+        dockerfile: Dockerfile
+deploy:
+  cloudrun:
+    projectid: ${GOOGLE_CLOUD_PROJECT}
+    region: us-central1
+    service: consultantos
+    platform: managed
+    allowUnauthenticated: true
+    memory: 2Gi
+    cpu: 2
+    timeout: 300s
+    minInstances: 0
+    maxInstances: 10
+

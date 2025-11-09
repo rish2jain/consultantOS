@@ -3,7 +3,7 @@ Input sanitization utilities
 """
 import html
 import re
-from typing import Any
+from typing import Any, Dict, List, Union
 
 
 def sanitize_input(text: str, max_length: int = 1000) -> str:
@@ -23,8 +23,11 @@ def sanitize_input(text: str, max_length: int = 1000) -> str:
     # Remove HTML tags and escape HTML entities
     text = html.escape(text)
     
-    # Remove potentially dangerous SQL injection patterns
-    text = re.sub(r"[';--]", "", text)
+    # Remove SQL comment markers ('--') only
+    # Note: Proper SQL injection protection must come from parameterized/prepared
+    # statements at the database layer, not from ad-hoc string stripping.
+    # This removal is a minimal defense-in-depth measure for SQL comment sequences.
+    text = re.sub(r'--', '', text)
     
     # Remove script tags and javascript: protocols
     text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.IGNORECASE | re.DOTALL)
@@ -37,7 +40,7 @@ def sanitize_input(text: str, max_length: int = 1000) -> str:
     return text.strip()
 
 
-def sanitize_dict(data: dict, max_length: int = 1000) -> dict:
+def sanitize_dict(data: Dict[str, Any], max_length: int = 1000) -> Dict[str, Any]:
     """
     Sanitize all string values in a dictionary
     
@@ -46,9 +49,9 @@ def sanitize_dict(data: dict, max_length: int = 1000) -> dict:
         max_length: Maximum length for string values
     
     Returns:
-        Sanitized dictionary
+        Sanitized dictionary with all string values sanitized
     """
-    sanitized = {}
+    sanitized: Dict[str, Any] = {}
     for key, value in data.items():
         if isinstance(value, str):
             sanitized[key] = sanitize_input(value, max_length)
@@ -63,4 +66,3 @@ def sanitize_dict(data: dict, max_length: int = 1000) -> dict:
             sanitized[key] = value
     
     return sanitized
-

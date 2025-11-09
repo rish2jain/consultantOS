@@ -1,0 +1,23 @@
+'use client'
+
+import dynamic from 'next/dynamic'
+
+const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
+
+type PlotlyChartProps = {
+  title: string
+  figure: any
+}
+
+export function PlotlyChart({ title, figure }: PlotlyChartProps) {
+  if (!figure) {
+    return null
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-4">
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <Plot data={figure.data} layout={figure.layout} config={{ displayModeBar: false }} style={{ width: '100%', height: '100%' }} />
+    </div>
+  )
+}

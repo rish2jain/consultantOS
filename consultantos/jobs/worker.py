@@ -60,13 +60,6 @@ class AnalysisWorker:
                 depth="standard"  # Default
             )
             
-            # Execute analysis
-            logger.info(f"Processing job {job_id} for {analysis_request.company}")
-            report = await self.orchestrator.execute(analysis_request)
-            
-            # Generate PDF
-            pdf_bytes = generate_pdf_report(report)
-            
             # Generate collision-safe report ID using UUID and microsecond precision
             # Sanitize company name for safe filename/DB characters
             sanitized_company = sanitize_input(analysis_request.company).replace(' ', '_')
@@ -75,6 +68,13 @@ class AnalysisWorker:
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')  # Include microseconds
             unique_suffix = str(uuid.uuid4())[:8]  # Short UUID for uniqueness
             report_id = f"{sanitized_company}_{timestamp}_{unique_suffix}"
+
+            # Execute analysis
+            logger.info(f"Processing job {job_id} for {analysis_request.company}")
+            report = await self.orchestrator.execute(analysis_request)
+
+            # Generate PDF
+            pdf_bytes = generate_pdf_report(report, report_id=report_id)
             
             # Upload PDF
             pdf_url = self.storage_service.upload_pdf(report_id, pdf_bytes)
@@ -112,10 +112,17 @@ class AnalysisWorker:
         self.running = True
         logger.info("Analysis worker started")
         
+        # Ensure database service is available
+        if self.db_service is None:
+            logger.error("Database service is None, worker cannot process jobs")
+            return
+        
+        logger.info(f"Worker polling for jobs every {poll_interval} seconds")
+        
         while self.running:
             try:
                 # Get pending jobs
-                pending_jobs = await self.queue.list_jobs(status=JobStatus.PENDING, limit=10)
+                pending_jobs = await self.queue.list_jobs(statuses=[JobStatus.PENDING], limit=10)
                 
                 if pending_jobs:
                     logger.info(f"Found {len(pending_jobs)} pending jobs")
@@ -123,6 +130,15 @@ class AnalysisWorker:
                     tasks = [self.process_job(job["job_id"]) for job in pending_jobs[:3]]  # Max 3 concurrent
                     await asyncio.gather(*tasks, return_exceptions=True)
                 else:
+                    # Log periodically that worker is waiting (every 10th poll = ~100 seconds)
+                    if hasattr(self, '_poll_count'):
+                        self._poll_count += 1
+                    else:
+                        self._poll_count = 1
+                    
+                    if self._poll_count % 10 == 0:
+                        logger.debug(f"Worker waiting for jobs (poll #{self._poll_count})")
+                    
                     await asyncio.sleep(poll_interval)
                     
             except Exception as e:
@@ -149,4 +165,3 @@ def get_worker() -> AnalysisWorker:
             if _worker is None:
                 _worker = AnalysisWorker()
     return _worker
-

@@ -55,11 +55,11 @@ def test_porters_five_forces_validation():
 def test_swot_analysis():
     """Test SWOTAnalysis model"""
     swot = SWOTAnalysis(
-        strengths=["Strong brand", "Market leader"],
-        weaknesses=["High debt", "Dependency on suppliers"],
-        opportunities=["Growing market", "New products"],
-        threats=["Competition", "Regulation"]
+        strengths=["Strong brand", "Market leader", "Innovation"],
+        weaknesses=["High debt", "Dependency on suppliers", "Limited diversification"],
+        opportunities=["Growing market", "New products", "International expansion"],
+        threats=["Competition", "Regulation", "Economic downturn"]
     )
-    assert len(swot.strengths) >= 2
-    assert len(swot.weaknesses) >= 2
+    assert len(swot.strengths) >= 3
+    assert len(swot.weaknesses) >= 3
 

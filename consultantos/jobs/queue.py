@@ -6,8 +6,7 @@ import logging
 from enum import Enum
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from consultantos.database import get_db_service
-from consultantos.models import AnalysisRequest
+from consultantos_core import database as core_db, models as core_models
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +24,14 @@ class JobQueue:
     """Job queue for async analysis processing"""
     
     def __init__(self):
-        self.db_service = get_db_service()
+        # Get fresh database service reference to ensure it's initialized
+        self.db_service = core_db.get_db_service()
+        if self.db_service is None:
+            logger.warning("JobQueue initialized with None db_service")
     
     async def enqueue(
         self,
-        analysis_request: AnalysisRequest,
+        analysis_request: core_models.AnalysisRequest,
         user_id: Optional[str] = None
     ) -> str:
         """
@@ -48,7 +50,7 @@ class JobQueue:
         job_metadata = {
             "job_id": job_id,
             "status": JobStatus.PENDING.value,
-            "request": analysis_request.dict(),
+            "request": analysis_request.model_dump(),
             "user_id": user_id,
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat()
@@ -57,8 +59,7 @@ class JobQueue:
         try:
             # Store in database (would use proper job table in production)
             # For now, use report metadata table with job prefix
-            from consultantos.database import ReportMetadata
-            job_record = ReportMetadata(
+            job_record = core_db.ReportMetadata(
                 report_id=f"job_{job_id}",
                 user_id=user_id,
                 company=analysis_request.company,
@@ -151,6 +152,7 @@ class JobQueue:
         self,
         user_id: Optional[str] = None,
         status: Optional[JobStatus] = None,
+        statuses: Optional[List[JobStatus]] = None,
         limit: int = 50
     ) -> List[Dict[str, Any]]:
         """
@@ -158,33 +160,74 @@ class JobQueue:
         
         Args:
             user_id: Filter by user ID
-            status: Filter by status
+            status: Filter by single status (deprecated, use statuses)
+            statuses: Filter by list of statuses
             limit: Maximum number of jobs to return
         
         Returns:
             List of job dictionaries
         """
         try:
+            # Check if db_service is available
+            if self.db_service is None:
+                logger.warning("Database service is None, returning empty jobs list")
+                return []
+            
             # Use report listing with job filter
-            reports = self.db_service.list_reports(user_id=user_id, limit=limit * 2)
+            try:
+                reports = self.db_service.list_reports(user_id=user_id, limit=limit * 2)
+            except Exception as db_error:
+                logger.error(f"Database list_reports failed: {db_error}", exc_info=True)
+                return []
+            
+            # Ensure reports is a list
+            if not isinstance(reports, list):
+                logger.warning(f"list_reports returned non-list: {type(reports)}")
+                return []
+            
+            # Determine which statuses to filter by
+            filter_statuses = statuses if statuses is not None else ([status] if status is not None else None)
             
             # Filter for jobs and apply status filter
             jobs = []
             for report in reports:
-                if report.report_id and report.report_id.startswith("job_"):
-                    job_id = report.report_id.replace("job_", "")
-                    job_status = JobStatus(report.status) if report.status in [s.value for s in JobStatus] else JobStatus.PENDING
+                try:
+                    # Skip if report_id is missing or not a job
+                    if not report or not hasattr(report, 'report_id') or not report.report_id:
+                        continue
                     
-                    if status is None or job_status == status:
+                    if not report.report_id.startswith("job_"):
+                        continue
+                    
+                    job_id = report.report_id.replace("job_", "")
+                    
+                    # Safely get job status
+                    try:
+                        if hasattr(report, 'status') and report.status:
+                            if report.status in [s.value for s in JobStatus]:
+                                job_status = JobStatus(report.status)
+                            else:
+                                job_status = JobStatus.PENDING
+                        else:
+                            job_status = JobStatus.PENDING
+                    except (ValueError, AttributeError, TypeError) as status_error:
+                        logger.warning(f"Failed to parse job status for {job_id}: {status_error}")
+                        job_status = JobStatus.PENDING
+                    
+                    # Apply status filter if specified
+                    if filter_statuses is None or job_status in filter_statuses:
                         jobs.append({
                             "job_id": job_id,
                             "status": job_status.value,
-                            "company": report.company,
-                            "created_at": report.created_at
+                            "company": getattr(report, 'company', 'Unknown') or 'Unknown',
+                            "created_at": getattr(report, 'created_at', None) or datetime.now().isoformat()
                         })
                     
                     if len(jobs) >= limit:
                         break
+                except Exception as report_error:
+                    logger.warning(f"Failed to process report: {report_error}")
+                    continue
             
             return jobs
         except Exception as e:
@@ -193,6 +236,9 @@ class JobQueue:
 
 
 # Convenience functions
+AnalysisRequest = core_models.AnalysisRequest
+
+
 async def create_job(analysis_request: AnalysisRequest, user_id: Optional[str] = None) -> str:
     """Create a new job"""
     queue = JobQueue()
@@ -214,4 +260,3 @@ async def update_job_status(
     """Update job status"""
     queue = JobQueue()
     await queue.update_status(job_id, status, report_id, error)
-

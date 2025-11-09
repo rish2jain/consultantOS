@@ -85,7 +85,7 @@
    - Integrated into orchestrator for automatic caching
 
 2. **Monitoring & Observability** ✅
-   - Structured logging with structlog (`consultantos/monitoring.py`)
+
    - Cloud Logging integration (Google Cloud Logging)
    - Metrics collection (requests, cache hits, execution times, errors)
    - `/metrics` endpoint for application metrics

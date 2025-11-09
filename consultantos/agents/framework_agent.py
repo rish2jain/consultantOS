@@ -1,6 +1,7 @@
 """
 Framework Agent - Applies business frameworks (Porter, SWOT, PESTEL, Blue Ocean)
 """
+import logging
 from typing import Dict, Any, List
 from consultantos.agents.base_agent import BaseAgent
 from consultantos.models import FrameworkAnalysis, PortersFiveForces, SWOTAnalysis, PESTELAnalysis, BlueOceanStrategy
@@ -10,6 +11,8 @@ from consultantos.prompts import (
     PESTEL_PROMPT_TEMPLATE,
     BLUE_OCEAN_PROMPT_TEMPLATE
 )
+
+logger = logging.getLogger(__name__)
 
 
 class FrameworkAgent(BaseAgent):
@@ -37,7 +40,39 @@ class FrameworkAgent(BaseAgent):
         """
     
     async def _execute_internal(self, input_data: Dict[str, Any]) -> FrameworkAnalysis:
-        """Execute framework analysis"""
+        """
+        Execute strategic framework analysis using selected business frameworks.
+
+        Applies rigorous McKinsey/BCG-grade frameworks to analyze competitive
+        positioning and strategic options. Each framework provides unique insights:
+        - Porter's Five Forces: Industry competitive dynamics
+        - SWOT: Internal strengths/weaknesses, external opportunities/threats
+        - PESTEL: Macro-environmental factors
+        - Blue Ocean: Value innovation opportunities
+
+        Args:
+            input_data: Dictionary containing:
+                - company: Company name
+                - industry: Industry context
+                - frameworks: List of frameworks to apply (default: all 4)
+                - research: CompanyResearch from research agent (optional)
+                - market: MarketTrends from market agent (optional)
+                - financial: FinancialSnapshot from financial agent (optional)
+
+        Returns:
+            FrameworkAnalysis object containing:
+                - porter_five_forces: Porter's analysis (if requested)
+                - swot_analysis: SWOT analysis (if requested)
+                - pestel_analysis: PESTEL analysis (if requested)
+                - blue_ocean_strategy: Blue Ocean analysis (if requested)
+
+        Raises:
+            Exception: If framework application fails
+
+        Note:
+            Gracefully handles missing data from previous phases by noting
+            gaps in the analysis rather than failing completely.
+        """
         company = input_data.get("company", "")
         industry = input_data.get("industry", "")
         frameworks = input_data.get("frameworks", ["porter", "swot", "pestel", "blue_ocean"])
@@ -89,8 +124,7 @@ class FrameworkAgent(BaseAgent):
         )
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=PortersFiveForces,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -117,18 +151,19 @@ class FrameworkAgent(BaseAgent):
         )
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=SWOTAnalysis,
                 messages=[{"role": "user", "content": prompt}]
             )
             return result
         except Exception as e:
+            logger.warning(f"SWOT analysis failed, using fallback: {e}")
+            # Ensure minimum 3 items per list as required by Pydantic model
             return SWOTAnalysis(
-                strengths=["Analysis pending"],
-                weaknesses=["Analysis pending"],
-                opportunities=["Analysis pending"],
-                threats=["Analysis pending"]
+                strengths=["Analysis pending", "Data collection in progress", "Review recommended"],
+                weaknesses=["Analysis pending", "Data collection in progress", "Review recommended"],
+                opportunities=["Analysis pending", "Data collection in progress", "Review recommended"],
+                threats=["Analysis pending", "Data collection in progress", "Review recommended"]
             )
     
     async def _analyze_pestel(self, company: str, research: str, market: str, financial: str) -> PESTELAnalysis:
@@ -136,8 +171,7 @@ class FrameworkAgent(BaseAgent):
         prompt = PESTEL_PROMPT_TEMPLATE.format(company_name=company)
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=PESTELAnalysis,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -162,8 +196,7 @@ class FrameworkAgent(BaseAgent):
         )
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=BlueOceanStrategy,
                 messages=[{"role": "user", "content": prompt}]
             )

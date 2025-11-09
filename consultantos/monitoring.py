@@ -8,6 +8,7 @@ import functools
 from typing import Dict, Any, Optional
 from datetime import datetime
 from contextlib import contextmanager
+from contextvars import ContextVar
 
 try:
     from google.cloud import logging as cloud_logging
@@ -17,6 +18,26 @@ except ImportError:
     cloud_logging = None
 
 import structlog
+
+# Request ID ContextVar (imported from main.py)
+request_id_var: ContextVar[str] = ContextVar('request_id', default='')
+
+
+class RequestIdFilter(logging.Filter):
+    """Add request_id to all log records"""
+    
+    def filter(self, record):
+        record.request_id = request_id_var.get('')
+        return True
+
+
+def get_logger(name: str) -> logging.Logger:
+    """Get logger with request ID filter"""
+    logger = logging.getLogger(name)
+    if not any(isinstance(f, RequestIdFilter) for f in logger.filters):
+        logger.addFilter(RequestIdFilter())
+    return logger
+
 
 # Configure structured logging
 structlog.configure(
@@ -214,6 +235,75 @@ class MetricsCollector:
                 if activity.get("last_activity")
             ])
         }
+    
+    def get_prometheus_metrics(self) -> str:
+        """
+        Export metrics in Prometheus format
+        
+        Returns metrics as Prometheus exposition format:
+        # TYPE metric_name metric_type
+        # HELP metric_name description
+        metric_name{label="value"} metric_value
+        """
+        lines = []
+        
+        # Request metrics
+        lines.append("# TYPE consultantos_requests_total counter")
+        lines.append("# HELP consultantos_requests_total Total number of requests")
+        lines.append(f"consultantos_requests_total {self.metrics['requests_total']}")
+        
+        lines.append("# TYPE consultantos_requests_success counter")
+        lines.append("# HELP consultantos_requests_success Number of successful requests")
+        lines.append(f"consultantos_requests_success {self.metrics['requests_success']}")
+        
+        lines.append("# TYPE consultantos_requests_failed counter")
+        lines.append("# HELP consultantos_requests_failed Number of failed requests")
+        lines.append(f"consultantos_requests_failed {self.metrics['requests_failed']}")
+        
+        # Cache metrics
+        lines.append("# TYPE consultantos_cache_hits counter")
+        lines.append("# HELP consultantos_cache_hits Number of cache hits")
+        lines.append(f"consultantos_cache_hits {self.metrics['cache_hits']}")
+        
+        lines.append("# TYPE consultantos_cache_misses counter")
+        lines.append("# HELP consultantos_cache_misses Number of cache misses")
+        lines.append(f"consultantos_cache_misses {self.metrics['cache_misses']}")
+        
+        # Execution time histograms
+        lines.append("# TYPE consultantos_execution_duration_seconds histogram")
+        lines.append("# HELP consultantos_execution_duration_seconds Execution duration in seconds")
+        for operation, times in self.metrics["execution_times"].items():
+            if isinstance(times, list) and times:
+                avg_time = sum(times) / len(times)
+                lines.append(f'consultantos_execution_duration_seconds{{operation="{operation}"}} {avg_time}')
+        
+        # Error counters by type
+        lines.append("# TYPE consultantos_errors_total counter")
+        lines.append("# HELP consultantos_errors_total Total errors by type")
+        for error_type, errors in self.metrics["errors_by_type"].items():
+            count = len(errors) if isinstance(errors, list) else errors
+            lines.append(f'consultantos_errors_total{{error_type="{error_type}"}} {count}')
+        
+        # API call metrics
+        lines.append("# TYPE consultantos_api_calls_total counter")
+        lines.append("# HELP consultantos_api_calls_total Total API calls by service")
+        for service, stats in self.metrics["api_calls"].items():
+            lines.append(f'consultantos_api_calls_total{{service="{service}",status="success"}} {stats["success"]}')
+            lines.append(f'consultantos_api_calls_total{{service="{service}",status="failed"}} {stats["failed"]}')
+        
+        # Job queue metrics
+        lines.append("# TYPE consultantos_jobs_total gauge")
+        lines.append("# HELP consultantos_jobs_total Jobs by status")
+        for status, count in self.metrics["job_queue"].items():
+            lines.append(f'consultantos_jobs_total{{status="{status}"}} {count}')
+        
+        # Cost tracking
+        lines.append("# TYPE consultantos_api_cost_total counter")
+        lines.append("# HELP consultantos_api_cost_total Total API costs")
+        for service, cost_data in self.metrics["cost_tracking"].items():
+            lines.append(f'consultantos_api_cost_total{{service="{service}",unit="{cost_data["unit"]}"}} {cost_data["total_cost"]}')
+        
+        return "\n".join(lines)
 
 
 # Global metrics collector
@@ -348,4 +438,3 @@ def log_cache_miss(cache_key: str):
     """Log cache miss"""
     metrics.increment("cache_misses")
     logger.debug("cache_miss", cache_key=cache_key)
-

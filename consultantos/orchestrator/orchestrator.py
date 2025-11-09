@@ -5,7 +5,7 @@ import asyncio
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
-from consultantos.models import AnalysisRequest, StrategicReport, ExecutiveSummary
+from consultantos_core import models as core_models
 from consultantos.agents import (
     ResearchAgent,
     MarketAgent,
@@ -18,11 +18,16 @@ from consultantos.monitoring import track_operation, log_cache_hit, log_cache_mi
 
 logger = logging.getLogger(__name__)
 
+AnalysisRequest = core_models.AnalysisRequest
+StrategicReport = core_models.StrategicReport
+ExecutiveSummary = core_models.ExecutiveSummary
+
 
 class AnalysisOrchestrator:
     """Orchestrates multi-agent analysis workflow"""
     
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize orchestrator with all agent instances."""
         self.research_agent = ResearchAgent()
         self.market_agent = MarketAgent()
         self.financial_agent = FinancialAgent()
@@ -35,6 +40,15 @@ class AnalysisOrchestrator:
         
         Phase 1: Parallel data gathering (Research, Market, Financial)
         Phase 2: Sequential analysis (Framework → Synthesis)
+        
+        Args:
+            request: Analysis request containing company info and framework selection
+            
+        Returns:
+            Complete strategic report with all analysis phases
+            
+        Raises:
+            Exception: If all Phase 1 agents fail or orchestration fails
         """
         # Check semantic cache first
         cache_key_str = cache_key(
@@ -92,7 +106,7 @@ class AnalysisOrchestrator:
             except Exception as e:
                 raise Exception(f"Orchestration failed: {str(e)}")
     
-    async def _safe_execute_agent(self, agent, input_data: Dict[str, Any], agent_name: str) -> Optional[Any]:
+    async def _safe_execute_agent(self, agent: Any, input_data: Dict[str, Any], agent_name: str) -> Optional[Dict[str, Any]]:
         """
         Execute agent with error handling and logging
         
@@ -119,8 +133,18 @@ class AnalysisOrchestrator:
         """
         Execute Phase 1: Parallel data gathering with graceful degradation
         
+        Args:
+            request: Analysis request with company and industry information
+        
         Returns:
-            Dictionary with results and error tracking
+            Dictionary with results and error tracking containing:
+            - research: Research agent results or None
+            - market: Market agent results or None
+            - financial: Financial agent results or None
+            - errors: Dict of error messages for failed agents
+            
+        Raises:
+            Exception: If all three agents fail to produce results
         """
         input_data = {
             "company": request.company,
@@ -181,6 +205,13 @@ class AnalysisOrchestrator:
         Execute Phase 2: Framework analysis
         
         Continues even if some Phase 1 data is missing
+        
+        Args:
+            request: Analysis request with framework selection
+            phase1_results: Results from Phase 1 data gathering
+            
+        Returns:
+            Dictionary containing framework analysis results
         """
         input_data = {
             "company": request.company,
@@ -220,7 +251,17 @@ class AnalysisOrchestrator:
     async def _execute_synthesis_phase(self, request: AnalysisRequest, 
                                        phase1_results: Dict[str, Any],
                                        phase2_results: Dict[str, Any]) -> ExecutiveSummary:
-        """Execute Phase 3: Synthesis"""
+        """
+        Execute Phase 3: Synthesis
+        
+        Args:
+            request: Original analysis request
+            phase1_results: Results from parallel data gathering phase
+            phase2_results: Results from framework analysis phase
+            
+        Returns:
+            Executive summary synthesizing all analysis results
+        """
         input_data = {
             "company": request.company,
             "industry": request.industry,
@@ -239,6 +280,15 @@ class AnalysisOrchestrator:
         Assemble final strategic report
         
         Includes metadata about partial results if any agents failed
+        
+        Args:
+            request: Original analysis request
+            phase1_results: Results from Phase 1
+            phase2_results: Results from Phase 2
+            synthesis: Executive summary from Phase 3
+            
+        Returns:
+            Complete strategic report with all components and metadata
         """
         # Get framework analysis
         framework_analysis = phase2_results.get("frameworks")
@@ -292,6 +342,12 @@ class AnalysisOrchestrator:
         Resolve ticker symbol for company
         
         Uses enhanced ticker resolution, falls back to simple guess
+        
+        Args:
+            company: Company name to resolve ticker for
+            
+        Returns:
+            Ticker symbol string (may be a guess if resolution fails)
         """
         from consultantos.tools.ticker_resolver import resolve_ticker, guess_ticker
         
@@ -302,4 +358,3 @@ class AnalysisOrchestrator:
         
         # Fallback to guess
         return guess_ticker(company)
-

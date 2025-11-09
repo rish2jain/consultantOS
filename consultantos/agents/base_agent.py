@@ -21,7 +21,7 @@ class BaseAgent(ABC):
         name: str,
         model: str = "gemini-2.0-flash-exp",
         timeout: int = 60
-    ):
+    ) -> None:
         """
         Initialize base agent
         
@@ -40,7 +40,7 @@ class BaseAgent(ABC):
         
         # Configure Gemini client
         genai.configure(api_key=self.api_key)
-        self.client = genai.GenerativeModel(model=self.model)
+        self.client = genai.GenerativeModel(self.model)
         
         # Patch with Instructor for structured outputs
         try:
@@ -51,10 +51,17 @@ class BaseAgent(ABC):
         except (NotImplementedError, AttributeError) as e:
             # Fallback if instructor doesn't support this mode
             logger.warning(f"GEMINI_JSON mode not available, falling back to JSON mode: {e}")
-            self.structured_client = instructor.patch(
-                self.client,
-                mode=instructor.Mode.JSON  # Use different fallback mode
-            )
+            try:
+                self.structured_client = instructor.from_gemini(
+                    client=self.client,
+                    mode=instructor.Mode.JSON
+                )
+            except Exception:
+                # Final fallback - use patch
+                self.structured_client = instructor.patch(
+                    self.client,
+                    mode=instructor.Mode.JSON
+                )
     
     async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -64,7 +71,10 @@ class BaseAgent(ABC):
             input_data: Input data for the agent
         
         Returns:
-            Agent execution result
+            Agent execution result with at least these keys:
+            - success: bool indicating if execution was successful
+            - data: Any result data from the agent
+            - error: Optional error message if success is False
         
         Raises:
             asyncio.TimeoutError: If execution exceeds timeout
@@ -86,6 +96,13 @@ class BaseAgent(ABC):
     
     @abstractmethod
     async def _execute_internal(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Internal execution method (implemented by subclasses)"""
+        """
+        Internal execution method (implemented by subclasses)
+        
+        Args:
+            input_data: Input data specific to the agent implementation
+            
+        Returns:
+            Dict containing execution results with structure specific to each agent
+        """
         pass
-

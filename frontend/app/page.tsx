@@ -1,357 +1,426 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
-import { BarChart3, FileText, Key, TrendingUp, Clock, CheckCircle } from 'lucide-react'
-import { format } from 'date-fns'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  MetricCard,
+  Button,
+  Badge,
+  DataTable,
+  Alert,
+  Spinner,
+} from '@/app/components';
+import { api, APIError } from '@/lib/api';
+import {
+  BarChart3,
+  FileText,
+  Briefcase,
+  User,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  Plus,
+  ArrowRight,
+  FolderOpen,
+  Settings,
+  Layers,
+} from 'lucide-react';
+import { format } from 'date-fns';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-
-interface Report {
-  report_id: string
-  company: string
-  industry?: string
-  frameworks: string[]
-  status: string
-  confidence_score?: number
-  created_at: string
-  execution_time_seconds?: number
-  pdf_url?: string
+// Types
+interface DashboardMetrics {
+  total: number;
+  active: number;
+  thisMonth: number;
+  avgConfidence: number;
 }
 
-interface Metrics {
-  total_reports: number
-  total_requests: number
-  cache_hit_rate: number
-  avg_execution_time: number
+interface RecentReport {
+  report_id: string;
+  company: string;
+  industry?: string;
+  frameworks: string[];
+  status: string;
+  confidence_score?: number;
+  created_at: string;
 }
 
-export default function Dashboard() {
-  const [apiKey, setApiKey] = useState<string>('')
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+export default function DashboardPage() {
+  const router = useRouter();
+  
+  // State
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    total: 0,
+    active: 0,
+    thisMonth: 0,
+    avgConfidence: 0,
+  });
+  const [recentReports, setRecentReports] = useState<RecentReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Load dashboard data
   useEffect(() => {
-    // Check in-memory state and refresh token from server if needed
-    // Note: In production, implement server-side auth with HttpOnly cookies
-    // For now, check if we have an in-memory token, otherwise call silent-auth endpoint
-    const checkAuth = async () => {
-      // If no in-memory token, try to refresh from server
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch recent reports
+      const reportsResponse = await api.analysis.listReports({ limit: 5, sort_by: 'created_at', order: 'desc' });
+      const reports = reportsResponse?.reports || [];
+      setRecentReports(reports);
+
+      // Fetch active jobs (handle errors gracefully)
+      let activeJobs = [];
       try {
-        // Call server endpoint to refresh/issue access token (server sets HttpOnly cookie)
-        const response = await axios.post(`${API_URL}/auth/silent-auth`, {}, {
-          withCredentials: true // Include HttpOnly cookies
-        })
-        if (response.data.access_token) {
-          setApiKey(response.data.access_token) // Store only in memory
-          setIsAuthenticated(true)
-        }
-      } catch (error) {
-        // Not authenticated, user needs to login
-        setIsAuthenticated(false)
+        const jobsResponse = await api.jobs.listJobs({ status: 'pending,running' });
+        activeJobs = jobsResponse?.jobs || [];
+      } catch (err) {
+        // If jobs endpoint fails, just use empty array (non-critical)
+        console.warn('Failed to fetch active jobs:', err);
+        activeJobs = [];
       }
-    }
-    checkAuth()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Run once on mount
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const formData = new FormData(e.target as HTMLFormElement)
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
+      // Calculate metrics
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const reportsThisMonth = reports.filter((r: RecentReport) => 
+        new Date(r.created_at) >= firstDayOfMonth
+      );
 
-    try {
-      const response = await axios.post(`${API_URL}/users/login`, {
-        email,
-        password,
-      })
+      const confidenceScores = reports
+        .filter((r: RecentReport) => r.confidence_score != null)
+        .map((r: RecentReport) => r.confidence_score!);
       
-      const token = response.data.access_token
-      // Store token only in memory (server sets HttpOnly refresh cookie)
-      setApiKey(token)
-      setIsAuthenticated(true)
-    } catch (error: any) {
-      alert(error.response?.data?.detail || 'Login failed')
+      const avgConfidence = confidenceScores.length > 0
+        ? confidenceScores.reduce((sum, score) => sum + score, 0) / confidenceScores.length
+        : 0;
+
+      setMetrics({
+        total: reports.length,
+        active: activeJobs.length,
+        thisMonth: reportsThisMonth.length,
+        avgConfidence,
+      });
+    } catch (err) {
+      console.error('Dashboard load error:', err);
+      if (err instanceof APIError) {
+        setError(err.message);
+      } else {
+        setError('Failed to load dashboard data');
+      }
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  const handleLogout = async () => {
-    // Clear in-memory token and call server logout endpoint
-    try {
-      await axios.post(`${API_URL}/auth/logout`, {}, {
-        withCredentials: true // Include HttpOnly cookies for server to clear
-      })
-    } catch (error) {
-      // Continue with logout even if server call fails
-    }
-    setApiKey('')
-    setIsAuthenticated(false)
-  }
-
-  // Fetch reports
-  const { data: reportsData, isLoading: reportsLoading } = useQuery({
-    queryKey: ['reports', apiKey],
-    queryFn: async () => {
-      const response = await axios.get(`${API_URL}/reports`, {
-        headers: { 'X-API-Key': apiKey },
-      })
-      return response.data
-    },
-    enabled: isAuthenticated && !!apiKey,
-  })
-
-  // Fetch metrics
-  const { data: metricsData } = useQuery({
-    queryKey: ['metrics', apiKey],
-    queryFn: async () => {
-      const response = await axios.get(`${API_URL}/metrics`, {
-        headers: { 'X-API-Key': apiKey },
-      })
-      return response.data
-    },
-    enabled: isAuthenticated && !!apiKey,
-  })
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-            ConsultantOS Dashboard
-          </h1>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="your@email.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="••••••••"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors font-medium"
-            >
-              Sign In
-            </button>
-          </form>
-          <p className="mt-4 text-sm text-center text-gray-600">
-            Don't have an account?{' '}
-            <a href="/register" className="text-primary-600 hover:underline">
-              Register
-            </a>
-          </p>
+  // Table columns for recent reports
+  const columns = [
+    {
+      key: 'company',
+      label: 'Company',
+      render: (report: RecentReport) => (
+        <div>
+          <div className="font-medium text-gray-900">{report.company}</div>
+          {report.industry && (
+            <div className="text-sm text-gray-500">{report.industry}</div>
+          )}
         </div>
-      </div>
-    )
-  }
+      ),
+    },
+    {
+      key: 'frameworks',
+      label: 'Frameworks',
+      render: (report: RecentReport) => (
+        <div className="flex flex-wrap gap-1">
+          {(report.frameworks || []).map((f) => (
+            <Badge key={f} variant="primary">
+              {f}
+            </Badge>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: 'created_at',
+      label: 'Date',
+      render: (report: RecentReport) => {
+        if (!report.created_at) return '-';
+        try {
+          const date = new Date(report.created_at);
+          if (isNaN(date.getTime())) return '-';
+          return format(date, 'MMM d, yyyy');
+        } catch {
+          return '-';
+        }
+      },
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (report: RecentReport) => (
+        <Badge variant={report.status === 'completed' ? 'success' : 'warning'}>
+          {report.status}
+        </Badge>
+      ),
+    },
+  ];
 
-  const reports: Report[] = reportsData?.reports || []
-  const metrics: Metrics = metricsData?.metrics || {
-    total_reports: reports.length,
-    total_requests: 0,
-    cache_hit_rate: 0,
-    avg_execution_time: 0,
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">ConsultantOS Dashboard</h1>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              Logout
-            </button>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">
+              Welcome to ConsultantOS
+            </h1>
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              Generate McKinsey-grade business framework analyses in 30 minutes
+              with our multi-agent AI system
+            </p>
+            <div className="flex justify-center gap-4">
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => router.push('/analysis')}
+                className="bg-white text-blue-600 hover:bg-blue-50"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Create Analysis
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => router.push('/reports')}
+                className="border-white text-white hover:bg-blue-700"
+              >
+                View Reports
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
           </div>
         </div>
-      </header>
+      </section>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <MetricCard
-            title="Total Reports"
-            value={metrics.total_reports}
-            icon={<FileText className="w-6 h-6" />}
-            color="blue"
-          />
-          <MetricCard
-            title="Total Requests"
-            value={metrics.total_requests}
-            icon={<TrendingUp className="w-6 h-6" />}
-            color="green"
-          />
-          <MetricCard
-            title="Cache Hit Rate"
-            value={`${metrics.cache_hit_rate.toFixed(1)}%`}
-            icon={<BarChart3 className="w-6 h-6" />}
-            color="purple"
-          />
-          <MetricCard
-            title="Avg Execution"
-            value={`${metrics.avg_execution_time.toFixed(1)}s`}
-            icon={<Clock className="w-6 h-6" />}
-            color="orange"
-          />
-        </div>
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="error" className="mb-6">
+            {error}
+          </Alert>
+        )}
 
-        {/* Reports Table */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Reports</h2>
+        {/* Key Metrics Dashboard */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Dashboard Overview</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MetricCard
+              title="Total Reports Created"
+              value={metrics.total}
+              icon={<FileText className="w-6 h-6" />}
+              trend={metrics.thisMonth > 0 ? { value: metrics.thisMonth, direction: 'up' } : undefined}
+              className="bg-white"
+            />
+            <MetricCard
+              title="Active Jobs"
+              value={metrics.active}
+              icon={<TrendingUp className="w-6 h-6" />}
+              className="bg-white"
+            />
+            <MetricCard
+              title="Reports This Month"
+              value={metrics.thisMonth}
+              icon={<BarChart3 className="w-6 h-6" />}
+              className="bg-white"
+            />
+            <MetricCard
+              title="Avg Confidence Score"
+              value={`${(metrics.avgConfidence * 100).toFixed(0)}%`}
+              icon={<CheckCircle className="w-6 h-6" />}
+              className="bg-white"
+            />
           </div>
-          {reportsLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading reports...</div>
-          ) : reports.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No reports yet. Generate your first analysis!
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Company
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Frameworks
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Confidence
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {reports.map((report) => (
-                    <tr key={report.report_id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {report.company}
-                        </div>
-                        {report.industry && (
-                          <div className="text-sm text-gray-500">{report.industry}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-1">
-                          {report.frameworks.map((f) => (
-                            <span
-                              key={f}
-                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-primary-100 text-primary-800"
-                            >
-                              {f}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            report.status === 'completed'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {report.status === 'completed' && (
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                          )}
-                          {report.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {report.confidence_score
-                          ? `${(report.confidence_score * 100).toFixed(0)}%`
-                          : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {format(new Date(report.created_at), 'MMM d, yyyy')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {report.pdf_url && (
-                          <a
-                            href={report.pdf_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary-600 hover:text-primary-900"
-                          >
-                            View PDF
-                          </a>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        </section>
+
+        {/* Recent Reports Section */}
+        <section className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">Recent Reports</h2>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/reports')}
+            >
+              View All
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+          <Card>
+            <CardContent>
+              {recentReports.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">No reports yet</p>
+                  <Button onClick={() => router.push('/analysis')}>
+                    Create Your First Analysis
+                  </Button>
+                </div>
+              ) : (
+                <DataTable
+                  columns={columns}
+                  data={recentReports}
+                  rowKey={(report) => report.report_id}
+                  onRowClick={(report) => router.push(`/reports/${report.report_id}`)}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Quick Actions Section */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/analysis')}>
+              <CardHeader>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <BarChart3 className="w-6 h-6 text-blue-600" />
+                </div>
+                <CardTitle className="text-lg">Create Analysis</CardTitle>
+                <CardDescription>
+                  Generate a new business framework analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" className="w-full">
+                  Get Started
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/templates')}>
+              <CardHeader>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                  <Layers className="w-6 h-6 text-green-600" />
+                </div>
+                <CardTitle className="text-lg">Browse Templates</CardTitle>
+                <CardDescription>
+                  Explore pre-built analysis templates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" className="w-full">
+                  View Library
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/jobs')}>
+              <CardHeader>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <Clock className="w-6 h-6 text-purple-600" />
+                </div>
+                <CardTitle className="text-lg">View Job Queue</CardTitle>
+                <CardDescription>
+                  Monitor active and pending analyses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" className="w-full">
+                  View Queue
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/profile')}>
+              <CardHeader>
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                  <User className="w-6 h-6 text-orange-600" />
+                </div>
+                <CardTitle className="text-lg">Manage Profile</CardTitle>
+                <CardDescription>
+                  Update your account settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" className="w-full">
+                  Settings
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Getting Started Guide */}
+        <section>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Getting Started</h2>
+          <Card>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-6">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-blue-600">1</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Create Your First Analysis
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Choose frameworks, enter company details, and let our AI agents
+                    generate comprehensive insights
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-green-600">2</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Review and Share Results
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Download professional PDF reports, share with stakeholders,
+                    and export to multiple formats
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-purple-600">3</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Collaborate with Comments
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Add comments, track versions, and collaborate with your team
+                    on strategic insights
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
       </main>
     </div>
-  )
+  );
 }
-
-function MetricCard({
-  title,
-  value,
-  icon,
-  color,
-}: {
-  title: string
-  value: string | number
-  icon: React.ReactNode
-  color: string
-}) {
-  const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    orange: 'bg-orange-500',
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{value}</p>
-        </div>
-        <div className={`${colorClasses[color as keyof typeof colorClasses]} text-white p-3 rounded-lg`}>
-          {icon}
-        </div>
-      </div>
-    </div>
-  )
-}
-

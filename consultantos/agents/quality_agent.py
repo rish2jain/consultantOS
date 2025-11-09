@@ -91,8 +91,7 @@ class QualityAgent(BaseAgent):
         """
         
         try:
-            result = self.structured_client.chat.completions.create(
-                model=self.model,
+            result = self.structured_client.create(
                 response_model=QualityReview,
                 messages=[{
                     "role": "user",

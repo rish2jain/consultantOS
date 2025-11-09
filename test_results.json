@@ -1,0 +1,115 @@
+{
+  "summary": {
+    "total_tests": 14,
+    "errors": 1,
+    "timestamp": "2025-11-08T13:50:01.301708"
+  },
+  "results": [
+    {
+      "scenario": "Scenario 1",
+      "test": "Registration",
+      "status": "PASS",
+      "details": "User ID: user_zccZsiILxXGoDp2MaHG2Nw",
+      "timestamp": "2025-11-08T13:47:36.818742"
+    },
+    {
+      "scenario": "Scenario 1",
+      "test": "Login",
+      "status": "PASS",
+      "details": "API key obtained (new user: testuser_1762627656@consultantos.com)",
+      "timestamp": "2025-11-08T13:47:37.206400"
+    },
+    {
+      "scenario": "Scenario 2",
+      "test": "Basic Analysis",
+      "status": "PASS",
+      "details": "Report ID: Tesla_20251108134737, Time: 5.70s",
+      "timestamp": "2025-11-08T13:47:42.911356"
+    },
+    {
+      "scenario": "Scenario 3",
+      "test": "Multi-Framework Analysis",
+      "status": "PASS",
+      "details": "Report ID: Netflix_20251108134742, Frameworks: 0, Time: 5.15s",
+      "timestamp": "2025-11-08T13:47:48.062060"
+    },
+    {
+      "scenario": "Scenario 3B",
+      "test": "Async Job Enqueue",
+      "status": "PASS",
+      "details": "Job ID: 03b8514d-ec7d-48d1-b94d-1d459ff09339, Status: pending",
+      "timestamp": "2025-11-08T13:47:48.064538"
+    },
+    {
+      "scenario": "Scenario 3B",
+      "test": "Job Status Polling",
+      "status": "ERROR",
+      "details": "Timeout: Job still pending after 120 seconds",
+      "timestamp": "2025-11-08T13:50:01.278849"
+    },
+    {
+      "scenario": "Scenario 4",
+      "test": "Get Specific Report",
+      "status": "PASS",
+      "details": "Retrieved report: Tesla_20251108134737",
+      "timestamp": "2025-11-08T13:50:01.281946"
+    },
+    {
+      "scenario": "Scenario 4",
+      "test": "List Reports",
+      "status": "PASS",
+      "details": "Found 23 reports",
+      "timestamp": "2025-11-08T13:50:01.286050"
+    },
+    {
+      "scenario": "Scenario 6",
+      "test": "Missing Required Fields",
+      "status": "PASS",
+      "details": "Correctly rejected with 400",
+      "timestamp": "2025-11-08T13:50:01.289106"
+    },
+    {
+      "scenario": "Scenario 6",
+      "test": "Invalid Framework Names",
+      "status": "PASS",
+      "details": "Correctly rejected with 400",
+      "timestamp": "2025-11-08T13:50:01.291333"
+    },
+    {
+      "scenario": "Scenario 10",
+      "test": "Health Check",
+      "status": "PASS",
+      "details": "Status: healthy",
+      "timestamp": "2025-11-08T13:50:01.293809"
+    },
+    {
+      "scenario": "Scenario 10",
+      "test": "Authentication (Valid Key)",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-11-08T13:50:01.296877"
+    },
+    {
+      "scenario": "Scenario 10",
+      "test": "Authentication (Invalid Key)",
+      "status": "PASS",
+      "details": "Reports endpoint allows optional auth (expected behavior)",
+      "timestamp": "2025-11-08T13:50:01.299404"
+    },
+    {
+      "scenario": "Scenario 10",
+      "test": "Authentication (Required Endpoint)",
+      "status": "PASS",
+      "details": "Correctly rejected invalid key on protected endpoint",
+      "timestamp": "2025-11-08T13:50:01.301698"
+    }
+  ],
+  "errors": [
+    {
+      "scenario": "Scenario 3B",
+      "test": "Job Status Polling",
+      "error": "Timeout: Job still pending after 120 seconds",
+      "timestamp": "2025-11-08T13:50:01.278838"
+    }
+  ]
+}
