@@ -46,7 +46,9 @@ steps:
       - "--max-instances"
       - "10"
       - "--set-env-vars"
-      - "GCP_PROJECT_ID=$PROJECT_ID,ENVIRONMENT=production,GEMINI_API_KEY=temp,TAVILY_API_KEY=temp"
+      - "GCP_PROJECT_ID=$PROJECT_ID,ENVIRONMENT=production"
+      - "--set-secrets"
+      - "GEMINI_API_KEY=gemini-api-key:latest,TAVILY_API_KEY=tavily-api-key:latest"
 
 images:
   - "gcr.io/$PROJECT_ID/consultantos-reporting:$BUILD_ID"

@@ -44,7 +44,9 @@ class MonitoringWorker:
         self.check_interval = check_interval
         self.max_concurrent_checks = max_concurrent_checks
         self.is_running = False
-        self.logger = logger.bind(component="monitoring_worker")
+        # Use LoggerAdapter for structured context
+        from logging import LoggerAdapter
+        self.logger = LoggerAdapter(logger, {"component": "monitoring_worker"})
 
     async def start(self) -> None:
         """
@@ -61,7 +63,7 @@ class MonitoringWorker:
                 await asyncio.sleep(self.check_interval)
 
         except Exception as e:
-            self.logger.error("worker_crashed", error=str(e))
+            self.logger.error(f"worker_crashed: {str(e)}", extra={"error": str(e)})
             raise
 
     async def stop(self) -> None:
@@ -84,8 +86,8 @@ class MonitoringWorker:
                 return
 
             self.logger.info(
-                "processing_scheduled_monitors",
-                monitor_count=len(monitors),
+                f"processing_scheduled_monitors: {len(monitors)} monitors",
+                extra={"monitor_count": len(monitors)}
             )
 
             # Process in batches with concurrency limit
@@ -95,8 +97,8 @@ class MonitoringWorker:
 
         except Exception as e:
             self.logger.error(
-                "scheduled_check_processing_failed",
-                error=str(e),
+                f"scheduled_check_processing_failed: {str(e)}",
+                extra={"error": str(e)}
             )
 
     async def _get_monitors_to_check(self) -> List[Monitor]:
@@ -119,8 +121,8 @@ class MonitoringWorker:
 
         except Exception as e:
             self.logger.error(
-                "get_monitors_to_check_failed",
-                error=str(e),
+                f"get_monitors_to_check_failed: {str(e)}",
+                extra={"error": str(e)}
             )
             return []
 
@@ -139,10 +141,12 @@ class MonitoringWorker:
         failures = len(results) - successes
 
         self.logger.info(
-            "batch_processed",
-            total=len(monitors),
-            successes=successes,
-            failures=failures,
+            f"batch_processed: {successes} successes, {failures} failures",
+            extra={
+                "total": len(monitors),
+                "successes": successes,
+                "failures": failures
+            }
         )
 
     async def _check_monitor_safe(self, monitor: Monitor) -> None:
@@ -154,9 +158,11 @@ class MonitoringWorker:
         """
         try:
             self.logger.info(
-                "checking_monitor",
-                monitor_id=monitor.id,
-                company=monitor.company,
+                f"checking_monitor: {monitor.id}",
+                extra={
+                    "monitor_id": monitor.id,
+                    "company": monitor.company
+                }
             )
 
             # Run monitoring check
@@ -168,24 +174,30 @@ class MonitoringWorker:
                     await self.monitor_service.send_alert(alert)
                 except Exception as e:
                     self.logger.error(
-                        "alert_send_failed",
-                        alert_id=alert.id,
-                        monitor_id=monitor.id,
-                        error=str(e),
+                        f"alert_send_failed: {str(e)}",
+                        extra={
+                            "alert_id": alert.id,
+                            "monitor_id": monitor.id,
+                            "error": str(e)
+                        }
                     )
 
             self.logger.info(
-                "monitor_check_completed",
-                monitor_id=monitor.id,
-                alerts_generated=len(alerts),
+                f"monitor_check_completed: {monitor.id}",
+                extra={
+                    "monitor_id": monitor.id,
+                    "alerts_generated": len(alerts)
+                }
             )
 
         except Exception as e:
             self.logger.error(
-                "monitor_check_failed",
-                monitor_id=monitor.id,
-                company=monitor.company,
-                error=str(e),
+                f"monitor_check_failed: {str(e)}",
+                extra={
+                    "monitor_id": monitor.id,
+                    "company": monitor.company,
+                    "error": str(e)
+                }
             )
 
 
@@ -218,7 +230,7 @@ async def run_monitoring_worker() -> None:
         max_concurrent_checks=5,  # Process up to 5 monitors concurrently
     )
 
-    logger.info("starting_monitoring_worker")
+    logger.info("starting_monitoring_worker", extra={})
 
     try:
         await worker.start()
@@ -226,7 +238,7 @@ async def run_monitoring_worker() -> None:
         logger.info("worker_interrupted")
         await worker.stop()
     except Exception as e:
-        logger.error("worker_error", error=str(e))
+        logger.error(f"worker_error: {str(e)}", extra={"error": str(e)})
         raise
 
 

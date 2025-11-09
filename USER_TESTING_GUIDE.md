@@ -18,13 +18,11 @@ This guide provides testing scenarios for ConsultantOS hackathon demonstration. 
 - Health checks and monitoring
 - User registration and authentication
 - API key management
-- **Knowledge base** (search across all analyses, timelines, connections)
-- **Custom frameworks builder** (create and share analysis frameworks)
-- **Saved searches** (save and auto-run analysis configurations)
 
 ### What's Disabled for Hackathon ⚠️
 
 The following features exist in the codebase but are disabled for demo simplicity:
+
 - Dashboard endpoints
 - Continuous monitoring
 - Team collaboration
@@ -38,6 +36,7 @@ The following features exist in the codebase but are disabled for demo simplicit
 ### Prerequisites
 
 1. **Backend Setup**
+
    ```bash
    # Install dependencies
    pip install -r requirements.txt
@@ -85,6 +84,7 @@ Save the `access_token` from login response for subsequent requests.
 **Objective**: Generate a strategic analysis with 2 frameworks
 
 **Steps**:
+
 ```bash
 curl -X POST "http://localhost:8080/analyze" \
   -H "Content-Type: application/json" \
@@ -96,6 +96,7 @@ curl -X POST "http://localhost:8080/analyze" \
 ```
 
 **Expected Results**:
+
 - ✅ API responds within 5 seconds
 - ✅ Analysis completes in 20-40 seconds
 - ✅ Response includes:
@@ -106,6 +107,7 @@ curl -X POST "http://localhost:8080/analyze" \
   - PDF download URL
 
 **What to Record**:
+
 - Total time from request to completion
 - Confidence score
 - Quality of framework analysis
@@ -118,6 +120,7 @@ curl -X POST "http://localhost:8080/analyze" \
 **Objective**: Test all 4 frameworks simultaneously
 
 **Steps**:
+
 ```bash
 curl -X POST "http://localhost:8080/analyze" \
   -H "Content-Type: application/json" \
@@ -130,6 +133,7 @@ curl -X POST "http://localhost:8080/analyze" \
 ```
 
 **Expected Results**:
+
 - ✅ All 4 frameworks included
 - ✅ Each framework has substantial content:
   - **Porter**: All 5 forces analyzed
@@ -140,6 +144,7 @@ curl -X POST "http://localhost:8080/analyze" \
 - ✅ Completion time 50-90 seconds
 
 **What to Record**:
+
 - Framework completeness (each framework scored 1-10)
 - Cross-framework consistency
 - Data recency (% of citations within 12 months)
@@ -154,6 +159,7 @@ curl -X POST "http://localhost:8080/analyze" \
 **Steps**:
 
 1. **Enqueue Job**
+
    ```bash
    curl -X POST "http://localhost:8080/analyze/async" \
      -H "Content-Type: application/json" \
@@ -166,6 +172,7 @@ curl -X POST "http://localhost:8080/analyze" \
    ```
 
    Expected response:
+
    ```json
    {
      "job_id": "550e8400-...",
@@ -175,12 +182,14 @@ curl -X POST "http://localhost:8080/analyze" \
    ```
 
 2. **Check Job Status**
+
    ```bash
    # Poll status (repeat until completed)
    curl "http://localhost:8080/jobs/{job_id}/status"
    ```
 
    Status progression:
+
    - `pending` → `processing` → `completed` or `failed`
 
 3. **Retrieve Completed Report**
@@ -190,12 +199,14 @@ curl -X POST "http://localhost:8080/analyze" \
    ```
 
 **Expected Results**:
+
 - ✅ Job enqueued immediately (< 1 second)
 - ✅ Status updates correctly
 - ✅ Job completes within 2-5 minutes
 - ✅ Report accessible after completion
 
 **What to Record**:
+
 - Time from enqueue to completion
 - Status polling frequency needed
 - Error handling if job fails
@@ -207,47 +218,56 @@ curl -X POST "http://localhost:8080/analyze" \
 **Objective**: Test different report export formats
 
 **Test 4A: PDF Export**
+
 ```bash
 curl "http://localhost:8080/reports/{report_id}/pdf" -o report.pdf
 ```
 
 Expected:
+
 - ✅ Professional PDF formatting
 - ✅ Charts and visualizations render correctly
 - ✅ Clickable table of contents
 - ✅ Citations included
 
 **Test 4B: JSON Export**
+
 ```bash
 curl "http://localhost:8080/reports/{report_id}/export?format=json" -o report.json
 ```
 
 Expected:
+
 - ✅ Valid JSON structure
 - ✅ All metadata included
 - ✅ Framework data properly structured
 
 **Test 4C: Excel Export**
+
 ```bash
 curl "http://localhost:8080/reports/{report_id}/export?format=excel" -o report.xlsx
 ```
 
 Expected:
+
 - ✅ Data organized in worksheets
 - ✅ Framework data in separate sheets
 - ✅ Charts included
 
 **Test 4D: Word Export**
+
 ```bash
 curl "http://localhost:8080/reports/{report_id}/export?format=word" -o report.docx
 ```
 
 Expected:
+
 - ✅ Editable document format
 - ✅ Professional formatting preserved
 - ✅ Charts embedded
 
 **What to Record**:
+
 - Export success rate for each format
 - File sizes
 - Data completeness
@@ -260,6 +280,7 @@ Expected:
 **Objective**: Verify system health endpoints
 
 **Steps**:
+
 ```bash
 # Health check
 curl "http://localhost:8080/health"
@@ -272,12 +293,14 @@ curl "http://localhost:8080/health/live"
 ```
 
 **Expected Results**:
+
 - ✅ Health check returns `{"status": "healthy"}`
 - ✅ Readiness check indicates services ready
 - ✅ Liveness check confirms API is responsive
 - ✅ Response time < 1 second
 
 **What to Record**:
+
 - Service availability status
 - Response times
 - Any warnings in health check
@@ -287,6 +310,7 @@ curl "http://localhost:8080/health/live"
 ### Scenario 6: Edge Cases and Error Handling
 
 **Test 6A: Missing Required Fields**
+
 ```bash
 curl -X POST "http://localhost:8080/analyze" \
   -H "Content-Type: application/json" \
@@ -296,6 +320,7 @@ curl -X POST "http://localhost:8080/analyze" \
 Expected: `400 Bad Request` with clear error message
 
 **Test 6B: Invalid Framework Names**
+
 ```bash
 curl -X POST "http://localhost:8080/analyze" \
   -H "Content-Type: application/json" \
@@ -309,6 +334,7 @@ curl -X POST "http://localhost:8080/analyze" \
 Expected: `422 Validation Error` listing valid frameworks
 
 **Test 6C: Private Company (Limited Data)**
+
 ```bash
 curl -X POST "http://localhost:8080/analyze" \
   -H "Content-Type: application/json" \
@@ -320,6 +346,7 @@ curl -X POST "http://localhost:8080/analyze" \
 ```
 
 Expected:
+
 - ✅ Graceful handling with proxy/industry data
 - ✅ Lower confidence score
 - ✅ Clear labeling of data limitations
@@ -331,6 +358,7 @@ Submit 11 requests rapidly (default limit: 10/hour):
 Expected: 11th request returns `429 Too Many Requests`
 
 **What to Record**:
+
 - Error message clarity
 - HTTP status code correctness
 - Helpful guidance for users
@@ -343,11 +371,13 @@ Expected: 11th request returns `429 Too Many Requests`
 **Test 7A: Response Time Benchmarks**
 
 Run 10 analyses and measure:
+
 - API response time (request to first byte)
 - Analysis completion time (total duration)
 - Success rate
 
 Target metrics:
+
 - API response: < 5 seconds (p95)
 - Completion: 30-60 seconds (p50)
 - Success rate: ≥ 99%
@@ -355,6 +385,7 @@ Target metrics:
 **Test 7B: Concurrent Requests**
 
 Submit 3-5 analyses simultaneously:
+
 ```bash
 # In parallel terminals or script
 for i in {1..5}; do
@@ -366,11 +397,13 @@ wait
 ```
 
 Expected:
+
 - ✅ All requests accepted
 - ✅ Jobs processed in parallel
 - ✅ No failures due to concurrency
 
 **What to Record**:
+
 - p50, p95, p99 response times
 - Success vs failure rate
 - Resource usage (if observable)
@@ -383,6 +416,7 @@ Expected:
 **Test 8A: Password Validation**
 
 Try registering with weak passwords:
+
 ```bash
 # Weak password (should fail)
 curl -X POST "http://localhost:8080/users/register" \
@@ -395,6 +429,7 @@ curl -X POST "http://localhost:8080/users/register" \
 ```
 
 Expected:
+
 - ❌ `400 Bad Request`
 - Error message listing password requirements:
   - Minimum 8 characters
@@ -440,6 +475,7 @@ curl -X POST "http://localhost:8080/users/password-reset/confirm" \
 ```
 
 **What to Record**:
+
 - Password validation works correctly
 - Email verification flow
 - Password reset functionality
@@ -452,6 +488,7 @@ curl -X POST "http://localhost:8080/users/password-reset/confirm" \
 Use this checklist when reviewing generated reports:
 
 ### Content Quality (Score 1-10)
+
 - [ ] Insights are relevant and accurate
 - [ ] Analysis is comprehensive
 - [ ] Claims supported by evidence
@@ -459,30 +496,34 @@ Use this checklist when reviewing generated reports:
 - [ ] No obvious errors
 
 ### Framework Adherence (Score 1-10)
+
 - [ ] Porter's: All 5 forces analyzed
 - [ ] SWOT: All 4 quadrants populated
 - [ ] PESTEL: All 6 dimensions covered
 - [ ] Blue Ocean: Value curves identified
 
 ### Data Quality (Score 1-10)
+
 - [ ] Citations present and accessible
 - [ ] Data recent (within 12 months)
 - [ ] Sources credible
 - [ ] Confidence scores reasonable
 
 ### Visual Quality (Score 1-10)
+
 - [ ] Charts clear and readable
 - [ ] Visualizations add value
 - [ ] Formatting professional
 - [ ] PDF rendering consistent
 
 ### Executive Summary (Score 1-10)
+
 - [ ] Concise (1 page or less)
 - [ ] Captures key insights
 - [ ] Actionable recommendations
 - [ ] Highlights risks and opportunities
 
-**Overall Quality Score**: ___ / 50
+**Overall Quality Score**: \_\_\_ / 50
 
 ---
 
@@ -513,33 +554,37 @@ Use this checklist when reviewing generated reports:
 
 ## Performance Metrics
 
-| Metric | Target | Actual | Status |
-|--------|--------|--------|--------|
-| API Response (p95) | < 5s | ___ | ✅/❌ |
-| Analysis Time (p50) | 30-60s | ___ | ✅/❌ |
-| Success Rate | ≥ 99% | ___ % | ✅/❌ |
-| Error Rate | < 1% | ___ % | ✅/❌ |
+| Metric              | Target | Actual   | Status |
+| ------------------- | ------ | -------- | ------ |
+| API Response (p95)  | < 5s   | \_\_\_   | ✅/❌  |
+| Analysis Time (p50) | 30-60s | \_\_\_   | ✅/❌  |
+| Success Rate        | ≥ 99%  | \_\_\_ % | ✅/❌  |
+| Error Rate          | < 1%   | \_\_\_ % | ✅/❌  |
 
 ## Quality Scores
 
 | Report | Company | Quality | Notes |
-|--------|---------|---------|-------|
-| 1 | Tesla | __/50 | |
-| 2 | OpenAI | __/50 | |
-| 3 | SpaceX | __/50 | |
+| ------ | ------- | ------- | ----- |
+| 1      | Tesla   | \_\_/50 |       |
+| 2      | OpenAI  | \_\_/50 |       |
+| 3      | SpaceX  | \_\_/50 |       |
 
 ## Issues Found
 
 ### Critical
+
 - [Issue description]
 
 ### High
+
 - [Issue description]
 
 ### Medium
+
 - [Issue description]
 
 ### Low
+
 - [Issue description]
 
 ## Recommendations
@@ -562,18 +607,22 @@ Use this checklist when reviewing generated reports:
 Use these for consistent testing:
 
 1. **Tesla** (Electric Vehicles)
+
    - Well-known, data-rich
    - Good for baseline quality
 
 2. **OpenAI** (Artificial Intelligence)
+
    - Recent company, active news
    - Tests data recency
 
 3. **SpaceX** (Aerospace)
+
    - Private company
    - Tests limited data handling
 
 4. **Netflix** (Streaming Media)
+
    - Mature industry
    - Tests comprehensive analysis
 
@@ -586,6 +635,7 @@ Use these for consistent testing:
 ## Troubleshooting
 
 ### Issue: API Won't Start
+
 ```bash
 # Check environment variables
 echo $GEMINI_API_KEY
@@ -599,6 +649,7 @@ python main.py
 ```
 
 ### Issue: Import Errors
+
 ```bash
 # Ensure on master branch
 git checkout master
@@ -609,12 +660,14 @@ pip install -r requirements.txt --upgrade
 ```
 
 ### Issue: Analysis Fails
+
 - Check API keys are valid
 - Verify network connectivity
 - Check rate limits not exceeded
 - Review error message in response
 
 ### Issue: Low Quality Reports
+
 - Verify data sources accessible
 - Check confidence scores
 - Review framework completeness
@@ -626,21 +679,21 @@ pip install -r requirements.txt --upgrade
 
 ### Target Metrics (Hackathon Demo)
 
-| Metric | Target | Acceptable | Poor |
-|--------|--------|------------|------|
-| API Response | < 5s | 5-10s | > 10s |
-| Analysis (2 frameworks) | 20-40s | 40-60s | > 60s |
-| Analysis (4 frameworks) | 50-90s | 90-120s | > 120s |
-| Success Rate | ≥ 99% | 95-99% | < 95% |
-| Error Rate | < 1% | 1-3% | > 3% |
+| Metric                  | Target | Acceptable | Poor   |
+| ----------------------- | ------ | ---------- | ------ |
+| API Response            | < 5s   | 5-10s      | > 10s  |
+| Analysis (2 frameworks) | 20-40s | 40-60s     | > 60s  |
+| Analysis (4 frameworks) | 50-90s | 90-120s    | > 120s |
+| Success Rate            | ≥ 99%  | 95-99%     | < 95%  |
+| Error Rate              | < 1%   | 1-3%       | > 3%   |
 
 ### Comparison to Manual Work
 
-| Task | Manual | ConsultantOS | Speedup |
-|------|--------|--------------|---------|
-| Basic Analysis | 8 hours | 30 seconds | 960x |
-| Comprehensive | 32 hours | 60 seconds | 1,920x |
-| Multi-Company | 160 hours | 5 minutes | 1,920x |
+| Task           | Manual    | ConsultantOS | Speedup |
+| -------------- | --------- | ------------ | ------- |
+| Basic Analysis | 8 hours   | 30 seconds   | 960x    |
+| Comprehensive  | 32 hours  | 60 seconds   | 1,920x  |
+| Multi-Company  | 160 hours | 5 minutes    | 1,920x  |
 
 ---
 
@@ -649,21 +702,25 @@ pip install -r requirements.txt --upgrade
 For hackathon demonstration, the system should:
 
 ✅ **Functional**
+
 - Generate analyses successfully ≥ 95% of the time
 - Complete analyses within target time ranges
 - Export reports in multiple formats
 
 ✅ **Quality**
+
 - Average quality score ≥ 35/50
 - Framework completeness ≥ 90%
 - Data recency ≥ 70% within 12 months
 
 ✅ **Performance**
+
 - API response < 10 seconds (p95)
 - Analysis completion within 2x target times
 - Handle 3-5 concurrent requests
 
 ✅ **Reliability**
+
 - Graceful error handling
 - Clear error messages
 - No crashes or data loss

@@ -27,14 +27,36 @@ from consultantos.orchestrator import AnalysisOrchestrator
 from consultantos.reports import generate_pdf_report
 
 # Import monitoring functions from monitoring module (not package)
+# Note: There's both a monitoring.py file and monitoring/ package
+# We need to import from the .py file directly
 try:
-    from consultantos import monitoring as monitoring_module
-    logger = monitoring_module.logger
-    metrics = monitoring_module.metrics
-    log_request = monitoring_module.log_request
-    log_request_success = monitoring_module.log_request_success
-    log_request_failure = monitoring_module.log_request_failure
-except (ImportError, AttributeError):
+    import importlib.util
+    from pathlib import Path
+    # Get the path to monitoring.py file
+    consultantos_path = Path(__file__).parent.parent
+    monitoring_file_path = consultantos_path / "monitoring.py"
+    # Load the file as a module
+    spec = importlib.util.spec_from_file_location("monitoring_file", monitoring_file_path)
+    if spec and spec.loader:
+        monitoring_file = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(monitoring_file)
+        logger = monitoring_file.logger
+        metrics = monitoring_file.metrics
+        log_request = monitoring_file.log_request
+        log_request_success = monitoring_file.log_request_success
+        # Ensure log_request_failure accepts the correct signature
+        if hasattr(monitoring_file, 'log_request_failure'):
+            import inspect
+            sig = inspect.signature(monitoring_file.log_request_failure)
+            # Create a wrapper if needed to ensure compatibility
+            original_log_failure = monitoring_file.log_request_failure
+            def log_request_failure(request_id: str, error: Exception):
+                return original_log_failure(request_id, error)
+        else:
+            raise AttributeError("log_request_failure not found in monitoring.py")
+    else:
+        raise ImportError("Could not load monitoring.py")
+except (ImportError, AttributeError, Exception) as e:
     # Fallback for hackathon demo
     logger = logging.getLogger(__name__)
     
@@ -70,8 +92,10 @@ except (ImportError, AttributeError):
         pass
     def log_request_success(request_id: str, **kwargs):
         pass
-    def log_request_failure(request_id: str, **kwargs):
+    def log_request_failure(*args, **kwargs):
+        # Accept any arguments to prevent signature mismatches
         pass
+# Import routers
 from consultantos.api.user_endpoints import router as user_router
 from consultantos.api.template_endpoints import router as template_router
 from consultantos.api.sharing_endpoints import router as sharing_router
@@ -258,7 +282,7 @@ app.include_router(versioning_router)
 app.include_router(comments_router)
 app.include_router(community_router)
 app.include_router(analytics_router)
-# Disabled for hackathon demo - missing get_current_user auth
+# Disabled for hackathon demo - require additional dependencies
 # app.include_router(feedback_router)
 app.include_router(visualization_router)
 app.include_router(auth_router)
@@ -414,13 +438,19 @@ async def analyze_company(
             )
         except asyncio.TimeoutError:
             error = Exception("Analysis timeout")
-            log_request_failure(report_id, error)
+            try:
+                log_request_failure(report_id, error)
+            except Exception as log_err:
+                logger.error(f"Failed to log request failure: {log_err}")
             raise HTTPException(
                 status_code=504,
                 detail="Analysis timed out. Please try with a simpler query or contact support."
             )
         except Exception as e:
-            log_request_failure(report_id, e)
+            try:
+                log_request_failure(report_id, e)
+            except Exception as log_err:
+                logger.error(f"Failed to log request failure: {log_err}")
             raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
         
         # Generate PDF with error handling

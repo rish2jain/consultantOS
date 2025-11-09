@@ -20,7 +20,7 @@ Use this checklist to track your deployment fix implementation.
 
 ### Method A: Automated (Recommended - 5 min total)
 
-- [ ] Navigate to project: `cd /Users/rish2jain/Documents/Hackathons/ConsultantOS`
+- [ ] Navigate to project: `cd <project-root>` (or `cd ./ConsultantOS` if already in parent directory)
 - [ ] Run automation script: `bash DEPLOYMENT_QUICK_FIX.sh`
 - [ ] Review proposed commit message
 - [ ] Confirm push to remote
@@ -29,7 +29,7 @@ Use this checklist to track your deployment fix implementation.
   - [ ] Applies all .fixed files
   - [ ] Tests local Docker build
   - [ ] Commits changes to git
-  - [ ] Pushes to remote master branch
+  - [ ] Pushes to remote main branch
 - [ ] Skip to "Deployment Monitoring" section
 
 ### Method B: Manual Step-by-Step (15 min total)
@@ -76,7 +76,11 @@ async def health():
         "version": "1.0.0"
     }
 ```
-- [ ] Repeat for each service's main.py (api_service, agent_service, etc.)
+- [ ] Repeat for each service's main.py:
+  - [ ] `api_service/main.py` — updated and verified (confirm entrypoint updated, lint passes, and unit/integration test runs)
+  - [ ] `agent_service/main.py` — updated and verified (confirm entrypoint updated, lint passes, and unit/integration test runs)
+  - [ ] `worker_service/main.py` — updated and verified (confirm entrypoint updated, lint passes, and unit/integration test runs)
+  - [ ] `auth_service/main.py` — updated and verified (confirm entrypoint updated, lint passes, and unit/integration test runs)
 
 #### Step 6: Test Local Docker Build (5 min)
 - [ ] Test build: `docker build -t consultantos:test -f Dockerfile .`
@@ -88,7 +92,7 @@ async def health():
 - [ ] `git add Dockerfile services/*/Dockerfile cloudbuild*.yaml`
 - [ ] (Optional) `git add requirements.txt`
 - [ ] `git commit -m "fix(deployment): Add missing system dependencies and secret configuration"`
-- [ ] `git push origin master`
+- [ ] `git push origin main`
 - [ ] Verify push completes without errors
 
 ### Method C: Deep Review (30 min total)
@@ -141,7 +145,7 @@ async def health():
   - [ ] consultantos-task
 
 ### Health Check Verification
-- [ ] Get API service URL: `gcloud run services describe consultantos-api --region=us-central1 --format='value(status.url)'`
+- [ ] Get API service URL: `gcloud run services describe consultantos-api --region=${CLOUD_RUN_REGION:-us-central1} --format='value(status.url)'` (replace ${CLOUD_RUN_REGION} with your actual deployment region or set as environment variable)
 - [ ] Test health endpoint: `curl https://<SERVICE_URL>/health`
 - [ ] Verify response (should be JSON):
   ```json
@@ -210,16 +214,24 @@ If something goes wrong, you can rollback:
 # Restore original files
 cp Dockerfile.backup Dockerfile
 cp services/api_service/Dockerfile.backup services/api_service/Dockerfile
-# ... etc for all files
+cp services/agent_service/Dockerfile.backup services/agent_service/Dockerfile
+cp services/reporting_service/Dockerfile.backup services/reporting_service/Dockerfile
+cp services/task_handler_service/Dockerfile.backup services/task_handler_service/Dockerfile
+cp cloudbuild.api.yaml.backup cloudbuild.api.yaml
+cp cloudbuild.agent.yaml.backup cloudbuild.agent.yaml
+cp cloudbuild.reporting.yaml.backup cloudbuild.reporting.yaml
+cp cloudbuild.task.yaml.backup cloudbuild.task.yaml
 
-# OR revert git commits
+# OR revert git commits (safer - preserves history)
 git revert <commit-hash>
-git push origin master
+git push origin main
 
-# OR reset to previous state
+# OR reset to previous state (destructive - use with caution)
 git reset --hard HEAD~1
-git push --force origin master
+git push --force-with-lease origin main
 ```
+
+**⚠️ WARNING: Force pushes (--force or --force-with-lease) overwrite remote history and can irreversibly delete collaborators' work. Only use when absolutely necessary and coordinate with your team.**
 
 ---
 

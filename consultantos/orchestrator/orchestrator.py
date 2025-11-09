@@ -22,8 +22,12 @@ try:
     track_operation = monitoring_module.track_operation
     log_cache_hit = monitoring_module.log_cache_hit
     log_cache_miss = monitoring_module.log_cache_miss
-except (ImportError, AttributeError):
+except (ImportError, AttributeError) as e:
     # Fallback to no-op functions for hackathon demo
+    logger.warning(
+        f"Monitoring module not available: {e}. Using no-op monitoring functions.",
+        exc_info=True
+    )
     @contextmanager
     def track_operation(operation_name: str, **context):
         yield None

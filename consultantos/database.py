@@ -454,10 +454,33 @@ class InMemoryDatabaseService:
     # Knowledge Base stub methods
     async def list_knowledge_items(self, user_id: str):
         """Get all knowledge items for a user (stub)"""
+        from consultantos.models import KnowledgeItem
         with self._lock:
             if not hasattr(self, '_knowledge_items'):
                 self._knowledge_items = {}
-            return [item for item in self._knowledge_items.values() if item.get("user_id") == user_id]
+            items = []
+            for item_dict in self._knowledge_items.values():
+                if item_dict.get("user_id") == user_id:
+                    try:
+                        # Convert dict to KnowledgeItem instance
+                        # Handle datetime conversion if stored as string
+                        item_data = dict(item_dict)
+                        if isinstance(item_data.get("created_at"), str):
+                            try:
+                                item_data["created_at"] = datetime.fromisoformat(item_data["created_at"])
+                            except (ValueError, AttributeError):
+                                # If parsing fails, use current time as fallback
+                                item_data["created_at"] = datetime.utcnow()
+                        items.append(KnowledgeItem(**item_data))
+                    except (TypeError, ValueError, KeyError) as e:
+                        # Skip items with missing required fields or invalid data
+                        # Pydantic ValidationError is a subclass of ValueError, so it's already caught
+                        logger.warning(
+                            f"Failed to convert knowledge item to KnowledgeItem instance: {e}. "
+                            f"Item data: {item_dict}"
+                        )
+                        continue
+            return items
     
     # Custom Frameworks stub methods
     async def create_custom_framework(self, framework):
