@@ -88,20 +88,16 @@ app = FastAPI(
 )
 
 # CORS middleware - MUST be added FIRST before other middleware
-allowed_origins = [
-    "http://localhost:3000",
-    "http://localhost:8080",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8080",
-]
+# Get allowed origins from config (comma-separated string)
+allowed_origins = [origin.strip() for origin in settings.cors_origins.split(",")]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key"],
+    expose_headers=["Content-Length", "Content-Type"],
     max_age=3600,
 )
 
