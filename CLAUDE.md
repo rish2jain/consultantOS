@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ConsultantOS is a multi-agent AI system for generating McKinsey-grade business framework analyses. It orchestrates 5 specialized agents (Research, Market, Financial, Framework, Synthesis) to produce professional PDF reports with visualizations in 30 minutes instead of 32 hours.
+**ConsultantOS is a Continuous Competitive Intelligence Platform**
+
+The platform has evolved from a one-time report generation tool to a continuous monitoring system. It orchestrates 5 specialized agents (Research, Market, Financial, Framework, Synthesis) to provide ongoing competitive intelligence with automated change detection and smart alerts.
+
+**Key Paradigm Shift**:
+- **Old**: Generate PDF reports on-demand (32 hours → 30 minutes)
+- **New**: Continuous monitoring with dashboard-first experience, PDF as secondary export option
 
 **Tech Stack**: Python 3.11+, FastAPI, Google Gemini AI, Next.js 14 (frontend), Google Cloud Platform (Cloud Run, Firestore, Cloud Storage)
 
@@ -68,14 +74,31 @@ gcloud run deploy consultantos \
 
 ## Architecture
 
-### Multi-Agent Orchestration
+### Continuous Intelligence Monitoring System
+
+**NEW PRIMARY WORKFLOW**: Dashboard-first continuous monitoring
+
+1. **User Creates Monitor**: Company + industry + config (frequency, frameworks, alert threshold)
+2. **Baseline Analysis**: Initial analysis run automatically to establish snapshot
+3. **Background Worker**: Scheduled checks run at configured frequency (hourly/daily/weekly/monthly)
+4. **Change Detection**: Compare new snapshot with previous to detect material changes
+5. **Smart Alerts**: Only alert if confidence > threshold (avoid noise)
+6. **User Feedback Loop**: Users provide feedback on alert quality to improve system
+
+**Key Components**:
+- `IntelligenceMonitor`: Core monitoring logic, change detection, alert generation
+- `MonitoringWorker`: Background scheduler processing monitors in batches
+- `MonitorAnalysisSnapshot`: Key metrics for change detection
+- Dashboard UI: Real-time monitoring status, alert feed, manual triggers
+
+### Multi-Agent Orchestration (Used by Monitoring System)
 
 The system uses a **phased execution model** coordinated by `AnalysisOrchestrator`:
 
 1. **Phase 1 (Parallel)**: Research, Market, and Financial agents run concurrently
 2. **Phase 2 (Sequential)**: Framework agent applies business frameworks (Porter's 5 Forces, SWOT, PESTEL, Blue Ocean Strategy)
 3. **Phase 3**: Synthesis agent creates executive summary
-4. **PDF Generation**: ReportLab + Plotly for charts and visualizations
+4. **Optional**: PDF Generation (ReportLab + Plotly) - now secondary export option
 
 **Graceful Degradation**: Partial results returned with adjusted confidence if agents fail
 
@@ -90,8 +113,12 @@ consultantos/
 │   ├── framework_agent.py   # Strategic framework analysis
 │   └── synthesis_agent.py   # Executive summary generation
 ├── orchestrator/    # Multi-agent coordination with caching
+├── monitoring/      # **NEW**: Continuous intelligence monitoring system
+│   ├── intelligence_monitor.py  # Core monitoring, change detection, alerts
+│   └── __init__.py
 ├── api/             # FastAPI endpoints (thin layer - validation, auth, delegation)
 │   ├── main.py              # Main app, CORS, rate limiting, routes
+│   ├── monitoring_endpoints.py  # **NEW**: Monitor CRUD, alerts, feedback
 │   ├── user_endpoints.py
 │   ├── template_endpoints.py
 │   ├── sharing_endpoints.py
@@ -100,10 +127,14 @@ consultantos/
 │   ├── community_endpoints.py
 │   └── analytics_endpoints.py
 ├── models/          # Pydantic domain models (shared across app)
+│   └── monitoring.py        # **NEW**: Monitor, Alert, Change models
 ├── tools/           # External data integrations (Tavily, Trends, SEC, yfinance)
 ├── reports/         # PDF generation and exports (JSON, Excel, Word)
 ├── visualizations/  # Plotly chart generation
 ├── jobs/            # Async job queue and worker
+│   ├── queue.py
+│   ├── worker.py
+│   └── monitoring_worker.py # **NEW**: Background monitoring scheduler
 ├── services/        # Cross-cutting services (email)
 ├── utils/           # Validation, sanitization, retry, circuit breaker
 ├── cache.py         # Multi-level caching (disk + semantic)
@@ -115,6 +146,8 @@ consultantos/
 
 frontend/
 ├── app/             # Next.js 14 app directory
+│   └── dashboard/           # **NEW**: Real-time monitoring dashboard
+│       └── page.tsx
 ├── components/      # React components
 └── public/          # Static assets
 ```

@@ -84,6 +84,11 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
     
     // Ensure totalPages is a valid number
     const safeTotalPages = isNaN(totalPages) || totalPages < 1 ? 1 : Math.max(1, Math.floor(totalPages));
+    
+    // Compute validated safeCurrentPage (clamp between 0 and safeTotalPages-1)
+    const safeCurrentPage = isNaN(currentPage) || currentPage < 0 
+      ? 0 
+      : Math.max(0, Math.min(Math.floor(currentPage), safeTotalPages - 1));
 
     if (safeTotalPages <= maxVisible + 2) {
       // Show all pages if total is small
@@ -94,16 +99,16 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
       // Always show first page
       pages.push(0);
 
-      let startPage = Math.max(1, currentPage - halfVisible);
-      let endPage = Math.min(safeTotalPages - 2, currentPage + halfVisible);
+      let startPage = Math.max(1, safeCurrentPage - halfVisible);
+      let endPage = Math.min(safeTotalPages - 2, safeCurrentPage + halfVisible);
 
       // Adjust if near start
-      if (currentPage <= halfVisible) {
+      if (safeCurrentPage <= halfVisible) {
         endPage = maxVisible - 1;
       }
 
       // Adjust if near end
-      if (currentPage >= safeTotalPages - halfVisible - 1) {
+      if (safeCurrentPage >= safeTotalPages - halfVisible - 1) {
         startPage = safeTotalPages - maxVisible;
       }
 
@@ -229,7 +234,7 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
 
         {/* Mobile page indicator */}
         <div className="sm:hidden px-3 py-1 text-sm text-gray-700">
-          Page {safeCurrentPage + 1} of {safeTotalPages}
+          {safeTotalPages > 0 ? `Page ${safeCurrentPage + 1} of ${safeTotalPages}` : 'Page 1'}
         </div>
 
         <Button
@@ -264,26 +269,45 @@ export const usePagination = (
   initialPageSize: number = 10
 ) => {
   const [currentPage, setCurrentPage] = React.useState(0);
-  const [pageSize, setPageSize] = React.useState(initialPageSize);
+  // Ensure pageSize is always at least 1
+  const [pageSize, setPageSize] = React.useState(Math.max(1, initialPageSize || 10));
 
-  const totalPages = Math.ceil(totalItems / pageSize);
+  // Clamp totalItems to minimum 0
+  const safeTotalItems = Math.max(0, totalItems || 0);
+  // Ensure pageSize is at least 1 before division
+  const safePageSize = Math.max(1, pageSize);
+  const totalPages = safePageSize > 0 ? Math.ceil(safeTotalItems / safePageSize) : 0;
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    // Clamp page to valid range
+    const safeTotalPages = Math.max(1, totalPages);
+    const safePage = Math.max(0, Math.min(page, safeTotalPages - 1));
+    setCurrentPage(safePage);
   };
 
   const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize);
+    // Ensure new page size is at least 1
+    const safeNewPageSize = Math.max(1, newPageSize || 10);
+    setPageSize(safeNewPageSize);
     setCurrentPage(0);
   };
 
-  const startIndex = currentPage * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  // Clamp currentPage to valid range after pageSize or totalItems change
+  React.useEffect(() => {
+    const safeTotalPages = Math.max(1, totalPages);
+    const safeCurrentPage = Math.max(0, Math.min(currentPage, safeTotalPages - 1));
+    if (safeCurrentPage !== currentPage) {
+      setCurrentPage(safeCurrentPage);
+    }
+  }, [pageSize, safeTotalItems, totalPages]);
+
+  const startIndex = currentPage * safePageSize;
+  const endIndex = Math.min(startIndex + safePageSize, safeTotalItems);
 
   return {
     currentPage,
-    pageSize,
-    totalPages,
+    pageSize: safePageSize,
+    totalPages: Math.max(1, totalPages),
     startIndex,
     endIndex,
     handlePageChange,

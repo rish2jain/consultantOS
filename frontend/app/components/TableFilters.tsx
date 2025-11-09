@@ -141,12 +141,13 @@ const FilterInput: React.FC<FilterInputProps> = ({
   }
 
   if (filter.type === "dateRange") {
+    const safeValue = filter.value || { from: '', to: '' };
     return (
       <div className="flex items-center gap-2">
         <Input
           type="date"
-          value={filter.value?.from || ""}
-          onChange={(e) => onChange({ ...filter.value, from: e.target.value })}
+          value={safeValue.from || ""}
+          onChange={(e) => onChange({ ...safeValue, from: e.target.value })}
           placeholder="From"
           size={compact ? "sm" : "md"}
           leftIcon={<Calendar className="w-4 h-4" />}
@@ -155,8 +156,8 @@ const FilterInput: React.FC<FilterInputProps> = ({
         <span className="text-gray-500">to</span>
         <Input
           type="date"
-          value={filter.value?.to || ""}
-          onChange={(e) => onChange({ ...filter.value, to: e.target.value })}
+          value={safeValue.to || ""}
+          onChange={(e) => onChange({ ...safeValue, to: e.target.value })}
           placeholder="To"
           size={compact ? "sm" : "md"}
           leftIcon={<Calendar className="w-4 h-4" />}

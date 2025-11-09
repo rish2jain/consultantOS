@@ -1,12 +1,16 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import type { Data, Layout } from 'plotly.js'
 
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
 
 type PlotlyChartProps = {
   title: string
-  figure: any
+  figure: {
+    data: Data[]
+    layout?: Partial<Layout>
+  }
 }
 
 export function PlotlyChart({ title, figure }: PlotlyChartProps) {

@@ -58,14 +58,29 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidUpdate(prevProps: ErrorBoundaryProps) {
     // Reset error boundary if resetKeys change
-    if (this.state.hasError && this.props.resetKeys && prevProps.resetKeys) {
-      // First check if lengths differ (treat as change)
+    if (this.state.hasError) {
+      // Check for reference equality first
+      if (this.props.resetKeys === prevProps.resetKeys) {
+        return; // No change
+      }
+      
+      // Handle undefined/null transitions
+      if (!this.props.resetKeys || !prevProps.resetKeys) {
+        this.reset();
+        return;
+      }
+      
+      // Both are arrays, compare length and elements
       if (this.props.resetKeys.length !== prevProps.resetKeys.length) {
         this.reset();
-      } else {
-        // Only if lengths are equal, check index-by-index
-        if (this.props.resetKeys.some((key, index) => key !== prevProps.resetKeys![index])) {
+        return;
+      }
+      
+      // Check index-by-index without non-null assertions
+      for (let i = 0; i < this.props.resetKeys.length; i++) {
+        if (this.props.resetKeys[i] !== prevProps.resetKeys[i]) {
           this.reset();
+          return;
         }
       }
     }

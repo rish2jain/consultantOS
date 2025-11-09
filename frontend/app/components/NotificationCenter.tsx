@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Check, Trash2, Inbox } from "lucide-react";
 import { Badge } from "./Badge";
 import { Button } from "./Button";
@@ -27,6 +28,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   pollingInterval = 30000,
   apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
 }) => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -227,9 +229,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
     // Use Next.js router for internal routes
     if (notification.link.startsWith("/")) {
-      // Internal route - would need useRouter from next/navigation
-      // For now, use window.location for internal navigation
-      window.location.href = notification.link;
+      // Internal route - use Next.js router for client-side navigation
+      router.push(notification.link);
     } else {
       // External URL - validate protocol
       try {

@@ -79,9 +79,9 @@ class SynthesisAgent(BaseAgent):
         )
         
         try:
-            result = self.structured_client.create(
-                response_model=ExecutiveSummary,
-                messages=[{"role": "user", "content": prompt}]
+            result = await self.generate_structured(
+                prompt=prompt,
+                response_model=ExecutiveSummary
             )
             # Ensure company name and industry are set
             result.company_name = company

@@ -2,80 +2,131 @@
 Base agent class for ConsultantOS agents
 """
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
-import os
+from typing import Dict, Any, Optional, Type
 import asyncio
 import logging
-import google.generativeai as genai
-import instructor
+from pydantic import BaseModel
 from consultantos.config import settings
+from consultantos.llm.provider_manager import ProviderManager
+from consultantos.llm.cost_tracker import cost_tracker
 
 logger = logging.getLogger(__name__)
 
 
 class BaseAgent(ABC):
     """Base class for all agents"""
-    
+
+    # Class-level provider manager (shared across all agents)
+    _provider_manager: Optional[ProviderManager] = None
+
     def __init__(
         self,
         name: str,
-        model: str = "gemini-2.0-flash-exp",
-        timeout: int = 60
+        timeout: int = 60,
+        task_type: str = "analytical"
     ) -> None:
         """
         Initialize base agent
-        
+
         Args:
             name: Agent name/identifier
-            model: LLM model to use
             timeout: Per-agent timeout in seconds (default: 60s)
+            task_type: Task type hint for capability-based routing
+                      (creative, analytical, speed, synthesis, reasoning)
         """
         self.name = name
-        self.model = model
         self.timeout = timeout
-        self.api_key = settings.gemini_api_key or os.getenv("GEMINI_API_KEY")
-        
-        if not self.api_key:
-            raise ValueError(f"GEMINI_API_KEY not found for {name}")
-        
-        # Configure Gemini client
-        genai.configure(api_key=self.api_key)
-        self.client = genai.GenerativeModel(self.model)
-        
-        # Patch with Instructor for structured outputs
-        try:
-            self.structured_client = instructor.from_gemini(
-                client=self.client,
-                mode=instructor.Mode.GEMINI_JSON
+        self.task_type = task_type
+
+        # Initialize provider manager if not already initialized
+        if BaseAgent._provider_manager is None:
+            BaseAgent._provider_manager = ProviderManager(
+                gemini_api_key=settings.gemini_api_key,
+                openai_api_key=settings.openai_api_key,
+                anthropic_api_key=settings.anthropic_api_key,
+                primary_provider=settings.primary_llm_provider,
+                enable_fallback=settings.enable_llm_fallback,
+                routing_strategy=settings.llm_routing_strategy
             )
-        except (NotImplementedError, AttributeError) as e:
-            # Fallback if instructor doesn't support this mode
-            logger.warning(f"GEMINI_JSON mode not available, falling back to JSON mode: {e}")
-            try:
-                self.structured_client = instructor.from_gemini(
-                    client=self.client,
-                    mode=instructor.Mode.JSON
-                )
-            except Exception:
-                # Final fallback - use patch
-                self.structured_client = instructor.patch(
-                    self.client,
-                    mode=instructor.Mode.JSON
-                )
+
+            # Set cost budgets if configured
+            if settings.llm_daily_budget:
+                cost_tracker.set_daily_budget(settings.llm_daily_budget)
+            if settings.llm_monthly_budget:
+                cost_tracker.set_monthly_budget(settings.llm_monthly_budget)
+
+        self.llm = BaseAgent._provider_manager
     
+    async def generate_structured(
+        self,
+        prompt: str,
+        response_model: Type[BaseModel],
+        temperature: float = 0.7,
+        max_tokens: int = 4000,
+        user_id: Optional[str] = None,
+        analysis_id: Optional[str] = None
+    ) -> BaseModel:
+        """
+        Generate structured output using configured provider strategy.
+
+        Args:
+            prompt: Input prompt
+            response_model: Pydantic model for structured output
+            temperature: Sampling temperature
+            max_tokens: Maximum tokens to generate
+            user_id: Optional user identifier for cost tracking
+            analysis_id: Optional analysis identifier for cost tracking
+
+        Returns:
+            Structured response as instance of response_model
+
+        Raises:
+            Exception: If generation fails
+        """
+        # Use routing strategy from settings or task type hint
+        kwargs = {}
+        if settings.llm_routing_strategy == "capability":
+            kwargs["task_type"] = self.task_type
+
+        result = await self.llm.generate(
+            prompt=prompt,
+            response_model=response_model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs
+        )
+
+        # Track costs
+        provider_stats = self.llm.get_provider_stats()
+        for provider_name, stats in provider_stats.items():
+            if stats["total_requests"] > 0:
+                # Track most recently used provider
+                await cost_tracker.track_usage(
+                    provider=provider_name,
+                    model=self.llm.providers[provider_name].model,
+                    tokens_used=stats["tokens_used"],
+                    cost_per_1k_tokens=self.llm.providers[provider_name].get_cost_per_token(),
+                    user_id=user_id,
+                    analysis_id=analysis_id,
+                    agent_name=self.name
+                )
+                break
+
+        return result
+
     async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute agent task with timeout
-        
+
         Args:
             input_data: Input data for the agent
-        
+
         Returns:
             Agent execution result with at least these keys:
             - success: bool indicating if execution was successful
             - data: Any result data from the agent
             - error: Optional error message if success is False
-        
+
         Raises:
             asyncio.TimeoutError: If execution exceeds timeout
             Exception: Other execution errors

@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick'> {
   /** Card variant */
   variant?: 'default' | 'outlined' | 'elevated' | 'filled';
   /** Padding size */
@@ -13,6 +13,8 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   clickable?: boolean;
   /** Selected state */
   selected?: boolean;
+  /** Click handler - accepts both mouse and keyboard events */
+  onClick?: (e: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
 const variantClasses = {
@@ -75,7 +77,7 @@ export const Card: React.FC<CardProps> = ({
           ? (e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                onClick?.(e as any);
+                onClick?.(e);
               }
             }
           : undefined

@@ -83,17 +83,35 @@ export const Dropdown: React.FC<DropdownProps> = ({
   const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      const nextIndex = (index + 1) % items.length;
-      const nextItem = dropdownRef.current?.querySelectorAll('[role="menuitem"]')[nextIndex] as HTMLElement;
-      nextItem?.focus();
+      // Find next enabled item, wrapping around
+      let nextIndex = (index + 1) % items.length;
+      let attempts = 0;
+      while (items[nextIndex].disabled && attempts < items.length) {
+        nextIndex = (nextIndex + 1) % items.length;
+        attempts++;
+      }
+      if (!items[nextIndex].disabled) {
+        const nextItem = dropdownRef.current?.querySelectorAll('[role="menuitem"]')[nextIndex] as HTMLElement;
+        nextItem?.focus();
+      }
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      const prevIndex = index === 0 ? items.length - 1 : index - 1;
-      const prevItem = dropdownRef.current?.querySelectorAll('[role="menuitem"]')[prevIndex] as HTMLElement;
-      prevItem?.focus();
+      // Find previous enabled item, wrapping around
+      let prevIndex = index === 0 ? items.length - 1 : index - 1;
+      let attempts = 0;
+      while (items[prevIndex].disabled && attempts < items.length) {
+        prevIndex = prevIndex === 0 ? items.length - 1 : prevIndex - 1;
+        attempts++;
+      }
+      if (!items[prevIndex].disabled) {
+        const prevItem = dropdownRef.current?.querySelectorAll('[role="menuitem"]')[prevIndex] as HTMLElement;
+        prevItem?.focus();
+      }
     } else if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      handleItemClick(items[index]);
+      if (!items[index].disabled) {
+        handleItemClick(items[index]);
+      }
     }
   };
 
@@ -116,7 +134,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   const widthClasses = {
     auto: 'w-auto',
     full: 'w-full',
-    trigger: 'w-full',
+    trigger: 'w-auto', // Match trigger's intrinsic width
   };
 
   const defaultTrigger = (

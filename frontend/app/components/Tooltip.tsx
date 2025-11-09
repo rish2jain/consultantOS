@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useId } from 'react';
+import React, { useEffect, useRef, useState, useId, useCallback } from 'react';
 
 export interface TooltipProps {
   /** Tooltip content */
@@ -100,20 +100,24 @@ export const Tooltip: React.FC<TooltipProps> = ({
     setIsVisible(false);
   };
 
+  const memoizedCalculatePosition = useCallback(() => {
+    calculatePosition();
+  }, []); // Add any dependencies used inside calculatePosition
+
   useEffect(() => {
     if (isVisible) {
-      calculatePosition();
+      memoizedCalculatePosition();
 
       // Recalculate on window resize/scroll
-      window.addEventListener('resize', calculatePosition);
-      window.addEventListener('scroll', calculatePosition);
+      window.addEventListener('resize', memoizedCalculatePosition);
+      window.addEventListener('scroll', memoizedCalculatePosition);
 
       return () => {
-        window.removeEventListener('resize', calculatePosition);
-        window.removeEventListener('scroll', calculatePosition);
+        window.removeEventListener('resize', memoizedCalculatePosition);
+        window.removeEventListener('scroll', memoizedCalculatePosition);
       };
     }
-  }, [isVisible]);
+  }, [isVisible, memoizedCalculatePosition]);
 
   useEffect(() => {
     return () => {

@@ -93,12 +93,9 @@ class MarketAgent(BaseAgent):
         """
         
         try:
-            result = self.structured_client.create(
-                response_model=MarketTrends,
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
+            result = await self.generate_structured(
+                prompt=prompt,
+                response_model=MarketTrends
             )
             return result
         except Exception as e:

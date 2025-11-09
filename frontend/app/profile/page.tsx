@@ -179,11 +179,22 @@ export default function ProfilePage() {
     setError('');
 
     try {
-      // This would call an actual API endpoint to generate a new key
-      // For now, we'll simulate it
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call backend API to generate a cryptographically secure key
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/auth/api-keys`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
 
-      const newKey = 'sk_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      if (!response.ok) {
+        throw new Error('Failed to generate API key');
+      }
+
+      const data = await response.json();
+      const newKey = data.api_key;
 
       setApiKeyData({
         key: newKey,

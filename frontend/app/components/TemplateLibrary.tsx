@@ -8,6 +8,7 @@ import { TemplateCreator, TemplateFormData } from './TemplateCreator';
 import { Button } from './Button';
 import { Input } from './Input';
 import { InlineLoading } from './Spinner';
+import { Alert } from './Alert';
 import { Grid, List, Plus, Search, Filter, X } from 'lucide-react';
 
 export interface TemplateLibraryProps {
@@ -39,6 +40,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCreatorModal, setShowCreatorModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const itemsPerPage = 12;
 
@@ -149,11 +151,14 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       // Add forked template to list
       setTemplates([forkedTemplate, ...templates]);
 
-      // Show success message or notification
-      alert('Template forked successfully!');
+      // Show success notification
+      setNotification({ type: 'success', message: 'Template forked successfully!' });
+      setTimeout(() => setNotification(null), 5000);
     } catch (error) {
       console.error('Error forking template:', error);
-      alert('Failed to fork template. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fork template. Please try again.';
+      setNotification({ type: 'error', message: errorMessage });
+      setTimeout(() => setNotification(null), 5000);
     }
   };
 
@@ -178,12 +183,32 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       setTemplates([newTemplate, ...templates]);
 
       setShowCreatorModal(false);
+      setNotification({ type: 'success', message: 'Template created successfully!' });
+      setTimeout(() => setNotification(null), 5000);
     } catch (error) {
       console.error('Error creating template:', error);
-      alert('Failed to create template. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create template. Please try again.';
+      setNotification({ type: 'error', message: errorMessage });
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Render notification if present
+  const renderNotification = () => {
+    if (!notification) return null;
+    return (
+      <div className="mb-4">
+        <Alert
+          variant={notification.type}
+          description={notification.message}
+          dismissible
+          onClose={() => setNotification(null)}
+          autoDismiss={5000}
+        />
+      </div>
+    );
   };
 
   // Empty state
@@ -191,6 +216,9 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Notification */}
+      {renderNotification()}
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
