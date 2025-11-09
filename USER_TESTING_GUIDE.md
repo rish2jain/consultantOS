@@ -18,6 +18,9 @@ This guide provides testing scenarios for ConsultantOS hackathon demonstration. 
 - Health checks and monitoring
 - User registration and authentication
 - API key management
+- **Knowledge base** (search across all analyses, timelines, connections)
+- **Custom frameworks builder** (create and share analysis frameworks)
+- **Saved searches** (save and auto-run analysis configurations)
 
 ### What's Disabled for Hackathon ⚠️
 
