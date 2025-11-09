@@ -47,8 +47,8 @@ If you prefer to do it manually or the scripts don't work:
 
 ```bash
 # Check if keys exist in current files
-git grep "AIzaSyBrKM5_cvn9fyQfZ2j8RT4BTwaVzEx9RSk" || echo "✅ Not found"
-git grep "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" || echo "✅ Not found"
+git grep "***REMOVED***" || echo "✅ Not found"
+git grep "***REMOVED***" || echo "✅ Not found"
 ```
 
 ### Step 2: Remove from Git History
@@ -74,8 +74,8 @@ git gc --prune=now --aggressive
 ```bash
 # 1. Create replacement file
 cat > /tmp/replacements.txt << EOF
-AIzaSyBrKM5_cvn9fyQfZ2j8RT4BTwaVzEx9RSk===>***REMOVED***
-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===>***REMOVED***
+***REMOVED***===>***REMOVED***
+***REMOVED***===>***REMOVED***
 EOF
 
 # 2. Clone a fresh mirror
@@ -103,8 +103,8 @@ git reset --hard origin/main  # or origin/master
 git log --all --full-history --source -- '*SECURITY_AUDIT_REPORT.md' | grep -i "AIzaSy\|tvly-dev" || echo "✅ Keys removed from history"
 
 # Search entire history
-git log --all -S "AIzaSyBrKM5_cvn9fyQfZ2j8RT4BTwaVzEx9RSk" || echo "✅ Not found in history"
-git log --all -S "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" || echo "✅ Not found in history"
+git log --all -S "***REMOVED***" || echo "✅ Not found in history"
+git log --all -S "***REMOVED***" || echo "✅ Not found in history"
 ```
 
 ### Step 4: Force Push (Coordinate with Team!)
@@ -149,8 +149,8 @@ If the repository is already public and you want help:
 
 After cleanup, verify:
 
-- [ ] Keys not found in current codebase: `git grep "AIzaSyBrKM5_cvn9fyQfZ2j8RT4BTwaVzEx9RSk"`
-- [ ] Keys not found in git history: `git log --all -S "AIzaSyBrKM5_cvn9fyQfZ2j8RT4BTwaVzEx9RSk"`
+- [ ] Keys not found in current codebase: `git grep "***REMOVED***"`
+- [ ] Keys not found in git history: `git log --all -S "***REMOVED***"`
 - [ ] `.env` is in `.gitignore`: `grep "^\.env$" .gitignore`
 - [ ] Team members notified and re-cloned
 - [ ] Remote repository updated

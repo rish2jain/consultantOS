@@ -20,8 +20,8 @@ if [ "$confirm" != "yes" ]; then
 fi
 
 # Exposed keys to remove
-GEMINI_KEY="AIzaSyBrKM5_cvn9fyQfZ2j8RT4BTwaVzEx9RSk"
-TAVILY_KEY="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"
+GEMINI_KEY="***REMOVED***"
+TAVILY_KEY="***REMOVED***"
 
 echo ""
 echo "🔍 Checking if keys exist in current codebase..."

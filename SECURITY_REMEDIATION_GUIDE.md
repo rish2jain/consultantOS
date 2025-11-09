@@ -149,8 +149,8 @@ brew install bfg  # macOS
 # or download from: https://rtyley.github.io/bfg-repo-cleaner/
 
 # Create a file with keys to remove
-echo "AIzaSyBrKM5_cvn9fyQfZ2j8RT4BTwaVzEx9RSk" > keys-to-remove.txt
-echo "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" >> keys-to-remove.txt
+echo "***REMOVED***" > keys-to-remove.txt
+echo "***REMOVED***" >> keys-to-remove.txt
 
 # Remove keys from history
 bfg --replace-text keys-to-remove.txt
@@ -210,8 +210,8 @@ Update your local `.env` file with new keys (never commit this file).
 
 ```bash
 # Verify keys are removed from current codebase
-git grep -i "AIzaSyBrKM5_cvn9fyQfZ2j8RT4BTwaVzEx9RSk" || echo "✅ Key not found in current code"
-git grep -i "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" || echo "✅ Key not found in current code"
+git grep -i "***REMOVED***" || echo "✅ Key not found in current code"
+git grep -i "***REMOVED***" || echo "✅ Key not found in current code"
 ```
 
 ### Test Application
