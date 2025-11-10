@@ -57,6 +57,9 @@ class VerifyEmailRequest(BaseModel):
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(request: RegisterRequest):
     """Register a new user account"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         user_info = create_user(
             email=request.email,
@@ -66,13 +69,17 @@ async def register(request: RegisterRequest):
         # Send verification email (or log for dev)
         verification_token = user_info.get("verification_token")
         if verification_token:
-            from consultantos.services.email_service import get_email_service
-            email_service = get_email_service()
-            email_service.send_email(
-                to=request.email,
-                subject="Verify your ConsultantOS account",
-                body=f"Please verify your email using this token: {verification_token}"
-            )
+            try:
+                from consultantos.services.email_service import get_email_service
+                email_service = get_email_service()
+                email_service.send_email(
+                    to=request.email,
+                    subject="Verify your ConsultantOS account",
+                    body=f"Please verify your email using this token: {verification_token}"
+                )
+            except Exception as email_error:
+                # Log email error but don't fail registration
+                logger.warning(f"Failed to send verification email: {email_error}")
         
         return {
             "message": "User registered successfully. Please check your email for verification.",
@@ -82,9 +89,20 @@ async def register(request: RegisterRequest):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Registration failed for {request.email}: {e}", exc_info=True)
+        # Provide more detailed error message
+        error_detail = str(e)
+        if "database" in error_detail.lower() or "connection" in error_detail.lower():
+            error_detail = "Database connection error. Please try again later."
+        elif "email" in error_detail.lower() and "exists" in error_detail.lower():
+            # This should be caught by create_user, but handle it anyway
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists"
+            )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Registration failed: {str(e)}"
+            detail=f"Registration failed: {error_detail}"
         )
 
 

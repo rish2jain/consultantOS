@@ -409,6 +409,13 @@ class PrometheusMetrics:
         """Set queue size."""
         self.queue_size.labels(queue_name=queue_name).set(size)
 
+    def track_job_status(self, status: str, increment: int = 1) -> None:
+        """Track job status changes (for compatibility with log_utils)."""
+        # Use the jobs_total counter with status as the job_type
+        # This maintains compatibility with existing code
+        for _ in range(increment):
+            self.jobs_total.labels(job_type="analysis", status=status).inc()
+
     # ===== Error Metrics Methods =====
 
     def record_error(self, error_type: str, component: str) -> None:
