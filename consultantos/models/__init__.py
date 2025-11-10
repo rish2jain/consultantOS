@@ -40,6 +40,13 @@ from consultantos.models.templates import (
     TemplateCategory,
     TemplateVisibility
 )
+from consultantos.models.decisions import (
+    DecisionOption,
+    StrategicDecision,
+    DecisionBrief,
+    DecisionUrgency,
+    DecisionCategory
+)
 from consultantos.models.versioning import (
     ReportVersion,
     VersionHistory,
@@ -135,6 +142,53 @@ from consultantos.models.financial_indicators import (
     SectorPerformance,
     EconomicIndicators,
     ComprehensiveFinancialData,
+)
+
+# Strategic Intelligence Models
+from consultantos.models.positioning import (
+    CompetitivePosition,
+    PositionTrajectory,
+    StrategicGroup,
+    WhiteSpaceOpportunity,
+    PositionThreat,
+    DynamicPositioning,
+    PositioningAnalysis
+)
+
+# Disruption Analysis Models
+from consultantos.models.disruption import (
+    DisruptionThreat,
+    DisruptionAssessment,
+    VulnerabilityBreakdown,
+    TechnologyTrend,
+    CustomerJobMisalignment,
+    BusinessModelShift,
+    DisruptionScoreComponents
+)
+from consultantos.models.decisions import (
+    DecisionUrgency,
+    DecisionCategory,
+    DecisionOption,
+    StrategicDecision,
+    DecisionBrief
+)
+from consultantos.models.systems import (
+    LoopType,
+    CausalLink,
+    FeedbackLoop,
+    LeveragePoint,
+    SystemDynamicsAnalysis
+)
+from consultantos.models.momentum import (
+    MomentumMetric,
+    FlywheelVelocity,
+    MomentumAnalysis
+)
+from consultantos.models.strategic_intelligence import (
+    StrategicHealthScore,
+    EnhancedStrategicReport as SI_EnhancedReport,
+    StrategicInsight,
+    GeographicExpansionOpportunity
 )
 
 __all__ = [
@@ -243,5 +297,42 @@ __all__ = [
     "SectorPerformance",
     "EconomicIndicators",
     "ComprehensiveFinancialData",
+    # Strategic Intelligence - Positioning
+    "CompetitivePosition",
+    "PositionTrajectory",
+    "StrategicGroup",
+    "WhiteSpaceOpportunity",
+    "PositionThreat",
+    "DynamicPositioning",
+    "PositioningAnalysis",
+    # Strategic Intelligence - Disruption
+    "DisruptionThreat",
+    "VulnerabilityBreakdown",
+    "TechnologyTrend",
+    "CustomerJobMisalignment",
+    "BusinessModelShift",
+    "DisruptionAssessment",
+    "DisruptionScoreComponents",
+    # Strategic Intelligence - Decisions
+    "DecisionUrgency",
+    "DecisionCategory",
+    "DecisionOption",
+    "StrategicDecision",
+    "DecisionBrief",
+    # Strategic Intelligence - Systems
+    "LoopType",
+    "CausalLink",
+    "FeedbackLoop",
+    "LeveragePoint",
+    "SystemDynamicsAnalysis",
+    # Strategic Intelligence - Momentum
+    "MomentumMetric",
+    "FlywheelVelocity",
+    "MomentumAnalysis",
+    # Strategic Intelligence - Reports
+    "StrategicHealthScore",
+    "SI_EnhancedReport",
+    "StrategicInsight",
+    "GeographicExpansionOpportunity",
 ]
 

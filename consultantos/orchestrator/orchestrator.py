@@ -12,8 +12,35 @@ from consultantos.agents import (
     MarketAgent,
     FinancialAgent,
     FrameworkAgent,
-    SynthesisAgent
+    SynthesisAgent,
+    DecisionIntelligenceEngine,
+    is_agent_available
 )
+
+# Strategic Intelligence agents (Phase 4 - with graceful degradation)
+try:
+    from consultantos.agents.positioning_agent import PositioningAgent
+    _POSITIONING_AVAILABLE = True
+except (ImportError, Exception) as e:
+    logger.warning(f"PositioningAgent not available: {e}")
+    PositioningAgent = None
+    _POSITIONING_AVAILABLE = False
+
+try:
+    from consultantos.agents.disruption_agent import DisruptionAgent
+    _DISRUPTION_AVAILABLE = True
+except (ImportError, Exception) as e:
+    logger.warning(f"DisruptionAgent not available: {e}")
+    DisruptionAgent = None
+    _DISRUPTION_AVAILABLE = False
+
+try:
+    from consultantos.agents.systems_agent import SystemsAgent
+    _SYSTEMS_AVAILABLE = True
+except (ImportError, Exception) as e:
+    logger.warning(f"SystemsAgent not available: {e}")
+    SystemsAgent = None
+    _SYSTEMS_AVAILABLE = False
 from consultantos.cache import cache_key, semantic_cache_lookup, semantic_cache_store
 
 # Initialize logger first
@@ -62,28 +89,45 @@ ExecutiveSummary = models.ExecutiveSummary
 
 class AnalysisOrchestrator:
     """Orchestrates multi-agent analysis workflow"""
-    
+
     def __init__(self) -> None:
         """Initialize orchestrator with all agent instances."""
+        # Phase 1: Data Gathering
         self.research_agent = ResearchAgent()
         self.market_agent = MarketAgent()
         self.financial_agent = FinancialAgent()
+
+        # Phase 2: Framework Analysis
         self.framework_agent = FrameworkAgent()
+
+        # Phase 3: Synthesis
         self.synthesis_agent = SynthesisAgent()
+
+        # Phase 4: Strategic Intelligence (conditional)
+        self.positioning_agent = PositioningAgent() if _POSITIONING_AVAILABLE else None
+        self.disruption_agent = DisruptionAgent() if _DISRUPTION_AVAILABLE else None
+        self.systems_agent = SystemsAgent() if _SYSTEMS_AVAILABLE else None
+
+        # Phase 5: Decision Intelligence
+        self.decision_intelligence = DecisionIntelligenceEngine()
     
-    async def execute(self, request: AnalysisRequest) -> StrategicReport:
+    async def execute(self, request: AnalysisRequest, enable_strategic_intelligence: bool = True) -> StrategicReport:
         """
         Execute complete analysis workflow
-        
+
         Phase 1: Parallel data gathering (Research, Market, Financial)
-        Phase 2: Sequential analysis (Framework → Synthesis)
-        
+        Phase 2: Framework analysis
+        Phase 3: Synthesis
+        Phase 4: Strategic Intelligence (Positioning, Disruption, Systems) - Optional
+        Phase 5: Decision Intelligence - Optional
+
         Args:
             request: Analysis request containing company info and framework selection
-            
+            enable_strategic_intelligence: Enable Phase 4 & 5 advanced intelligence (default: True)
+
         Returns:
             Complete strategic report with all analysis phases
-            
+
         Raises:
             Exception: If all Phase 1 agents fail or orchestration fails
         """
@@ -114,22 +158,41 @@ class AnalysisOrchestrator:
             try:
                 # Phase 1: Parallel data gathering
                 phase1_results = await self._execute_parallel_phase(request)
-                
+
                 # Phase 2: Sequential framework analysis
                 framework_results = await self._execute_framework_phase(
                     request, phase1_results
                 )
-                
+
                 # Phase 3: Synthesis
                 synthesis_results = await self._execute_synthesis_phase(
                     request, phase1_results, framework_results
                 )
-                
+
+                # Phase 4: Strategic Intelligence (conditional)
+                strategic_intelligence_results = None
+                if enable_strategic_intelligence:
+                    strategic_intelligence_results = await self._execute_strategic_intelligence_phase(
+                        request, phase1_results, framework_results
+                    )
+
+                # Phase 5: Decision Intelligence (conditional)
+                decision_intelligence_results = None
+                if enable_strategic_intelligence and strategic_intelligence_results:
+                    decision_intelligence_results = await self._execute_decision_intelligence_phase(
+                        request, phase1_results, framework_results, strategic_intelligence_results
+                    )
+
                 # Assemble final report
                 report = self._assemble_report(
-                    request, phase1_results, framework_results, synthesis_results
+                    request,
+                    phase1_results,
+                    framework_results,
+                    synthesis_results,
+                    strategic_intelligence_results,
+                    decision_intelligence_results
                 )
-                
+
                 # Store in semantic cache
                 await semantic_cache_store(
                     request.company,
@@ -137,9 +200,9 @@ class AnalysisOrchestrator:
                     cache_key_str,
                     report
                 )
-                
+
                 return report
-            
+
             except Exception as e:
                 raise Exception(f"Orchestration failed: {str(e)}")
     
@@ -285,17 +348,17 @@ class AnalysisOrchestrator:
                 "errors": {"framework": str(e)}
             }
     
-    async def _execute_synthesis_phase(self, request: AnalysisRequest, 
+    async def _execute_synthesis_phase(self, request: AnalysisRequest,
                                        phase1_results: Dict[str, Any],
                                        phase2_results: Dict[str, Any]) -> ExecutiveSummary:
         """
         Execute Phase 3: Synthesis
-        
+
         Args:
             request: Original analysis request
             phase1_results: Results from parallel data gathering phase
             phase2_results: Results from framework analysis phase
-            
+
         Returns:
             Executive summary synthesizing all analysis results
         """
@@ -307,23 +370,151 @@ class AnalysisOrchestrator:
             "financial": phase1_results.get("financial"),
             "frameworks": phase2_results.get("frameworks")
         }
-        
+
         synthesis = await self.synthesis_agent.execute(input_data)
         return synthesis
+
+    async def _execute_strategic_intelligence_phase(
+        self,
+        request: AnalysisRequest,
+        phase1_results: Dict[str, Any],
+        framework_results: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Execute Phase 4: Strategic Intelligence (Positioning, Disruption, Systems)
+
+        Runs advanced intelligence agents with graceful degradation.
+
+        Args:
+            request: Original analysis request
+            phase1_results: Results from Phase 1 data gathering
+            framework_results: Results from Phase 2 framework analysis
+
+        Returns:
+            Dictionary containing positioning, disruption, and systems analysis (or None if unavailable)
+        """
+        strategic_intelligence = {}
+
+        # Prepare shared input data
+        input_data = {
+            "company": request.company,
+            "industry": request.industry,
+            "market_data": phase1_results.get("market"),
+            "financial_data": phase1_results.get("financial"),
+            "research_data": phase1_results.get("research"),
+            "competitors": [],  # TODO: Extract from research or pass separately
+            "historical_snapshots": []  # TODO: Fetch from monitoring system if available
+        }
+
+        # Execute Positioning Agent (async)
+        if self.positioning_agent:
+            try:
+                positioning_result = await self._safe_execute_agent(
+                    self.positioning_agent, input_data, "positioning_agent"
+                )
+                strategic_intelligence["positioning"] = positioning_result
+            except Exception as e:
+                logger.warning(f"Positioning agent failed: {e}")
+                strategic_intelligence["positioning"] = None
+
+        # Execute Disruption Agent (async)
+        if self.disruption_agent:
+            try:
+                disruption_result = await self._safe_execute_agent(
+                    self.disruption_agent, input_data, "disruption_agent"
+                )
+                strategic_intelligence["disruption"] = disruption_result
+            except Exception as e:
+                logger.warning(f"Disruption agent failed: {e}")
+                strategic_intelligence["disruption"] = None
+
+        # Execute Systems Agent (async)
+        if self.systems_agent:
+            try:
+                systems_result = await self._safe_execute_agent(
+                    self.systems_agent, input_data, "systems_agent"
+                )
+                strategic_intelligence["systems"] = systems_result
+            except Exception as e:
+                logger.warning(f"Systems agent failed: {e}")
+                strategic_intelligence["systems"] = None
+
+        # Return None if all agents failed
+        if not any(strategic_intelligence.values()):
+            logger.warning("All strategic intelligence agents failed or unavailable")
+            return None
+
+        logger.info(f"Phase 4 completed with {len([v for v in strategic_intelligence.values() if v])} agents")
+        return strategic_intelligence
+
+    async def _execute_decision_intelligence_phase(
+        self,
+        request: AnalysisRequest,
+        phase1_results: Dict[str, Any],
+        framework_results: Dict[str, Any],
+        strategic_intelligence_results: Dict[str, Any]
+    ) -> Optional[Any]:
+        """
+        Execute Phase 5: Decision Intelligence
+
+        Transform all analyses into actionable decision briefs.
+
+        Args:
+            request: Original analysis request
+            phase1_results: Results from Phase 1
+            framework_results: Results from Phase 2
+            strategic_intelligence_results: Results from Phase 4
+
+        Returns:
+            DecisionBrief with prioritized strategic decisions (or None if failed)
+        """
+        if not self.decision_intelligence:
+            logger.warning("Decision Intelligence Engine not available")
+            return None
+
+        try:
+            input_data = {
+                "company": request.company,
+                "industry": request.industry,
+                "frameworks": framework_results.get("frameworks"),
+                "market_data": phase1_results.get("market"),
+                "financial_data": phase1_results.get("financial"),
+                "research_data": phase1_results.get("research"),
+                "positioning": strategic_intelligence_results.get("positioning") if strategic_intelligence_results else None,
+                "disruption": strategic_intelligence_results.get("disruption") if strategic_intelligence_results else None,
+                "systems": strategic_intelligence_results.get("systems") if strategic_intelligence_results else None
+            }
+
+            decision_brief = await self.decision_intelligence.execute(input_data)
+            logger.info(f"Phase 5 completed with {len(decision_brief.top_decisions if hasattr(decision_brief, 'top_decisions') else [])} decisions")
+            return decision_brief
+
+        except Exception as e:
+            logger.error(f"Decision Intelligence phase failed: {e}", exc_info=True)
+            return None
     
-    def _assemble_report(self, request: AnalysisRequest, phase1_results: Dict[str, Any],
-                        phase2_results: Dict[str, Any], synthesis: ExecutiveSummary) -> StrategicReport:
+    def _assemble_report(
+        self,
+        request: AnalysisRequest,
+        phase1_results: Dict[str, Any],
+        phase2_results: Dict[str, Any],
+        synthesis: ExecutiveSummary,
+        strategic_intelligence_results: Optional[Dict[str, Any]] = None,
+        decision_intelligence_results: Optional[Any] = None
+    ) -> StrategicReport:
         """
         Assemble final strategic report
-        
+
         Includes metadata about partial results if any agents failed
-        
+
         Args:
             request: Original analysis request
             phase1_results: Results from Phase 1
             phase2_results: Results from Phase 2
             synthesis: Executive summary from Phase 3
-            
+            strategic_intelligence_results: Results from Phase 4 (optional)
+            decision_intelligence_results: Results from Phase 5 (optional)
+
         Returns:
             Complete strategic report with all components and metadata
         """
@@ -358,10 +549,21 @@ class AnalysisOrchestrator:
             "frameworks_requested": request.frameworks,
             "depth": request.depth,
             "partial_results": len(all_errors) > 0,
-            "errors": all_errors if all_errors else None
+            "errors": all_errors if all_errors else None,
+            "strategic_intelligence_enabled": strategic_intelligence_results is not None,
+            "decision_intelligence_enabled": decision_intelligence_results is not None
         }
-        
-        # Create report
+
+        # Extract strategic intelligence components if available
+        positioning = None
+        disruption = None
+        systems = None
+        if strategic_intelligence_results:
+            positioning = strategic_intelligence_results.get("positioning")
+            disruption = strategic_intelligence_results.get("disruption")
+            systems = strategic_intelligence_results.get("systems")
+
+        # Create report (check if StrategicReport supports new fields)
         report = StrategicReport(
             executive_summary=synthesis,
             company_research=phase1_results.get("research"),
@@ -371,7 +573,18 @@ class AnalysisOrchestrator:
             recommendations=recommendations,
             metadata=metadata
         )
-        
+
+        # Add strategic intelligence fields if the model supports them
+        # (These would be added to StrategicReport model separately)
+        if hasattr(report, "competitive_positioning"):
+            report.competitive_positioning = positioning
+        if hasattr(report, "disruption_assessment"):
+            report.disruption_assessment = disruption
+        if hasattr(report, "system_dynamics"):
+            report.system_dynamics = systems
+        if hasattr(report, "decision_brief"):
+            report.decision_brief = decision_intelligence_results
+
         return report
     
     async def execute_comprehensive_analysis(
