@@ -16,6 +16,9 @@ import {
   Search,
   Settings,
   HelpCircle,
+  BarChart3,
+  Sparkles,
+  Plus,
 } from 'lucide-react';
 import { NotificationCenter, Button, Badge } from './';
 import { clearApiKey } from '@/lib/auth';
@@ -64,10 +67,12 @@ export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
   // Navigation links
   const navLinks: NavLink[] = [
     { href: '/', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+    { href: '/mvp-demo', label: 'MVP Demo', icon: <Sparkles size={20} /> },
     { href: '/analysis', label: 'Create Analysis', icon: <FileText size={20} /> },
     { href: '/reports', label: 'Reports', icon: <FolderOpen size={20} /> },
     { href: '/jobs', label: 'Jobs', icon: <Briefcase size={20} /> },
     { href: '/templates', label: 'Templates', icon: <FolderOpen size={20} /> },
+    { href: '/analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
   ];
 
   // User menu items
@@ -139,8 +144,17 @@ export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
             </div>
           </div>
 
-          {/* Right side - Notifications and user menu */}
+          {/* Right side - New Analysis button, Notifications and user menu */}
           <div className="flex items-center space-x-4">
+            {/* + New Analysis button (desktop only) */}
+            <Button
+              onClick={() => router.push('/analysis')}
+              className="hidden md:flex items-center bg-blue-600 text-white hover:bg-blue-700"
+              aria-label="Create new analysis"
+            >
+              <Plus size={16} className="mr-1.5" aria-hidden="true" />
+              New Analysis
+            </Button>
             {/* Search (desktop only) */}
             <button
               onClick={() => router.push('/reports')}

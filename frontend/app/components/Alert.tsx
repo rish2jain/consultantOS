@@ -52,7 +52,7 @@ const variantConfig = {
     container: 'bg-red-50 border-red-200',
     icon: 'text-red-600',
     title: 'text-red-900',
-    description: 'text-red-700',
+    description: 'text-red-800',
     IconComponent: XCircle,
   },
 };

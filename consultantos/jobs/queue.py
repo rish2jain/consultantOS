@@ -6,7 +6,7 @@ import logging
 from enum import Enum
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from consultantos_core import database as core_db, models as core_models
+from consultantos import database, models
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +25,13 @@ class JobQueue:
     
     def __init__(self):
         # Get fresh database service reference to ensure it's initialized
-        self.db_service = core_db.get_db_service()
+        self.db_service = database.get_db_service()
         if self.db_service is None:
             logger.warning("JobQueue initialized with None db_service")
     
     async def enqueue(
         self,
-        analysis_request: core_models.AnalysisRequest,
+        analysis_request: models.AnalysisRequest,
         user_id: Optional[str] = None
     ) -> str:
         """
@@ -59,7 +59,7 @@ class JobQueue:
         try:
             # Store in database (would use proper job table in production)
             # For now, use report metadata table with job prefix
-            job_record = core_db.ReportMetadata(
+            job_record = database.ReportMetadata(
                 report_id=f"job_{job_id}",
                 user_id=user_id,
                 company=analysis_request.company,
@@ -236,7 +236,7 @@ class JobQueue:
 
 
 # Convenience functions
-AnalysisRequest = core_models.AnalysisRequest
+AnalysisRequest = models.AnalysisRequest
 
 
 async def create_job(analysis_request: AnalysisRequest, user_id: Optional[str] = None) -> str:

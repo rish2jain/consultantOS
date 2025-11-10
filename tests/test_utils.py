@@ -498,6 +498,167 @@ class TestRetry:
         
         with pytest.raises(Exception, match="Always fails"):
             await retry_with_backoff(failing_func, max_retries=3, initial_delay=0.1)
-        
+
         assert call_count == 3
+
+
+# ============================================================================
+# FAKER-ENHANCED PROPERTY-BASED TESTS
+# ============================================================================
+
+@pytest.mark.property
+class TestValidatorsWithFaker:
+    """Property-based tests for validators using Faker"""
+
+    def test_validate_company_with_faker_companies(self, factory):
+        """Test validator with Faker-generated company names"""
+        # Generate 50 realistic company names
+        for _ in range(50):
+            company = factory.fake.company()
+            # Should not raise exception for realistic names
+            result = AnalysisRequestValidator.validate_company(company)
+            assert isinstance(result, str)
+            assert len(result) >= 2
+            assert len(result) <= 200
+
+    def test_validate_company_edge_cases(self, edge_case_companies):
+        """Test validator with edge case company names"""
+        # Min length - should pass
+        result = AnalysisRequestValidator.validate_company(edge_case_companies["min_length"])
+        assert result == edge_case_companies["min_length"]
+
+        # Max length - should pass
+        result = AnalysisRequestValidator.validate_company(edge_case_companies["max_length"])
+        assert len(result) == 200
+
+        # Empty - should fail
+        with pytest.raises(ValueError, match="required"):
+            AnalysisRequestValidator.validate_company(edge_case_companies["empty"])
+
+        # Too short - should fail
+        with pytest.raises(ValueError, match="at least 2 characters"):
+            AnalysisRequestValidator.validate_company(edge_case_companies["too_short"])
+
+        # Too long - should fail
+        with pytest.raises(ValueError, match="too long"):
+            AnalysisRequestValidator.validate_company(edge_case_companies["too_long"])
+
+    def test_validate_industry_with_faker_industries(self, faker):
+        """Test industry validator with Faker-generated industries"""
+        for _ in range(50):
+            industry = faker.industry()
+            result = AnalysisRequestValidator.validate_industry(industry)
+            assert isinstance(result, str)
+            assert len(result) <= 200
+
+    def test_validate_frameworks_with_faker(self, faker):
+        """Test framework validator with Faker-generated frameworks"""
+        for _ in range(30):
+            frameworks = faker.frameworks()
+            result = AnalysisRequestValidator.validate_frameworks(frameworks)
+            assert len(result) >= 1
+            assert all(fw in ["porter", "swot", "pestel", "blue_ocean", "ansoff", "bcg_matrix", "value_chain"] for fw in result)
+
+    def test_validate_request_with_faker_data(self, sample_analysis_request):
+        """Test complete request validation with Faker data"""
+        request = AnalysisRequest(**sample_analysis_request)
+        validated = AnalysisRequestValidator.validate_request(request)
+
+        assert validated.company is not None
+        assert len(validated.company) >= 2
+        assert len(validated.frameworks) >= 1
+        assert validated.depth in ["quick", "standard", "deep"]
+
+    def test_validate_company_bulk_generation(self, factory):
+        """Test validator with bulk-generated companies"""
+        companies = [factory.fake.company() for _ in range(100)]
+
+        # All should validate successfully (or raise specific exceptions)
+        validated_count = 0
+        for company in companies:
+            try:
+                result = AnalysisRequestValidator.validate_company(company)
+                validated_count += 1
+                assert isinstance(result, str)
+            except ValueError as e:
+                # Only specific validation errors acceptable
+                assert any(msg in str(e) for msg in ["too long", "too short", "required"])
+
+        # Most Faker companies should validate successfully
+        assert validated_count > 90  # At least 90% success rate
+
+
+@pytest.mark.property
+class TestSanitizeWithFaker:
+    """Property-based tests for sanitization using Faker"""
+
+    def test_sanitize_input_with_faker_companies(self, factory):
+        """Test sanitization preserves valid company names"""
+        for _ in range(50):
+            company = factory.fake.company()
+            sanitized = sanitize_input(company)
+
+            # Should preserve most of the company name
+            assert isinstance(sanitized, str)
+            # Original company name words should be mostly present
+            words = [w for w in company.split() if len(w) > 2]
+            if words:
+                # At least one significant word should be preserved
+                assert any(word in sanitized for word in words)
+
+    def test_sanitize_input_with_malicious_payloads(self, faker):
+        """Test sanitization removes malicious content"""
+        malicious_patterns = [
+            "<script>alert(1)</script>",
+            "'; DROP TABLE users;--",
+            "../../../etc/passwd",
+            "\x00null_byte",
+            "javascript:alert(1)",
+        ]
+
+        for base_company in [faker.company() for _ in range(10)]:
+            for pattern in malicious_patterns:
+                malicious_input = f"{base_company}{pattern}"
+                sanitized = sanitize_input(malicious_input)
+
+                # Company name should be mostly preserved
+                assert base_company.split()[0] in sanitized or len(sanitized) > 0
+                # Malicious content should be removed
+                assert "<script>" not in sanitized
+                assert "javascript:" not in sanitized.lower()
+                assert "\x00" not in sanitized
+
+    def test_sanitize_dict_with_faker_data(self, sample_analysis_request):
+        """Test dict sanitization with Faker-generated data"""
+        sanitized = sanitize_dict(sample_analysis_request)
+
+        assert "company" in sanitized
+        assert "industry" in sanitized
+        assert "frameworks" in sanitized
+        assert isinstance(sanitized["frameworks"], list)
+
+    def test_sanitize_dict_preserves_structure(self, factory):
+        """Test sanitization preserves dictionary structure"""
+        # Generate 20 complex nested structures
+        for _ in range(20):
+            data = {
+                "company": factory.fake.company(),
+                "industry": factory.fake.industry(),
+                "frameworks": factory.fake.frameworks(),
+                "metadata": {
+                    "user": factory.fake.name(),
+                    "timestamp": factory.fake.date_time().isoformat(),
+                    "nested": {
+                        "deep_value": factory.fake.catch_phrase()
+                    }
+                }
+            }
+
+            sanitized = sanitize_dict(data)
+
+            # Structure should be preserved
+            assert isinstance(sanitized["frameworks"], list)
+            assert isinstance(sanitized["metadata"], dict)
+            assert "nested" in sanitized["metadata"]
+            assert "deep_value" in sanitized["metadata"]["nested"]
 

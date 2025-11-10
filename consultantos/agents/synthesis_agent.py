@@ -5,8 +5,8 @@ from typing import Dict, Any
 from consultantos.agents.base_agent import BaseAgent
 from consultantos.models import ExecutiveSummary
 from consultantos.prompts import SYNTHESIS_PROMPT_TEMPLATE
-import logging
-logger = logging.getLogger(__name__)
+import structlog
+logger = structlog.get_logger(__name__)
 
 
 class SynthesisAgent(BaseAgent):
@@ -14,8 +14,7 @@ class SynthesisAgent(BaseAgent):
     
     def __init__(self):
         super().__init__(
-            name="synthesis_agent",
-            model="gemini-2.0-flash-exp"
+            name="synthesis_agent"
         )
         self.instruction = """
         You are a synthesis specialist.

@@ -158,3 +158,108 @@ def create_trend_chart_figure(trend_data: Dict[str, Any]) -> go.Figure:
     
     return fig
 
+
+def create_risk_heatmap_figure(risks: list, risk_heatmap: Dict[str, Any]) -> go.Figure:
+    """Generate risk heatmap (likelihood vs impact)"""
+    # Prepare data for heatmap
+    categories = ['High Impact', 'Medium Impact', 'Low Impact']
+    likelihood_levels = ['High Likelihood', 'Medium Likelihood', 'Low Likelihood']
+    
+    # Initialize matrix
+    z_data = [[0 for _ in range(3)] for _ in range(3)]
+    
+    # Map risk heatmap data to matrix
+    for i, likelihood in enumerate(['high', 'medium', 'low']):
+        for j, impact in enumerate(['high', 'medium', 'low']):
+            key = f"{likelihood}_likelihood_{impact}_impact"
+            if key in risk_heatmap:
+                items = risk_heatmap[key]
+                if isinstance(items, list):
+                    z_data[i][j] = len(items)
+                elif isinstance(items, (int, float)):
+                    z_data[i][j] = items
+    
+    fig = go.Figure(data=go.Heatmap(
+        z=z_data,
+        x=categories,
+        y=likelihood_levels,
+        colorscale='Reds',
+        showscale=True,
+        text=[[f"{z_data[i][j]} risks" for j in range(3)] for i in range(3)],
+        texttemplate='%{text}',
+        textfont={"size": 12}
+    ))
+    
+    fig.update_layout(
+        title="Risk Heatmap (Likelihood vs Impact)",
+        xaxis_title="Impact",
+        yaxis_title="Likelihood",
+        width=600,
+        height=400
+    )
+    
+    return fig
+
+
+def create_opportunity_prioritization_figure(opportunities: list) -> go.Figure:
+    """Generate opportunity prioritization chart (Impact vs Feasibility)"""
+    # Extract data
+    impact_values = [opp.impact_potential for opp in opportunities[:10]]  # Top 10
+    feasibility_values = [opp.feasibility for opp in opportunities[:10]]
+    titles = [opp.title[:30] for opp in opportunities[:10]]  # Truncate titles
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=feasibility_values,
+        y=impact_values,
+        mode='markers+text',
+        text=titles,
+        textposition="top center",
+        marker=dict(
+            size=[opp.priority_score * 2 for opp in opportunities[:10]],
+            color=[opp.priority_score for opp in opportunities[:10]],
+            colorscale='Viridis',
+            showscale=True,
+            colorbar=dict(title="Priority Score")
+        ),
+        name='Opportunities'
+    ))
+    
+    fig.update_layout(
+        title="Opportunity Prioritization (Impact vs Feasibility)",
+        xaxis_title="Feasibility (1-10)",
+        yaxis_title="Impact Potential (1-10)",
+        width=800,
+        height=600
+    )
+    
+    return fig
+
+
+def create_recommendations_timeline_figure(recommendations: Any) -> go.Figure:
+    """Generate timeline visualization for recommendations"""
+    timelines = ['Immediate', 'Short-term', 'Medium-term', 'Long-term']
+    counts = [
+        len(recommendations.immediate_actions),
+        len(recommendations.short_term_actions),
+        len(recommendations.medium_term_actions),
+        len(recommendations.long_term_actions)
+    ]
+    
+    fig = go.Figure(data=go.Bar(
+        x=timelines,
+        y=counts,
+        marker_color=['#ff4444', '#ffaa00', '#00aa00', '#0066cc']
+    ))
+    
+    fig.update_layout(
+        title="Recommendations by Timeline",
+        xaxis_title="Timeline",
+        yaxis_title="Number of Actions",
+        width=600,
+        height=400
+    )
+    
+    return fig
+

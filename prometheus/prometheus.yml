@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: consultantos-monitor
+    environment: development
+
+# Load alert rules
+rule_files:
+  - "/etc/prometheus/rules/alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ConsultantOS API
+  - job_name: "consultantos-api"
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ["localhost:8080"]
+    metrics_path: "/metrics"
+    params:
+      collect[]:
+        - default
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - localhost:9093

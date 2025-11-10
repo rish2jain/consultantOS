@@ -1,0 +1,284 @@
+"""
+Integration models for comprehensive analysis across all agents.
+
+These models support Phase 1 (core research), Phase 2 (advanced analytics),
+and Phase 3 (output generation) with graceful degradation when optional
+components are unavailable.
+"""
+from typing import Dict, List, Optional, Any
+from datetime import datetime
+from pydantic import BaseModel, Field
+from consultantos.models import (
+    CompanyResearch as ResearchResult,
+    MarketTrends as MarketTrendResult,
+    FinancialSnapshot,
+    FrameworkAnalysis,
+    ExecutiveSummary
+)
+
+
+class ComprehensiveAnalysisRequest(BaseModel):
+    """Request for comprehensive analysis using all available agents."""
+
+    # Required fields
+    company: str = Field(..., description="Company name to analyze")
+    industry: str = Field(..., description="Industry sector")
+
+    # Core analysis options (Phase 1)
+    frameworks: List[str] = Field(
+        default=["porter", "swot"],
+        description="Strategic frameworks to apply"
+    )
+    depth: str = Field(
+        default="standard",
+        description="Analysis depth: quick, standard, deep, exhaustive"
+    )
+
+    # Advanced analytics options (Phase 2)
+    enable_forecasting: bool = Field(
+        default=True,
+        description="Enable enhanced forecasting agent"
+    )
+    enable_social_media: bool = Field(
+        default=True,
+        description="Enable social media sentiment analysis"
+    )
+    enable_dark_data: bool = Field(
+        default=False,
+        description="Enable dark data analysis (requires special permissions)"
+    )
+    enable_wargaming: bool = Field(
+        default=False,
+        description="Enable competitive wargaming scenarios"
+    )
+    enable_conversational: bool = Field(
+        default=True,
+        description="Enable RAG-based conversational interface"
+    )
+
+    # Output options (Phase 3)
+    generate_dashboard: bool = Field(
+        default=True,
+        description="Generate interactive analytics dashboard"
+    )
+    generate_narratives: bool = Field(
+        default=True,
+        description="Generate persona-specific narratives"
+    )
+    narrative_personas: List[str] = Field(
+        default=["executive", "technical"],
+        description="Target personas for narratives"
+    )
+
+    # Additional options
+    forecast_horizon_days: int = Field(
+        default=90,
+        description="Forecasting horizon in days"
+    )
+    ticker: Optional[str] = Field(
+        default=None,
+        description="Stock ticker symbol (auto-detected if not provided)"
+    )
+
+
+class ForecastResult(BaseModel):
+    """Result from enhanced forecasting agent."""
+
+    metric_name: str
+    current_value: Optional[float] = None
+    forecast_horizon_days: int
+    scenarios: Dict[str, Any] = Field(default_factory=dict)
+    confidence_intervals: Dict[str, Any] = Field(default_factory=dict)
+    key_drivers: List[str] = Field(default_factory=list)
+    risk_factors: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SocialMediaInsight(BaseModel):
+    """Result from social media sentiment agent."""
+
+    overall_sentiment: str
+    sentiment_score: float
+    platform_breakdown: Dict[str, Any] = Field(default_factory=dict)
+    trending_topics: List[str] = Field(default_factory=list)
+    key_influencers: List[Dict[str, Any]] = Field(default_factory=list)
+    reddit_insights: Optional[Dict[str, Any]] = None
+    twitter_insights: Optional[Dict[str, Any]] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DarkDataInsight(BaseModel):
+    """Result from dark data analysis agent."""
+
+    sources_analyzed: List[str] = Field(default_factory=list)
+    insights: List[Dict[str, Any]] = Field(default_factory=list)
+    competitive_intelligence: Dict[str, Any] = Field(default_factory=dict)
+    hidden_risks: List[str] = Field(default_factory=list)
+    opportunities: List[str] = Field(default_factory=list)
+    confidence_score: float = 0.0
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class WargameResult(BaseModel):
+    """Result from competitive wargaming agent."""
+
+    scenario_name: str
+    our_strategy: str
+    competitor_moves: List[Dict[str, Any]] = Field(default_factory=list)
+    outcomes: Dict[str, Any] = Field(default_factory=dict)
+    winning_strategies: List[str] = Field(default_factory=list)
+    risk_mitigation: List[str] = Field(default_factory=list)
+    recommendations: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class Dashboard(BaseModel):
+    """Interactive analytics dashboard specification."""
+
+    dashboard_id: str
+    title: str
+    description: str
+    components: List[Dict[str, Any]] = Field(default_factory=list)
+    data_sources: List[str] = Field(default_factory=list)
+    refresh_interval_seconds: Optional[int] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class Narrative(BaseModel):
+    """Persona-specific narrative generated by storytelling agent."""
+
+    persona: str
+    title: str
+    summary: str
+    sections: List[Dict[str, Any]] = Field(default_factory=list)
+    key_takeaways: List[str] = Field(default_factory=list)
+    call_to_action: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class Phase1Results(BaseModel):
+    """Results from Phase 1: Core Research."""
+
+    research: Optional[ResearchResult] = None
+    market: Optional[MarketTrendResult] = None
+    financial: Optional[FinancialSnapshot] = None
+    frameworks: Optional[FrameworkAnalysis] = None
+    synthesis: Optional[ExecutiveSummary] = None
+    errors: Dict[str, str] = Field(default_factory=dict)
+
+
+class Phase2Results(BaseModel):
+    """Results from Phase 2: Advanced Analytics."""
+
+    forecast: Optional[ForecastResult] = None
+    social_media: Optional[SocialMediaInsight] = None
+    dark_data: Optional[DarkDataInsight] = None
+    wargaming: Optional[WargameResult] = None
+    errors: Dict[str, str] = Field(default_factory=dict)
+
+
+class Phase3Results(BaseModel):
+    """Results from Phase 3: Output Generation."""
+
+    dashboard: Optional[Dashboard] = None
+    narratives: Dict[str, Narrative] = Field(default_factory=dict)
+    errors: Dict[str, str] = Field(default_factory=dict)
+
+
+class ComprehensiveAnalysisResult(BaseModel):
+    """Unified result from comprehensive analysis across all agents."""
+
+    # Identification
+    analysis_id: str = Field(..., description="Unique analysis identifier")
+    company: str
+    industry: str
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    # Phase results
+    phase1: Phase1Results = Field(default_factory=Phase1Results)
+    phase2: Phase2Results = Field(default_factory=Phase2Results)
+    phase3: Phase3Results = Field(default_factory=Phase3Results)
+
+    # Metadata
+    enabled_features: List[str] = Field(default_factory=list)
+    confidence_score: float = Field(
+        default=0.0,
+        description="Overall confidence score (0-1)"
+    )
+    execution_time_seconds: float = 0.0
+    partial_results: bool = Field(
+        default=False,
+        description="True if some agents failed"
+    )
+    all_errors: Dict[str, str] = Field(default_factory=dict)
+
+    # RAG indexing
+    indexed_for_rag: bool = Field(
+        default=False,
+        description="Whether this analysis has been indexed for conversational queries"
+    )
+    rag_index_id: Optional[str] = None
+
+
+class ConversationalQueryRequest(BaseModel):
+    """Request for conversational query about an analysis."""
+
+    analysis_id: str = Field(..., description="Analysis to query")
+    query: str = Field(..., description="User question")
+    conversation_id: Optional[str] = Field(
+        default=None,
+        description="Conversation thread ID for context"
+    )
+    use_rag: bool = Field(
+        default=True,
+        description="Use RAG retrieval for context"
+    )
+
+
+class ConversationalQueryResponse(BaseModel):
+    """Response from conversational agent."""
+
+    response: str = Field(..., description="Answer to user query")
+    sources: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Sources used to generate response"
+    )
+    confidence: float = Field(default=0.0)
+    conversation_id: str = Field(..., description="Conversation thread ID")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DataFlowConfig(BaseModel):
+    """Configuration for data flow between agents."""
+
+    enable_auto_routing: bool = Field(
+        default=True,
+        description="Automatically route data between agents"
+    )
+    parallel_execution: bool = Field(
+        default=True,
+        description="Execute independent agents in parallel"
+    )
+    fail_fast: bool = Field(
+        default=False,
+        description="Stop on first agent failure"
+    )
+    timeout_seconds: int = Field(
+        default=300,
+        description="Overall timeout for analysis"
+    )
+    agent_timeouts: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Per-agent timeout overrides"
+    )
+
+
+class IntegrationHealthCheck(BaseModel):
+    """Health check result for integrated system."""
+
+    status: str = Field(..., description="overall, degraded, or unavailable")
+    available_agents: List[str] = Field(default_factory=list)
+    unavailable_agents: List[str] = Field(default_factory=list)
+    agent_details: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    system_capabilities: Dict[str, bool] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.now)

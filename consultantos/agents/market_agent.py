@@ -5,6 +5,7 @@ from typing import Dict, Any
 from consultantos.agents.base_agent import BaseAgent
 from consultantos.models import MarketTrends
 from consultantos.tools import google_trends_tool
+from consultantos.utils.schemas import MarketDataSchema, log_validation_metrics
 
 
 class MarketAgent(BaseAgent):
@@ -12,8 +13,7 @@ class MarketAgent(BaseAgent):
     
     def __init__(self):
         super().__init__(
-            name="market_analyst",
-            model="gemini-2.0-flash-exp"
+            name="market_analyst"
         )
         self.instruction = """
         You are a market trend analyst.
@@ -97,16 +97,40 @@ class MarketAgent(BaseAgent):
                 prompt=prompt,
                 response_model=MarketTrends
             )
-            return result
+
+            # Validate the result using Pandera
+            result_dict = result.model_dump()
+            is_valid, error_msg, cleaned_data = MarketDataSchema.validate_market_trends(result_dict)
+
+            # Log validation metrics
+            log_validation_metrics("market", is_valid, error_msg)
+
+            if not is_valid:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"Market trends validation failed for {company}: {error_msg}. "
+                    "Returning cleaned partial data."
+                )
+
+            # Return validated and cleaned data
+            return MarketTrends(**cleaned_data)
+
         except Exception as e:
             # Fallback
-            return MarketTrends(
-                search_interest_trend=trends_data.get("search_interest_trend", "Unknown"),
-                interest_data=trends_data.get("interest_data", {}),
-                geographic_distribution=trends_data.get("geographic_distribution", {}),
-                related_searches=[],
-                competitive_comparison={}
-            )
+            fallback_data = {
+                "search_interest_trend": trends_data.get("search_interest_trend", "Unknown"),
+                "interest_data": trends_data.get("interest_data", {}),
+                "geographic_distribution": trends_data.get("geographic_distribution", {}),
+                "related_searches": [],
+                "competitive_comparison": {}
+            }
+
+            # Validate fallback data
+            is_valid, error_msg, cleaned_fallback = MarketDataSchema.validate_market_trends(fallback_data)
+            log_validation_metrics("market_fallback", is_valid, error_msg)
+
+            return MarketTrends(**cleaned_fallback)
     
     def _format_trends_data(self, trends_data: Dict[str, Any]) -> str:
         """Format trends data for LLM"""

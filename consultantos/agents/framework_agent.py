@@ -20,8 +20,7 @@ class FrameworkAgent(BaseAgent):
     
     def __init__(self):
         super().__init__(
-            name="framework_analyst",
-            model="gemini-2.0-flash-exp"
+            name="framework_analyst"
         )
         self.instruction = """
         You are a strategic framework expert trained in McKinsey/BCG methodologies.
@@ -124,9 +123,9 @@ class FrameworkAgent(BaseAgent):
         )
         
         try:
-            result = self.structured_client.create(
-                response_model=PortersFiveForces,
-                messages=[{"role": "user", "content": prompt}]
+            result = await self.generate_structured(
+                prompt=prompt,
+                response_model=PortersFiveForces
             )
             return result
         except Exception as e:
@@ -151,9 +150,9 @@ class FrameworkAgent(BaseAgent):
         )
         
         try:
-            result = self.structured_client.create(
-                response_model=SWOTAnalysis,
-                messages=[{"role": "user", "content": prompt}]
+            result = await self.generate_structured(
+                prompt=prompt,
+                response_model=SWOTAnalysis
             )
             return result
         except Exception as e:
@@ -171,9 +170,9 @@ class FrameworkAgent(BaseAgent):
         prompt = PESTEL_PROMPT_TEMPLATE.format(company_name=company)
         
         try:
-            result = self.structured_client.create(
-                response_model=PESTELAnalysis,
-                messages=[{"role": "user", "content": prompt}]
+            result = await self.generate_structured(
+                prompt=prompt,
+                response_model=PESTELAnalysis
             )
             return result
         except Exception as e:
@@ -196,9 +195,9 @@ class FrameworkAgent(BaseAgent):
         )
         
         try:
-            result = self.structured_client.create(
-                response_model=BlueOceanStrategy,
-                messages=[{"role": "user", "content": prompt}]
+            result = await self.generate_structured(
+                prompt=prompt,
+                response_model=BlueOceanStrategy
             )
             return result
         except Exception as e:

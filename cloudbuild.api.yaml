@@ -41,6 +41,8 @@ steps:
       - "2"
       - "--timeout"
       - "300"
+      - "--startup-timeout"
+      - "120"
       - "--min-instances"
       - "0"
       - "--max-instances"

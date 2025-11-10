@@ -114,13 +114,22 @@ class AnalysisWorker:
         
         # Ensure database service is available
         if self.db_service is None:
-            logger.error("Database service is None, worker cannot process jobs")
-            return
+            logger.warning("Database service is None, worker will retry on next poll")
+            # Don't return, allow worker to continue and retry
         
         logger.info(f"Worker polling for jobs every {poll_interval} seconds")
         
         while self.running:
             try:
+                # Check database availability
+                if self.db_service is None:
+                    logger.debug("Database service not available, waiting...")
+                    await asyncio.sleep(poll_interval)
+                    # Try to reinitialize
+                    from consultantos.database import get_db_service
+                    self.db_service = get_db_service()
+                    continue
+                
                 # Get pending jobs
                 pending_jobs = await self.queue.list_jobs(statuses=[JobStatus.PENDING], limit=10)
                 

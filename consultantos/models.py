@@ -25,8 +25,31 @@ class AnalysisRequest(BaseModel):
 # AGENT OUTPUT MODELS
 # ============================================================================
 
+class EntityMention(BaseModel):
+    """Named entity extracted from text"""
+    text: str = Field(..., description="Entity text")
+    label: str = Field(..., description="Entity type (ORG, PERSON, GPE, DATE, etc.)")
+    start: int = Field(..., description="Start character index")
+    end: int = Field(..., description="End character index")
+
+
+class SentimentScore(BaseModel):
+    """Sentiment analysis result"""
+    polarity: float = Field(..., ge=-1.0, le=1.0, description="Sentiment polarity (-1.0 to 1.0)")
+    subjectivity: float = Field(..., ge=0.0, le=1.0, description="Subjectivity score (0.0 to 1.0)")
+    classification: str = Field(..., description="Sentiment classification: positive/negative/neutral")
+
+
+class EntityRelationship(BaseModel):
+    """Relationship between two entities"""
+    entity1: Dict[str, str] = Field(..., description="First entity (text, label)")
+    entity2: Dict[str, str] = Field(..., description="Second entity (text, label)")
+    distance: int = Field(..., description="Character distance between entities")
+    context: str = Field(..., description="Surrounding text context")
+
+
 class CompanyResearch(BaseModel):
-    """Research agent output"""
+    """Research agent output with NLP enrichment"""
     company_name: str
     description: str = Field(..., description="Company overview")
     products_services: List[str]
@@ -34,6 +57,12 @@ class CompanyResearch(BaseModel):
     key_competitors: List[str]
     recent_news: List[str]
     sources: List[str] = Field(..., description="Citation URLs")
+
+    # NLP enrichment fields
+    entities: List[EntityMention] = Field(default_factory=list, description="Extracted named entities")
+    sentiment: Optional[SentimentScore] = Field(None, description="Overall sentiment analysis")
+    entity_relationships: List[EntityRelationship] = Field(default_factory=list, description="Entity co-occurrences")
+    keywords: List[Dict[str, Any]] = Field(default_factory=list, description="Key terms and phrases")
 
 
 class MarketTrends(BaseModel):
@@ -45,8 +74,38 @@ class MarketTrends(BaseModel):
     competitive_comparison: Dict[str, Any] = Field(..., description="Company vs competitors")
 
 
+class AnalystRecommendations(BaseModel):
+    """Analyst recommendation data from Finnhub"""
+    strong_buy: int = Field(0, description="Number of strong buy recommendations")
+    buy: int = Field(0, description="Number of buy recommendations")
+    hold: int = Field(0, description="Number of hold recommendations")
+    sell: int = Field(0, description="Number of sell recommendations")
+    strong_sell: int = Field(0, description="Number of strong sell recommendations")
+    total_analysts: int = Field(0, description="Total number of analysts")
+    consensus: str = Field("Unknown", description="Consensus rating: Buy/Hold/Sell/Unknown")
+    period: Optional[str] = Field(None, description="Period of recommendation (e.g., 2024-01)")
+
+
+class NewsSentiment(BaseModel):
+    """News sentiment analysis from Finnhub"""
+    articles_count: int = Field(0, description="Number of articles analyzed")
+    sentiment_score: float = Field(0.0, ge=-1.0, le=1.0, description="Sentiment score (-1.0 to 1.0)")
+    sentiment: str = Field("Neutral", description="Sentiment label: Positive/Neutral/Negative")
+    recent_headlines: List[str] = Field(default_factory=list, description="Recent news headlines")
+
+
+class DataSourceValidation(BaseModel):
+    """Cross-validation result between data sources"""
+    metric: str = Field(..., description="Metric being validated (e.g., market_cap)")
+    yfinance_value: Optional[float] = Field(None, description="Value from yfinance")
+    finnhub_value: Optional[float] = Field(None, description="Value from Finnhub")
+    discrepancy_pct: Optional[float] = Field(None, description="Percentage difference")
+    is_valid: bool = Field(True, description="Whether discrepancy is within acceptable range")
+    note: Optional[str] = Field(None, description="Validation note or warning")
+
+
 class FinancialSnapshot(BaseModel):
-    """Financial analyst output"""
+    """Financial analyst output with multi-source data and technical analysis"""
     ticker: str
     market_cap: Optional[float] = None
     revenue: Optional[float] = Field(None, description="Latest annual revenue")
@@ -55,6 +114,26 @@ class FinancialSnapshot(BaseModel):
     pe_ratio: Optional[float] = None
     key_metrics: Dict[str, Any] = Field(default_factory=dict, description="Additional financial metrics")
     risk_assessment: str
+
+    # Enhanced fields from Finnhub integration
+    analyst_recommendations: Optional[AnalystRecommendations] = Field(None, description="Analyst recommendations from Finnhub")
+    news_sentiment: Optional[NewsSentiment] = Field(None, description="News sentiment analysis from Finnhub")
+    data_sources: List[str] = Field(default_factory=list, description="Data sources used (yfinance, finnhub, alpha_vantage)")
+    cross_validation: List[DataSourceValidation] = Field(default_factory=list, description="Cross-validation results between sources")
+
+    # Technical analysis from Alpha Vantage (optional - graceful degradation)
+    rsi: Optional[float] = Field(None, description="RSI technical indicator (0-100)")
+    rsi_signal: Optional[str] = Field(None, description="RSI trading signal (Buy/Sell/Hold)")
+    macd_trend: Optional[str] = Field(None, description="MACD trend (Bullish/Bearish/Neutral)")
+    trend_signal: Optional[str] = Field(None, description="Golden/Death Cross signal")
+    price_vs_sma50: Optional[str] = Field(None, description="Price position vs 50-day SMA (Above/Below)")
+    price_vs_sma200: Optional[str] = Field(None, description="Price position vs 200-day SMA (Above/Below)")
+    current_price: Optional[float] = Field(None, description="Current stock price from Alpha Vantage")
+
+    # Sector analysis (optional)
+    sector: Optional[str] = Field(None, description="Company sector")
+    sector_performance_ytd: Optional[float] = Field(None, description="Sector YTD performance %")
+    company_vs_sector: Optional[str] = Field(None, description="Outperforming/Underperforming/Inline")
 
 
 # ============================================================================

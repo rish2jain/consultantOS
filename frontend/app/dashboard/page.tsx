@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getApiKey } from '@/lib/auth';
 
 // Types matching backend models
 interface MonitoringConfig {
@@ -88,10 +89,13 @@ export default function DashboardPage() {
     try {
       setLoading(true);
 
+      // Get API key from in-memory storage (consistent with auth system)
+      const apiKey = getApiKey() || '';
+
       // Load monitors
       const monitorsRes = await fetch(`${API_URL}/monitors`, {
         headers: {
-          'X-API-Key': localStorage.getItem('api_key') || '',
+          'X-API-Key': apiKey,
         },
       });
 
@@ -105,7 +109,7 @@ export default function DashboardPage() {
       // Load stats
       const statsRes = await fetch(`${API_URL}/monitors/stats/dashboard`, {
         headers: {
-          'X-API-Key': localStorage.getItem('api_key') || '',
+          'X-API-Key': apiKey,
         },
       });
 
@@ -123,7 +127,7 @@ export default function DashboardPage() {
             `${API_URL}/monitors/${monitor.id}/alerts?limit=5`,
             {
               headers: {
-                'X-API-Key': localStorage.getItem('api_key') || '',
+                'X-API-Key': apiKey,
               },
             }
           );
@@ -153,10 +157,12 @@ export default function DashboardPage() {
 
   async function handleManualCheck(monitorId: string) {
     try {
+      const apiKey = getApiKey() || '';
+      
       const res = await fetch(`${API_URL}/monitors/${monitorId}/check`, {
         method: 'POST',
         headers: {
-          'X-API-Key': localStorage.getItem('api_key') || '',
+          'X-API-Key': apiKey,
         },
       });
 
@@ -173,10 +179,12 @@ export default function DashboardPage() {
 
   async function handleMarkAlertRead(alertId: string) {
     try {
+      const apiKey = getApiKey() || '';
+      
       const res = await fetch(`${API_URL}/monitors/alerts/${alertId}/read`, {
         method: 'POST',
         headers: {
-          'X-API-Key': localStorage.getItem('api_key') || '',
+          'X-API-Key': apiKey,
         },
       });
 
@@ -195,11 +203,13 @@ export default function DashboardPage() {
 
   async function handlePauseMonitor(monitorId: string) {
     try {
+      const apiKey = getApiKey() || '';
+      
       const res = await fetch(`${API_URL}/monitors/${monitorId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': localStorage.getItem('api_key') || '',
+          'X-API-Key': apiKey,
         },
         body: JSON.stringify({ status: 'paused' }),
       });
@@ -216,11 +226,13 @@ export default function DashboardPage() {
 
   async function handleResumeMonitor(monitorId: string) {
     try {
+      const apiKey = getApiKey() || '';
+      
       const res = await fetch(`${API_URL}/monitors/${monitorId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': localStorage.getItem('api_key') || '',
+          'X-API-Key': apiKey,
         },
         body: JSON.stringify({ status: 'active' }),
       });

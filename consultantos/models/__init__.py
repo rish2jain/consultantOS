@@ -15,8 +15,14 @@ if os.path.exists(_models_file):
     
     # Re-export all models from models.py
     AnalysisRequest = models_file.AnalysisRequest
+    EntityMention = models_file.EntityMention
+    SentimentScore = models_file.SentimentScore
+    EntityRelationship = models_file.EntityRelationship
     CompanyResearch = models_file.CompanyResearch
     MarketTrends = models_file.MarketTrends
+    AnalystRecommendations = models_file.AnalystRecommendations
+    NewsSentiment = models_file.NewsSentiment
+    DataSourceValidation = models_file.DataSourceValidation
     FinancialSnapshot = models_file.FinancialSnapshot
     PortersFiveForces = models_file.PortersFiveForces
     SWOTAnalysis = models_file.SWOTAnalysis
@@ -76,7 +82,7 @@ from consultantos.models.switching_costs import (
     CreateCommentRequest,
     # Personal KB
     KnowledgeItem,
-    Timeline,
+    Timeline,  # Make Timeline available directly
     KnowledgeGraph,
     ConnectionNode,
     ConnectionEdge,
@@ -100,11 +106,48 @@ from consultantos.models.switching_costs import (
     CreateAlertRequest,
 )
 
+# Enhanced Report Models
+from consultantos.models.enhanced_reports import (
+    EnhancedPortersFiveForces,
+    EnhancedSWOTAnalysis,
+    EnhancedPESTELAnalysis,
+    EnhancedBlueOceanStrategy,
+    ActionableRecommendations,
+    ActionItem,
+    RiskOpportunityMatrix,
+    RiskItem,
+    OpportunityItem,
+    EnhancedStrategicReport,
+    ExecutiveSummaryLayer,
+    DetailedAnalysisLayer,
+    SupportingAppendices,
+    CompetitiveIntelligence,
+    ScenarioPlanning,
+    PriorityLevel,
+    Timeline as EnhancedTimeline,
+    ImpactLevel,
+    ConfidenceLevel,
+)
+
+# Financial Indicators Models
+from consultantos.models.financial_indicators import (
+    TechnicalIndicators,
+    SectorPerformance,
+    EconomicIndicators,
+    ComprehensiveFinancialData,
+)
+
 __all__ = [
     # Core models from models.py
     "AnalysisRequest",
+    "EntityMention",
+    "SentimentScore",
+    "EntityRelationship",
     "CompanyResearch",
     "MarketTrends",
+    "AnalystRecommendations",
+    "NewsSentiment",
+    "DataSourceValidation",
     "FinancialSnapshot",
     "PortersFiveForces",
     "SWOTAnalysis",
@@ -175,5 +218,30 @@ __all__ = [
     "DigestFrequency",
     "Alert",
     "CreateAlertRequest",
+    # Enhanced Reports
+    "EnhancedPortersFiveForces",
+    "EnhancedSWOTAnalysis",
+    "EnhancedPESTELAnalysis",
+    "EnhancedBlueOceanStrategy",
+    "ActionableRecommendations",
+    "ActionItem",
+    "RiskOpportunityMatrix",
+    "RiskItem",
+    "OpportunityItem",
+    "EnhancedStrategicReport",
+    "ExecutiveSummaryLayer",
+    "DetailedAnalysisLayer",
+    "SupportingAppendices",
+    "CompetitiveIntelligence",
+    "ScenarioPlanning",
+    "PriorityLevel",
+    "EnhancedTimeline",
+    "ImpactLevel",
+    "ConfidenceLevel",
+    # Financial Indicators
+    "TechnicalIndicators",
+    "SectorPerformance",
+    "EconomicIndicators",
+    "ComprehensiveFinancialData",
 ]
 

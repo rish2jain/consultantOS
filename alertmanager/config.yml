@@ -1,0 +1,103 @@
+global:
+  resolve_timeout: 5m
+  # Slack webhook URL - set via environment variable
+  slack_api_url: ""
+
+# The root route with all parameters, which are inherited by the child
+# routes if they are not overwritten.
+route:
+  # The labels by which incoming alerts are grouped together. For example,
+  # multiple alerts coming in for cluster=A and alertname=InstanceDown would
+  # be batched into a single group.
+  group_by: ["alertname", "cluster", "service"]
+
+  # How long to initially wait to send a notification for a group
+  # of alerts. Allows to wait for an inhibiting alert to arrive or collect
+  # more initial alerts for the same group. (Usually ~0s to few minutes.)
+  group_wait: 10s
+
+  # How long to wait before sending a notification about new alerts added
+  # to a group of alerts for which an initial notification has already
+  # been sent. (Usually ~5m or more.)
+  group_interval: 10s
+
+  # How long to wait before sending a notification again if it has already
+  # been sent successfully for an alert. (Usually ~5m or more.)
+  repeat_interval: 12h
+
+  # A default receiver to fall back to.
+  receiver: "default"
+
+  # The child route tree.
+  routes:
+    # Critical alerts go to PagerDuty
+    - match:
+        severity: critical
+      receiver: "critical"
+      group_wait: 0s
+      repeat_interval: 1h
+      continue: true
+
+    # Warnings go to Slack
+    - match:
+        severity: warning
+      receiver: "warnings"
+      group_wait: 30s
+      repeat_interval: 4h
+
+    # Info alerts go to default channel
+    - match:
+        severity: info
+      receiver: "default"
+      group_wait: 5m
+      repeat_interval: 24h
+
+# Inhibition rules allow to mute a set of alerts given that another alert is
+# firing.
+inhibit_rules:
+  # Mute warning alerts if critical alert is firing
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ["alertname", "service"]
+
+  # Mute info alerts if warning or critical alert is firing
+  - source_match_re:
+      severity: warning|critical
+    target_match:
+      severity: info
+    equal: ["alertname", "service"]
+
+  # Mute alerts for services that are already down
+  - source_match:
+      alertname: InstanceDown
+    target_match_re:
+      alertname: "High.*"
+    equal: ["instance"]
+
+# Receivers specify where notifications should be sent
+receivers:
+  - name: "default"
+    slack_configs:
+      - channel: "#consultantos-alerts"
+        title: "ConsultantOS Alert"
+        text: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+        send_resolved: true
+
+  - name: "critical"
+    slack_configs:
+      - channel: "#consultantos-critical"
+        title: "CRITICAL: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+        send_resolved: true
+    # Uncomment to add PagerDuty integration
+    # pagerduty_configs:
+    #   - service_key: "$PAGERDUTY_SERVICE_KEY"
+
+  - name: "warnings"
+    slack_configs:
+      - channel: "#consultantos-warnings"
+        title: "Warning: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+        send_resolved: true

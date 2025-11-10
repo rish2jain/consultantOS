@@ -4,8 +4,6 @@
 
 set -e
 
-# Note: Using perl -pi for cross-platform in-place editing (works on both macOS and Linux)
-
 echo "⚠️  WARNING: This script will rewrite git history!"
 echo "   Make sure you have:"
 echo "   1. Backed up your repository"
@@ -73,14 +71,12 @@ else
     # Set environment variable to suppress warning
     export FILTER_BRANCH_SQUELCH_WARNING=1
     
-    # Remove files and patterns from all commits using filter-branch
+    # Remove sensitive files from all commits using filter-branch
+    # Note: For blob-level key replacements, use the separate BFG script (scripts/remove-keys-bfg.sh)
+    # with --replace-text instead of attempting inline perl in filter-branch
     git filter-branch --force --index-filter \
-        "git rm --cached --ignore-unmatch .env claudedocs/SECURITY_AUDIT_REPORT.md 2>/dev/null || true; \
-         # Remove Gemini API key pattern (AIzaSy followed by 35 alphanumeric chars)
-         git ls-files | xargs perl -pi -e 's/AIzaSy[A-Za-z0-9_-]{35}/***REMOVED***/g' 2>/dev/null || true; \
-         # Remove Tavily API key pattern (tvly-dev- followed by 30+ chars)
-         git ls-files | xargs perl -pi -e 's/tvly-dev-[A-Za-z0-9_-]{30,}/***REMOVED***/g' 2>/dev/null || true; \
-         git add -A" \
+        "git rm --cached --ignore-unmatch .env && \
+         git rm --cached --ignore-unmatch claudedocs/SECURITY_AUDIT_REPORT.md" \
         --prune-empty --tag-name-filter cat -- --all
 fi
 

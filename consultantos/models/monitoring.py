@@ -71,6 +71,11 @@ class MonitoringConfig(BaseModel):
         description="Channels for alert delivery"
     )
 
+    notification_preferences: Optional[dict] = Field(
+        default=None,
+        description="Channel-specific notification settings (e.g., email, Slack webhook, etc.)"
+    )
+
     keywords: Optional[List[str]] = Field(
         default=None,
         description="Optional keywords to monitor for mentions"
@@ -137,6 +142,31 @@ class Change(BaseModel):
     )
 
 
+class AnomalyScoreModel(BaseModel):
+    """Anomaly detection result (embedded in Alert)"""
+
+    metric_name: str
+    anomaly_type: str  # point, contextual, trend_reversal, volatility_spike
+    severity: float = Field(ge=0.0, le=10.0)
+    confidence: float = Field(ge=0.0, le=1.0)
+    explanation: str
+    statistical_details: dict = Field(default_factory=dict)
+    forecast_value: Optional[float] = None
+    actual_value: Optional[float] = None
+    lower_bound: Optional[float] = None
+    upper_bound: Optional[float] = None
+
+
+class AlertPriorityModel(BaseModel):
+    """Alert priority score (embedded in Alert)"""
+
+    priority_score: float = Field(ge=0.0, le=10.0)
+    urgency_level: str  # critical, high, medium, low
+    should_notify: bool
+    reasoning: List[str] = Field(default_factory=list)
+    throttle_until: Optional[datetime] = None
+
+
 class Alert(BaseModel):
     """Alert notification for material changes"""
 
@@ -164,6 +194,18 @@ class Alert(BaseModel):
 
     changes_detected: List[Change] = Field(
         description="List of specific changes detected"
+    )
+
+    # Statistical anomaly scores
+    anomaly_scores: List[AnomalyScoreModel] = Field(
+        default_factory=list,
+        description="Statistical anomaly detection results"
+    )
+
+    # Priority scoring
+    priority: Optional[AlertPriorityModel] = Field(
+        default=None,
+        description="Alert priority and notification recommendation"
     )
 
     created_at: datetime = Field(
@@ -392,3 +434,68 @@ class MonitoringStats(BaseModel):
     unread_alerts: int
     avg_alert_confidence: float
     top_change_types: List[tuple[str, int]]  # (change_type, count)
+
+
+class NotificationPreferencesUpdate(BaseModel):
+    """Request to update notification preferences"""
+
+    notification_channels: Optional[List[NotificationChannel]] = Field(
+        default=None,
+        description="Updated list of notification channels"
+    )
+
+    notification_preferences: Optional[dict] = Field(
+        default=None,
+        description="""Channel-specific settings. Example:
+        {
+            "email": "user@example.com",
+            "slack_channel": "#alerts",
+            "slack_user_id": "U123456",
+            "webhook_url": "https://hooks.example.com/...",
+            "webhook_headers": {"Authorization": "Bearer token"},
+            "webhook_timeout": 10
+        }"""
+    )
+
+
+class NotificationHistoryItem(BaseModel):
+    """Single notification delivery record"""
+
+    alert_id: str = Field(description="Alert identifier")
+    channel: str = Field(description="Channel name")
+    status: str = Field(description="Delivery status (sent, failed, pending)")
+    delivered_at: Optional[datetime] = Field(default=None, description="Delivery timestamp")
+    error_message: Optional[str] = Field(default=None, description="Error details if failed")
+    retry_count: int = Field(default=0, description="Number of retry attempts")
+
+
+class NotificationHistoryResponse(BaseModel):
+    """Response with notification delivery history"""
+
+    monitor_id: str = Field(description="Monitor identifier")
+    deliveries: List[NotificationHistoryItem] = Field(
+        description="List of delivery records"
+    )
+    total: int = Field(description="Total delivery attempts")
+    success_count: int = Field(description="Successful deliveries")
+    failure_count: int = Field(description="Failed deliveries")
+
+
+class TestNotificationRequest(BaseModel):
+    """Request to send test notifications"""
+
+    channels: Optional[List[NotificationChannel]] = Field(
+        default=None,
+        description="Specific channels to test (defaults to all configured)"
+    )
+
+
+class TestNotificationResponse(BaseModel):
+    """Response from test notification"""
+
+    results: dict = Field(
+        description="Delivery results by channel"
+    )
+    success: bool = Field(
+        description="True if all channels succeeded"
+    )

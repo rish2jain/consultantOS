@@ -3,12 +3,13 @@ FastAPI application for ConsultantOS
 """
 import asyncio
 import logging
+import time
 import traceback
 import uuid
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, Any, Optional
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Security
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Security, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -16,13 +17,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from consultantos_core import (
-    auth as core_auth,
-    config as core_config,
-    database as core_db,
-    models as core_models,
-    storage as core_storage,
-)
+from prometheus_fastapi_instrumentator import Instrumentator
+from consultantos.observability import metrics, setup_sentry, SentryIntegration
+from consultantos import auth, config, database, models, storage
 from consultantos.orchestrator import AnalysisOrchestrator
 from consultantos.reports import generate_pdf_report
 
@@ -125,19 +122,25 @@ from consultantos.api.saved_searches_endpoints import router as saved_searches_r
 # from consultantos.api.history_endpoints import router as history_router
 # from consultantos.api.digest_endpoints import router as digest_router
 from consultantos.api.jobs_endpoints import router as jobs_router
+from consultantos.api.enhanced_reports_endpoints import router as enhanced_reports_router
+from consultantos.api.mvp_endpoints import router as mvp_router  # MVP features for hackathon
+from consultantos.api.conversational_endpoints import router as conversational_router  # Conversational AI with RAG
+from consultantos.api.forecasting_endpoints import router as forecasting_router  # Enhanced multi-scenario forecasting
+from consultantos.api.wargaming_endpoints import router as wargaming_router  # Wargaming simulator with Monte Carlo (Phase 2 Week 11-12)
+from consultantos.api.integration_endpoints import router as integration_router  # Comprehensive system integration (Phase 1 & 2 complete)
 from consultantos.storage import LocalFileStorageService
 
 
 # Shared core aliases
-settings = core_config.settings
-AnalysisRequest = core_models.AnalysisRequest
-StrategicReport = core_models.StrategicReport
-get_storage_service = core_storage.get_storage_service
-verify_api_key = core_auth.verify_api_key
-get_api_key = core_auth.get_api_key
-create_api_key = core_auth.create_api_key
-get_db_service = core_db.get_db_service
-ReportMetadata = core_db.ReportMetadata
+settings = config.settings
+AnalysisRequest = models.AnalysisRequest
+StrategicReport = models.StrategicReport
+get_storage_service = storage.get_storage_service
+verify_api_key = auth.verify_api_key
+get_api_key = auth.get_api_key
+create_api_key = auth.create_api_key
+get_db_service = database.get_db_service
+ReportMetadata = database.ReportMetadata
 
 # Request ID tracking via ContextVar
 request_id_var: ContextVar[str] = ContextVar('request_id', default='')
@@ -243,12 +246,54 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Prometheus instrumentation
+@app.on_event("startup")
+async def setup_prometheus():
+    """Setup Prometheus instrumentation on startup."""
+    try:
+        Instrumentator().instrument(app).expose()
+    except Exception as e:
+        logger.warning(f"Failed to setup Prometheus instrumentation: {e}")
+
+# Metrics tracking middleware
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    """Track metrics for each request."""
+    metrics.increment_active_requests()
+    start_time = time.time()
+    
+    try:
+        response = await call_next(request)
+        duration = time.time() - start_time
+        
+        # Record API metrics
+        metrics.record_api_request(
+            method=request.method,
+            endpoint=request.url.path,
+            status_code=response.status_code,
+            duration=duration,
+        )
+        
+        return response
+    except Exception as e:
+        duration = time.time() - start_time
+        metrics.record_api_request(
+            method=request.method,
+            endpoint=request.url.path,
+            status_code=500,
+            duration=duration,
+        )
+        metrics.record_error("RequestError", request.method)
+        raise
+    finally:
+        metrics.decrement_active_requests()
+
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler with detailed error tracking"""
     request_id = getattr(request.state, 'request_id', 'unknown')
-    
+
     logger.error(
         "unhandled_exception",
         request_id=request_id,
@@ -259,10 +304,32 @@ async def global_exception_handler(request: Request, exc: Exception):
         stack_trace=traceback.format_exc(),
         exc_info=True
     )
-    
+
     # Track error in metrics
     metrics.record_error(type(exc).__name__, str(exc))
-    
+
+    # Capture exception in Sentry with request context
+    try:
+        SentryIntegration.add_breadcrumb(
+            message=f"Exception in {request.method} {request.url.path}",
+            category="api",
+            level="error",
+            data={
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+            }
+        )
+        event_id = SentryIntegration.capture_exception(
+            exc,
+            tag_endpoint=request.url.path,
+            tag_method=request.method,
+            extra_request_id=request_id,
+        )
+        logger.debug(f"Exception captured in Sentry: event_id={event_id}")
+    except Exception as sentry_error:
+        logger.warning(f"Failed to capture exception in Sentry: {sentry_error}")
+
     return JSONResponse(
         status_code=500,
         content={
@@ -298,6 +365,14 @@ app.include_router(saved_searches_router)
 # app.include_router(history_router)
 # app.include_router(digest_router)
 app.include_router(jobs_router)  # Job processing and status
+app.include_router(enhanced_reports_router)  # Enhanced reports with actionable insights
+app.include_router(mvp_router)  # MVP features for hackathon demo
+app.include_router(conversational_router)  # Conversational AI with RAG
+app.include_router(forecasting_router)  # Enhanced multi-scenario forecasting (Phase 1 Week 3-4)
+app.include_router(wargaming_router)  # Wargaming simulator with Monte Carlo (Phase 2 Week 11-12)
+app.include_router(integration_router)  # Comprehensive system integration (Phase 1 & 2 complete)
+
+# app.include_router(storytelling_router)  # AI storytelling with persona adaptation (Phase 2 Week 15-16) - Not yet implemented
 
 # Initialize orchestrator (lazy initialization to avoid import-time errors)
 _orchestrator: Optional[AnalysisOrchestrator] = None
@@ -319,6 +394,21 @@ async def startup():
     logger.info("ConsultantOS API starting up")
     logger.info(f"Rate limit: {settings.rate_limit_per_hour} requests/hour per IP")
 
+    # Initialize Sentry for error tracking and performance monitoring
+    try:
+        sentry_integration = setup_sentry(
+            dsn=settings.sentry_dsn,
+            environment=settings.sentry_environment or settings.environment,
+            traces_sample_rate=settings.sentry_traces_sample_rate,
+            release=settings.sentry_release,
+        )
+        if sentry_integration:
+            logger.info(f"Sentry initialized: environment={sentry_integration.environment}, release={sentry_integration.release}")
+        else:
+            logger.info("Sentry not configured (SENTRY_DSN not set)")
+    except Exception as e:
+        logger.warning(f"Failed to initialize Sentry: {e}")
+
     # Start background worker for async job processing
     global _worker_task
     try:
@@ -330,7 +420,7 @@ async def startup():
     except Exception as e:
         logger.warning(f"Failed to start background worker: {e}. Async jobs will not be processed.")
         logger.warning("To process async jobs, start the worker separately or restart the API server.")
-    
+
     # Mark startup as complete for health checks
     mark_startup_complete()
     logger.info("Application startup complete")
@@ -459,13 +549,22 @@ async def analyze_company(
         except Exception as e:
             logger.error(f"PDF generation failed: {str(e)}", exc_info=True)
             # Return JSON response even if PDF fails
+            # Include framework_analysis if available
+            frameworks_data = None
+            if report.framework_analysis:
+                try:
+                    frameworks_data = report.framework_analysis.model_dump()
+                except Exception as e:
+                    logger.warning(f"Failed to serialize framework_analysis for response: {e}")
+            
             return {
                 "status": "partial_success",
                 "report_id": report_id,
                 "report_url": None,
                 "error": "PDF generation failed, but analysis completed",
                 "executive_summary": report.executive_summary.model_dump(),
-                "confidence": report.executive_summary.confidence_score,
+                "confidence_score": report.executive_summary.confidence_score,
+                "frameworks": frameworks_data,
                 "generated_at": datetime.now().isoformat()
             }
         
@@ -528,12 +627,21 @@ async def analyze_company(
         report_url = f"https://storage.googleapis.com/consultantos-reports/{report_id}.pdf"
         
         # Return structured report + PDF URL
+        # Include framework_analysis if available
+        frameworks_data = None
+        if report.framework_analysis:
+            try:
+                frameworks_data = report.framework_analysis.model_dump()
+            except Exception as e:
+                logger.warning(f"Failed to serialize framework_analysis for response: {e}")
+        
         return {
             "status": "success",
             "report_id": report_id,
             "report_url": report_url,
             "executive_summary": report.executive_summary.model_dump(),
-            "confidence": report.executive_summary.confidence_score,
+            "confidence_score": report.executive_summary.confidence_score,
+            "frameworks": frameworks_data,
             "generated_at": datetime.now().isoformat(),
             "execution_time_seconds": execution_time
         }
@@ -653,6 +761,27 @@ async def download_report_pdf(report_id: str):
         raise HTTPException(status_code=500, detail="Failed to download PDF")
 
 
+@app.get("/reports/{report_id}/pdf")
+async def download_report_pdf_alias(report_id: str):
+    """
+    Alias for /reports/{report_id}/download - Download PDF report file
+    """
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/reports/{report_id}/download")
+
+
+@app.get("/reports/{report_id}/export")
+async def export_report_alias(
+    report_id: str,
+    format: str = Query("json", description="Export format: json, excel, word")
+):
+    """
+    Alias for /reports/{report_id}?format=... - Export report in various formats
+    """
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=f"/reports/{report_id}?format={format}")
+
+
 @app.get("/reports/{report_id}")
 async def get_report(
     report_id: str,
@@ -700,9 +829,110 @@ async def get_report(
                     "framework_analysis": metadata.framework_analysis if hasattr(metadata, 'framework_analysis') else None
                 })
             
-            # Excel and Word exports require full report reconstruction
-            # which is not yet implemented, so return 501 Not Implemented
-            raise HTTPException(status_code=501, detail=f"Export format '{format_lower}' not implemented")
+            # Excel and Word exports - reconstruct report from metadata
+            if format_lower in ['excel', 'word']:
+                from consultantos.reports.exports import export_to_excel, export_to_word
+                from consultantos.models import StrategicReport, ExecutiveSummary
+                from fastapi.responses import Response
+                
+                # Reconstruct minimal StrategicReport from metadata
+                # This is a simplified version - full report would require storing complete data
+                framework_analysis_dict = metadata.framework_analysis if isinstance(metadata.framework_analysis, dict) else {}
+                
+                # Extract key findings from SWOT if available
+                key_findings = ["Analysis completed", "Review recommended", "Data validation needed"]
+                if "swot_analysis" in framework_analysis_dict and framework_analysis_dict["swot_analysis"]:
+                    swot = framework_analysis_dict["swot_analysis"]
+                    if isinstance(swot, dict):
+                        # Combine strengths and opportunities as key findings
+                        strengths = swot.get("strengths", [])
+                        opportunities = swot.get("opportunities", [])
+                        if strengths or opportunities:
+                            key_findings = (strengths[:2] if strengths else []) + (opportunities[:1] if opportunities else [])
+                
+                executive_summary = ExecutiveSummary(
+                    company_name=metadata.company or "Unknown",
+                    industry=metadata.industry or "Unknown",
+                    key_findings=key_findings[:5],  # Limit to 5
+                    strategic_recommendation="Further analysis recommended based on available data",
+                    confidence_score=metadata.confidence_score or 0.5,
+                    supporting_evidence=["Report metadata available"],
+                    next_steps=["Review detailed analysis", "Validate findings", "Consult with stakeholders"]
+                )
+                
+                # Create minimal StrategicReport with required fields
+                # Export functions primarily use executive_summary, but we need minimal objects for validation
+                from consultantos.models import (
+                    CompanyResearch, FinancialSnapshot, FrameworkAnalysis
+                )
+                
+                # Minimal CompanyResearch
+                company_research = CompanyResearch(
+                    company_name=metadata.company or "Unknown",
+                    description=f"Analysis for {metadata.company}",
+                    products_services=[],
+                    target_market="Unknown",
+                    key_competitors=[],
+                    recent_news=[],
+                    sources=[]
+                )
+                
+                # Minimal FinancialSnapshot
+                financial_snapshot = FinancialSnapshot(
+                    ticker="N/A",
+                    market_cap=None,
+                    revenue=None,
+                    revenue_growth=None,
+                    profit_margin=None,
+                    pe_ratio=None,
+                    key_metrics={},
+                    risk_assessment="Unable to assess from metadata"
+                )
+                
+                # Minimal FrameworkAnalysis (all optional fields can be None)
+                framework_analysis = FrameworkAnalysis()
+                
+                report = StrategicReport(
+                    executive_summary=executive_summary,
+                    company_research=company_research,
+                    market_trends=None,
+                    financial_snapshot=financial_snapshot,
+                    framework_analysis=framework_analysis,
+                    recommendations=["Review detailed analysis", "Validate findings", "Consult stakeholders"],
+                    metadata={
+                        "report_id": report_id,
+                        "company": metadata.company,
+                        "industry": metadata.industry,
+                        "frameworks": metadata.frameworks or []
+                    }
+                )
+                
+                try:
+                    if format_lower == 'excel':
+                        excel_bytes = await export_to_excel(report)
+                        return Response(
+                            content=excel_bytes,
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            headers={"Content-Disposition": f"attachment; filename={report_id}.xlsx"}
+                        )
+                    elif format_lower == 'word':
+                        word_bytes = await export_to_word(report)
+                        return Response(
+                            content=word_bytes,
+                            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            headers={"Content-Disposition": f"attachment; filename={report_id}.docx"}
+                        )
+                except ImportError as e:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"Export format '{format_lower}' requires additional packages. {str(e)}"
+                    )
+                except Exception as e:
+                    logger.error(f"Export failed: {e}", exc_info=True)
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Failed to generate {format_lower} export: {str(e)}"
+                    )
         
         # Try to get metadata from database
         db_service = get_db_service()
@@ -731,10 +961,7 @@ async def get_report(
                 if isinstance(storage_service, LocalFileStorageService):
                     report_url = f"/reports/{report_id}/download"
                 else:
-                    if signed:
-                        report_url = storage_service.generate_signed_url(report_id)
-                    else:
-                        report_url = storage_service.get_report_url(report_id)
+                    report_url = storage_service.get_report_url(report_id, use_signed_url=signed)
             
             # Format created_at
             created_at = metadata.created_at

@@ -353,6 +353,42 @@ async def get_current_user_id(api_key: Optional[str] = Security(get_api_key)) ->
     return await get_current_user(api_key)
 
 
+async def get_optional_user_id(api_key: Optional[str] = Security(get_api_key)) -> Optional[str]:
+    """
+    Get current user ID from API key (optional authentication)
+
+    Returns None if no API key provided or if API key is invalid,
+    rather than raising an HTTPException.
+
+    This is useful for endpoints that support both authenticated and
+    unauthenticated access.
+
+    Args:
+        api_key: API key from header or query parameter (optional)
+
+    Returns:
+        User ID string if authenticated, None otherwise
+
+    Example:
+        @router.get("/my-endpoint")
+        async def my_endpoint(user_id: Optional[str] = Depends(get_optional_user_id)):
+            if user_id:
+                # Authenticated access
+                pass
+            else:
+                # Unauthenticated access
+                pass
+    """
+    if not api_key:
+        return None
+
+    user_info = validate_api_key(api_key)
+    if not user_info:
+        return None
+
+    return user_info["user_id"]
+
+
 def get_user_api_keys(user_id: str) -> list:
     """Get all API keys for a user (without exposing actual keys)"""
     user_keys = []

@@ -57,12 +57,9 @@ All Cloud Build configuration files now use Secret Manager instead of environmen
 
 3. **Store Keys in Secret Manager** (15 minutes)
 
-   ```bash
-   # Run the setup script
-   export GEMINI_API_KEY="your_new_key"
-   export TAVILY_API_KEY="your_new_key"
-   ./scripts/setup-secrets.sh
-   ```
+   ⚠️ **SECURITY WARNING**: Never export API keys directly to your shell as they persist in shell history. Use the secure method documented in the "Quick Start Commands" section below.
+
+   See the **🚀 Quick Start Commands** section for secure instructions using temporary files and non-echoed input.
 
 4. **Remove Keys from Git History** (30 minutes)
    ```bash

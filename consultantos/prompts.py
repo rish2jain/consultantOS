@@ -57,6 +57,15 @@ Based on the 5 forces, assess overall intensity:
 2. Use numbers: market share %, growth rates, number of competitors
 3. Compare to industry average (is this force stronger/weaker than typical?)
 4. Link to strategic implications (so what? why does this matter?)
+
+**ENHANCED ANALYSIS** (for detailed_analysis field):
+For each force, provide:
+- Barriers to entry (if applicable): specific barriers like capital requirements, regulations
+- Recent competitors: any new entrants in last 2 years
+- Switching costs: cost to switch suppliers/buyers
+- Substitute technologies: emerging alternatives
+- Competitive intensity indicators: battle zones, differentiation opportunities
+- Strategic implications: 2-3 specific action items derived from this force
 """
 
 SWOT_PROMPT_TEMPLATE = """
@@ -96,6 +105,17 @@ Identify 3-5 threats with SPECIFIC EVIDENCE:
 - Technological disruption?
 
 **CRITICAL**: Every item must include specific numbers, percentages, or comparisons.
+
+**ENHANCED ANALYSIS** (for actionable strategies):
+For each SWOT element, consider:
+- Importance score (1-10): How critical is this element?
+- Strategic implications: How to leverage strengths, address weaknesses, pursue opportunities, monitor threats
+- Timeline: When should this be addressed? (immediate/short-term/medium-term/long-term)
+- Impact level: High/Medium/Low impact on business
+
+**STRATEGIC COMBINATIONS**:
+- S+O: How can strengths be used to pursue opportunities?
+- W+T: How can weaknesses be addressed to counter threats?
 """
 
 PESTEL_PROMPT_TEMPLATE = """
@@ -113,6 +133,16 @@ For each category, identify 2-3 factors with:
 - Impact on {company_name} (Positive/Negative/Neutral)
 - Magnitude (Low/Medium/High)
 - Evidence/Data
+
+**ENHANCED ANALYSIS**:
+For each PESTEL factor, also provide:
+- Current state: Today's landscape
+- Trend direction: Is this moving favorable or unfavorable?
+- Timeline: How soon will changes matter? (immediate/6-12 months/12-24 months)
+- Early warning signals: What to watch for
+- Adaptation required: Specific adjustments needed
+- Competitive advantage: How to turn threats into opportunities
+- Risk score (0-10): Quantified risk level
 """
 
 BLUE_OCEAN_PROMPT_TEMPLATE = """
@@ -138,6 +168,16 @@ For each action:
 - Rationale (cost savings OR customer value)
 - Estimated impact (Low/Medium/High)
 Example: "ELIMINATE: Physical retail stores (Reduce overhead by $50M/year, customers prefer online)"
+
+**ENHANCED ANALYSIS**:
+For each action, also provide:
+- Implementation complexity: Low/Medium/High
+- Timeline: When to implement (immediate/short-term/medium-term/long-term)
+- Cost savings: If applicable, estimated savings
+- Customer value: If applicable, value proposition created
+- Strategic profile: Current vs future positioning
+- Uncontested market space: Target customer segments for value innovation
+- Risk assessment: Cannibalization risks, resource requirements
 """
 
 SYNTHESIS_PROMPT_TEMPLATE = """

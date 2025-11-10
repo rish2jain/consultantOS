@@ -18,7 +18,7 @@ from reportlab.lib import colors
 from datetime import datetime
 import plotly.graph_objects as go
 import plotly.io as pio
-from consultantos_core import models as core_models
+from consultantos import models
 from consultantos.visualizations import (
     create_porter_radar_figure,
     create_swot_matrix_figure,
@@ -43,7 +43,7 @@ def _cache_figure(cache_key: Optional[str], figure: go.Figure) -> None:
     set_cached_figure(cache_key, figure_to_json(figure))
 
 
-def generate_pdf_report(report: core_models.StrategicReport, report_id: Optional[str] = None) -> bytes:
+def generate_pdf_report(report: models.StrategicReport, report_id: Optional[str] = None) -> bytes:
     """Generate professional PDF report using ReportLab"""
     
     # Create temporary PDF file

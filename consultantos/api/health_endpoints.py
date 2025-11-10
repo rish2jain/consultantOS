@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
-from consultantos_core import config, database, storage
+from consultantos import config, database, storage
 import logging
 
 logger = logging.getLogger(__name__)

@@ -18,7 +18,7 @@ from consultantos.models.feedback import (
     ErrorCategory
 )
 from consultantos.database import get_db_service
-from consultantos.monitoring import get_logger
+from consultantos.log_utils import get_logger
 
 logger = get_logger(__name__)
 

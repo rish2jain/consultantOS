@@ -1,13 +1,19 @@
 """
 Background worker for continuous intelligence monitoring.
 
-Runs scheduled checks on all active monitors, detects changes,
-and sends alerts to users.
+MIGRATION NOTICE: This worker now delegates task execution to Celery.
+Tasks are queued via Celery with priority-based execution and retry logic.
+
+For direct Celery execution, use:
+- celery -A consultantos.jobs.celery_app worker
+- celery -A consultantos.jobs.celery_app beat
+
+This worker maintains backward compatibility while leveraging Celery.
 """
 
 import asyncio
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from consultantos.models.monitoring import Monitor, MonitorStatus
 from consultantos.monitoring.intelligence_monitor import IntelligenceMonitor
@@ -15,38 +21,69 @@ from consultantos.database import DatabaseService
 from consultantos.cache import CacheService
 from consultantos.orchestrator.analysis_orchestrator import AnalysisOrchestrator
 import logging
+
 logger = logging.getLogger(__name__)
+
+# Check if Celery is available
+try:
+    from consultantos.jobs.tasks import (
+        check_monitor_task,
+        check_scheduled_monitors_task,
+    )
+    CELERY_AVAILABLE = True
+except ImportError:
+    CELERY_AVAILABLE = False
+    logger.warning("Celery not available, using fallback direct execution")
 
 
 class MonitoringWorker:
     """
     Background worker for scheduled monitoring checks.
 
-    Continuously polls for monitors that need checking and processes
-    them in batches with concurrency control.
+    UPDATED: Now uses Celery for task execution when available.
+    Falls back to direct execution if Celery is unavailable.
+
+    Celery provides:
+    - Retry logic with exponential backoff
+    - Priority-based task queuing
+    - Dead letter queue for failed tasks
+    - Distributed execution across multiple workers
     """
 
     def __init__(
         self,
-        intelligence_monitor: IntelligenceMonitor,
+        intelligence_monitor: Optional[IntelligenceMonitor] = None,
         check_interval: int = 60,  # seconds
         max_concurrent_checks: int = 5,
+        use_celery: bool = True,
     ):
         """
         Initialize monitoring worker.
 
         Args:
-            intelligence_monitor: Intelligence monitor service
+            intelligence_monitor: Intelligence monitor service (for fallback)
             check_interval: Seconds between check polls
             max_concurrent_checks: Max monitors to check concurrently
+            use_celery: Whether to use Celery (if available)
         """
         self.monitor_service = intelligence_monitor
         self.check_interval = check_interval
         self.max_concurrent_checks = max_concurrent_checks
+        self.use_celery = use_celery and CELERY_AVAILABLE
         self.is_running = False
+
         # Use LoggerAdapter for structured context
         from logging import LoggerAdapter
         self.logger = LoggerAdapter(logger, {"component": "monitoring_worker"})
+
+        if self.use_celery:
+            self.logger.info("MonitoringWorker initialized with Celery execution")
+        else:
+            self.logger.info("MonitoringWorker initialized with fallback execution")
+            if intelligence_monitor is None:
+                raise ValueError(
+                    "intelligence_monitor is required when not using Celery"
+                )
 
     async def start(self) -> None:
         """
@@ -75,10 +112,16 @@ class MonitoringWorker:
         """
         Find and process monitors scheduled for checking.
 
-        Processes monitors in batches with concurrency control.
+        UPDATED: Delegates to Celery tasks when available.
         """
         try:
-            # Get monitors that need checking
+            if self.use_celery:
+                # Celery mode: Let Celery Beat handle scheduling
+                # This worker just ensures Celery is running
+                self.logger.debug("Using Celery Beat for scheduling")
+                return
+
+            # Fallback mode: Direct execution
             monitors = await self._get_monitors_to_check()
 
             if not monitors:

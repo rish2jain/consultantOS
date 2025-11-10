@@ -27,6 +27,8 @@ class CacheProtocol(Protocol):
 
 from consultantos.models.monitoring import (
     Alert,
+    AnomalyScoreModel,
+    AlertPriorityModel,
     Change,
     ChangeType,
     Monitor,
@@ -36,11 +38,23 @@ from consultantos.models.monitoring import (
     MonitorStatus,
 )
 from consultantos.database import DatabaseService
+from consultantos.monitoring.anomaly_detector import AnomalyDetector, AnomalyScore
+from consultantos.monitoring.alert_scorer import AlertScorer
+from consultantos.monitoring.timeseries_optimizer import TimeSeriesOptimizer
+from consultantos.monitoring.snapshot_aggregator import SnapshotAggregator, AggregationPeriod
 from consultantos.utils.validators import AnalysisRequestValidator
+from consultantos.utils.schemas import MonitorSnapshotSchema, log_validation_metrics
 
 # Import logger from the monitoring module (not package)
 import logging
 logger = logging.getLogger(__name__)
+
+# Import Sentry for error tracking and performance monitoring
+try:
+    from consultantos.observability import SentryIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    SENTRY_AVAILABLE = False
 
 
 class IntelligenceMonitor:
@@ -56,6 +70,7 @@ class IntelligenceMonitor:
         orchestrator: "AnalysisOrchestrator",
         db_service: DatabaseService,
         cache_service: Optional[CacheProtocol] = None,
+        enable_anomaly_detection: bool = True,
     ):
         """
         Initialize intelligence monitor.
@@ -64,11 +79,37 @@ class IntelligenceMonitor:
             orchestrator: Analysis orchestrator for running analyses
             db_service: Database service for persistence
             cache_service: Optional cache for snapshot storage
+            enable_anomaly_detection: Enable Prophet-based anomaly detection
         """
         self.orchestrator = orchestrator
         self.db = db_service
         self.cache = cache_service
         self.logger = logger  # Standard logging, no .bind() method
+
+        # Initialize time-series optimization components
+        self.timeseries_optimizer = TimeSeriesOptimizer(
+            db_service=db_service,
+            compression_threshold_bytes=1024,  # Compress snapshots >1KB
+            batch_size=10,
+            cache_ttl_seconds=300,  # 5 minute cache
+        )
+
+        self.snapshot_aggregator = SnapshotAggregator(
+            timeseries_optimizer=self.timeseries_optimizer,
+            db_service=db_service,
+        )
+
+        # Initialize anomaly detection components
+        self.enable_anomaly_detection = enable_anomaly_detection
+        if enable_anomaly_detection:
+            self.anomaly_detector = AnomalyDetector(
+                confidence_mode="balanced",
+                enable_seasonality=True,
+            )
+            self.alert_scorer = AlertScorer(db_service=db_service)
+        else:
+            self.anomaly_detector = None
+            self.alert_scorer = None
 
     async def create_monitor(
         self,
@@ -154,6 +195,18 @@ class IntelligenceMonitor:
         Raises:
             ValueError: If monitor not found
         """
+        # Start Sentry transaction for performance monitoring
+        transaction = None
+        if SENTRY_AVAILABLE:
+            try:
+                transaction = SentryIntegration.start_transaction(
+                    name="IntelligenceMonitor.check_for_updates",
+                    op="monitor.check"
+                )
+                transaction.__enter__()
+            except Exception:
+                pass
+
         # Fetch monitor
         monitor = await self.db.get_monitor(monitor_id)
         if not monitor:
@@ -163,7 +216,32 @@ class IntelligenceMonitor:
             self.logger.info(
                 f"monitor_not_active: monitor_id={monitor_id}, status={monitor.status}"
             )
+            if SENTRY_AVAILABLE and transaction:
+                try:
+                    transaction.__exit__(None, None, None)
+                except Exception:
+                    pass
             return []
+
+        # Set monitor context for Sentry
+        if SENTRY_AVAILABLE:
+            try:
+                SentryIntegration.set_monitor_context(
+                    monitor_id=monitor_id,
+                    company=monitor.company,
+                    industry=monitor.industry,
+                )
+                SentryIntegration.add_breadcrumb(
+                    message=f"Checking monitor for {monitor.company}",
+                    category="monitor",
+                    level="info",
+                    data={
+                        "frequency": monitor.config.frequency,
+                        "alert_threshold": monitor.config.alert_threshold,
+                    }
+                )
+            except Exception:
+                pass
 
         self.logger.info(
             f"checking_monitor: monitor_id={monitor_id}, company={monitor.company}"
@@ -176,23 +254,56 @@ class IntelligenceMonitor:
             # Run new analysis
             new_snapshot = await self._run_analysis_snapshot(monitor)
 
-            # Detect changes
-            changes = await self._detect_changes(previous_snapshot, new_snapshot)
+            # Detect changes (threshold-based + anomaly detection)
+            changes = await self._detect_changes(previous_snapshot, new_snapshot, monitor)
+
+            # Run statistical anomaly detection if enabled
+            anomaly_scores = []
+            if self.enable_anomaly_detection and previous_snapshot:
+                anomaly_scores = await self._detect_statistical_anomalies(
+                    monitor, previous_snapshot, new_snapshot
+                )
 
             # Filter by confidence threshold
             significant_changes = [
                 c for c in changes if c.confidence >= monitor.config.alert_threshold
             ]
 
-            # Generate alerts if material changes detected
+            # Generate alerts if material changes or anomalies detected
             alerts = []
-            if significant_changes:
-                alert = await self._create_alert(monitor, significant_changes)
-                alerts.append(alert)
+            if significant_changes or anomaly_scores:
+                alert = await self._create_alert(
+                    monitor, significant_changes, anomaly_scores
+                )
 
-                # Update monitor stats
-                monitor.total_alerts += 1
-                monitor.last_alert_id = alert.id
+                # Score alert priority if anomaly detection enabled
+                if self.enable_anomaly_detection and self.alert_scorer:
+                    priority = self.alert_scorer.score_alert(
+                        alert=alert,
+                        anomaly_scores=anomaly_scores,
+                        config=monitor.config,
+                    )
+                    alert.priority = AlertPriorityModel(**priority.dict())
+
+                    # Check if alert should be sent (deduplication + throttling)
+                    should_send = self.alert_scorer.should_send_alert(alert, priority)
+                    if should_send:
+                        alerts.append(alert)
+                        # Update monitor stats
+                        monitor.total_alerts += 1
+                        monitor.last_alert_id = alert.id
+                    else:
+                        # Store alert but don't notify
+                        await self.db.create_alert(alert)
+                        self.logger.info(
+                            f"Alert created but not sent: monitor_id={monitor.id}, "
+                            f"priority={priority.priority_score:.1f}"
+                        )
+                else:
+                    # No anomaly detection - use simple alerting
+                    alerts.append(alert)
+                    monitor.total_alerts += 1
+                    monitor.last_alert_id = alert.id
 
             # Update monitor status
             monitor.last_check = datetime.utcnow()
@@ -205,6 +316,24 @@ class IntelligenceMonitor:
             self.logger.info(
                 f"monitor_check_completed: monitor_id={monitor_id}, changes_detected={len(changes)}, alerts_generated={len(alerts)}"
             )
+
+            # Record successful check in Sentry
+            if SENTRY_AVAILABLE and transaction:
+                try:
+                    transaction.set_measurement("changes_detected", len(changes))
+                    transaction.set_measurement("alerts_generated", len(alerts))
+                    SentryIntegration.add_breadcrumb(
+                        message="Monitor check completed successfully",
+                        category="monitor",
+                        level="info",
+                        data={
+                            "changes_detected": len(changes),
+                            "alerts_generated": len(alerts),
+                        }
+                    )
+                    transaction.__exit__(None, None, None)
+                except Exception:
+                    pass
 
             return alerts
 
@@ -226,6 +355,29 @@ class IntelligenceMonitor:
                 f"monitor_check_failed: monitor_id={monitor_id}, error={str(e)}",
                 exc_info=True
             )
+
+            # Capture error in Sentry
+            if SENTRY_AVAILABLE:
+                try:
+                    SentryIntegration.add_breadcrumb(
+                        message="Monitor check failed",
+                        category="monitor",
+                        level="error",
+                        data={
+                            "error": str(e),
+                            "error_count": monitor.error_count,
+                        }
+                    )
+                    SentryIntegration.capture_exception(
+                        e,
+                        tag_monitor_id=monitor_id,
+                        tag_company=monitor.company,
+                        tag_error_count=monitor.error_count,
+                    )
+                    if transaction:
+                        transaction.__exit__(type(e), e, None)
+                except Exception:
+                    pass
 
             raise
 
@@ -382,12 +534,36 @@ class IntelligenceMonitor:
         if "swot" in monitor.config.frameworks and result.get("framework_analysis"):
             snapshot.strategic_position = result["framework_analysis"].get("swot", {})
 
+        # Validate snapshot before returning
+        snapshot_dict = {
+            "monitor_id": snapshot.monitor_id,
+            "timestamp": snapshot.timestamp,
+            "company": snapshot.company,
+            "industry": snapshot.industry,
+            "competitive_forces": snapshot.competitive_forces or {},
+            "market_trends": snapshot.market_trends or [],
+            "financial_metrics": snapshot.financial_metrics or {},
+            "strategic_position": snapshot.strategic_position or {},
+        }
+
+        is_valid, error_msg, cleaned_snapshot = MonitorSnapshotSchema.validate_snapshot(snapshot_dict)
+
+        # Log validation metrics
+        log_validation_metrics("snapshot", is_valid, error_msg)
+
+        if not is_valid:
+            self.logger.warning(
+                f"Snapshot validation failed for monitor {monitor.id}: {error_msg}. "
+                "Snapshot may contain data quality issues."
+            )
+
         return snapshot
 
     async def _detect_changes(
         self,
         previous: Optional[MonitorAnalysisSnapshot],
         current: MonitorAnalysisSnapshot,
+        monitor: Monitor,
     ) -> List[Change]:
         """
         Detect material changes between snapshots.
@@ -395,6 +571,7 @@ class IntelligenceMonitor:
         Args:
             previous: Previous snapshot (None for first check)
             current: Current snapshot
+            monitor: Monitor configuration
 
         Returns:
             List of detected changes
@@ -539,18 +716,206 @@ class IntelligenceMonitor:
 
         return prev_hash != curr_hash
 
+    async def _detect_statistical_anomalies(
+        self,
+        monitor: Monitor,
+        previous_snapshot: MonitorAnalysisSnapshot,
+        current_snapshot: MonitorAnalysisSnapshot,
+    ) -> List[AnomalyScore]:
+        """
+        Detect statistical anomalies using Prophet.
+
+        Args:
+            monitor: Monitor configuration
+            previous_snapshot: Previous snapshot
+            current_snapshot: Current snapshot
+
+        Returns:
+            List of detected anomalies
+        """
+        if not self.anomaly_detector:
+            return []
+
+        anomaly_scores = []
+
+        try:
+            # Fetch historical snapshots for training
+            historical_snapshots = await self.db.get_snapshots_history(
+                monitor_id=monitor.id,
+                days_back=30,  # Last 30 days for training
+            )
+
+            if len(historical_snapshots) < AnomalyDetector.MIN_TRAINING_DAYS:
+                self.logger.info(
+                    f"Insufficient history for anomaly detection: "
+                    f"{len(historical_snapshots)} snapshots (min: {AnomalyDetector.MIN_TRAINING_DAYS})"
+                )
+                return []
+
+            # Extract and analyze financial metrics
+            if current_snapshot.financial_metrics:
+                financial_anomalies = await self._detect_financial_anomalies(
+                    monitor, historical_snapshots, current_snapshot
+                )
+                anomaly_scores.extend(financial_anomalies)
+
+            # Analyze trend reversals
+            if current_snapshot.market_trends:
+                trend_anomalies = await self._detect_trend_anomalies(
+                    monitor, historical_snapshots, current_snapshot
+                )
+                anomaly_scores.extend(trend_anomalies)
+
+            self.logger.info(
+                f"Anomaly detection completed: monitor_id={monitor.id}, "
+                f"anomalies_detected={len(anomaly_scores)}"
+            )
+
+        except Exception as e:
+            self.logger.error(
+                f"Error in anomaly detection for monitor {monitor.id}: {e}",
+                exc_info=True
+            )
+
+        return anomaly_scores
+
+    async def _detect_financial_anomalies(
+        self,
+        monitor: Monitor,
+        historical_snapshots: List[MonitorAnalysisSnapshot],
+        current_snapshot: MonitorAnalysisSnapshot,
+    ) -> List[AnomalyScore]:
+        """Detect anomalies in financial metrics."""
+        anomalies = []
+
+        for metric_name, current_value in current_snapshot.financial_metrics.items():
+            if not isinstance(current_value, (int, float)):
+                continue
+
+            # Prepare historical data
+            historical_data = [
+                (snapshot.timestamp, snapshot.financial_metrics.get(metric_name, 0))
+                for snapshot in historical_snapshots
+                if isinstance(snapshot.financial_metrics.get(metric_name), (int, float))
+            ]
+
+            if len(historical_data) < AnomalyDetector.MIN_TRAINING_DAYS:
+                continue
+
+            # Train Prophet model
+            success = self.anomaly_detector.fit_model(metric_name, historical_data)
+            if not success:
+                continue
+
+            # Detect anomalies
+            anomaly = self.anomaly_detector.detect_anomalies(
+                metric_name=metric_name,
+                current_value=float(current_value),
+                timestamp=current_snapshot.timestamp,
+            )
+
+            if anomaly:
+                anomalies.append(anomaly)
+
+        return anomalies
+
+    async def _detect_trend_anomalies(
+        self,
+        monitor: Monitor,
+        historical_snapshots: List[MonitorAnalysisSnapshot],
+        current_snapshot: MonitorAnalysisSnapshot,
+    ) -> List[AnomalyScore]:
+        """Detect trend reversals."""
+        anomalies = []
+
+        # For simplicity, analyze market trend count as a metric
+        metric_name = "market_trends_count"
+
+        historical_data = [
+            (snapshot.timestamp, len(snapshot.market_trends or []))
+            for snapshot in historical_snapshots
+        ]
+
+        if len(historical_data) < AnomalyDetector.MIN_TRAINING_DAYS:
+            return []
+
+        # Train model
+        success = self.anomaly_detector.fit_model(metric_name, historical_data)
+        if not success:
+            return []
+
+        # Analyze trends
+        trend_analysis = self.anomaly_detector.trend_analysis(
+            metric_name=metric_name,
+            recent_window_days=7,
+        )
+
+        if trend_analysis and trend_analysis.reversal_detected:
+            # Create anomaly score for trend reversal
+            anomaly = AnomalyScore(
+                metric_name="Market Trends",
+                anomaly_type="trend_reversal",
+                severity=min(10.0, trend_analysis.reversal_confidence * 10),
+                confidence=trend_analysis.reversal_confidence,
+                explanation=(
+                    f"Market trend direction changed from "
+                    f"{trend_analysis.historical_trend} to {trend_analysis.current_trend}"
+                ),
+                statistical_details={
+                    "historical_trend": trend_analysis.historical_trend,
+                    "current_trend": trend_analysis.current_trend,
+                    "trend_strength": trend_analysis.trend_strength,
+                },
+            )
+            anomalies.append(anomaly)
+
+        return anomalies
+
     async def _create_alert(
-        self, monitor: Monitor, changes: List[Change]
+        self,
+        monitor: Monitor,
+        changes: List[Change],
+        anomaly_scores: Optional[List[AnomalyScore]] = None,
     ) -> Alert:
-        """Create alert from detected changes."""
+        """Create alert from detected changes and anomalies."""
         alert_id = str(uuid4())
 
-        # Calculate overall confidence (weighted average)
-        avg_confidence = sum(c.confidence for c in changes) / len(changes)
+        # Calculate overall confidence
+        if changes:
+            avg_confidence = sum(c.confidence for c in changes) / len(changes)
+        elif anomaly_scores:
+            avg_confidence = sum(a.confidence for a in anomaly_scores) / len(anomaly_scores)
+        else:
+            avg_confidence = 0.5
 
         # Generate summary
-        change_types = set(c.change_type.value for c in changes)
-        summary = f"Detected {len(changes)} changes in {monitor.company}: {', '.join(change_types)}"
+        summary_parts = []
+        if changes:
+            change_types = set(c.change_type.value for c in changes)
+            summary_parts.append(
+                f"{len(changes)} changes in {', '.join(change_types)}"
+            )
+        if anomaly_scores:
+            summary_parts.append(f"{len(anomaly_scores)} statistical anomalies")
+
+        summary = f"Detected {' and '.join(summary_parts)} for {monitor.company}"
+
+        # Convert anomaly scores to models
+        anomaly_models = []
+        if anomaly_scores:
+            for score in anomaly_scores:
+                anomaly_models.append(AnomalyScoreModel(
+                    metric_name=score.metric_name,
+                    anomaly_type=score.anomaly_type.value,
+                    severity=score.severity,
+                    confidence=score.confidence,
+                    explanation=score.explanation,
+                    statistical_details=score.statistical_details,
+                    forecast_value=score.forecast_value,
+                    actual_value=score.actual_value,
+                    lower_bound=score.lower_bound,
+                    upper_bound=score.upper_bound,
+                ))
 
         alert = Alert(
             id=alert_id,
@@ -559,6 +924,7 @@ class IntelligenceMonitor:
             summary=summary,
             confidence=avg_confidence,
             changes_detected=changes,
+            anomaly_scores=anomaly_models,
             created_at=datetime.utcnow(),
             read=False,
         )
@@ -571,25 +937,21 @@ class IntelligenceMonitor:
     async def _get_latest_snapshot(
         self, monitor_id: str
     ) -> Optional[MonitorAnalysisSnapshot]:
-        """Get most recent snapshot for monitor."""
-        if self.cache:
-            cache_key = f"snapshot:{monitor_id}:latest"
-            snapshot = await self.cache.get(cache_key)
-            if snapshot:
-                return snapshot
-
-        # Fallback to database
-        return await self.db.get_latest_snapshot(monitor_id)
+        """Get most recent snapshot for monitor using optimized queries."""
+        # Use time-series optimizer for cached retrieval
+        return await self.timeseries_optimizer.get_latest_snapshot(
+            monitor_id=monitor_id,
+            decompress=True,
+        )
 
     async def _store_snapshot(self, snapshot: MonitorAnalysisSnapshot) -> None:
-        """Store snapshot for future comparison."""
-        # Store in database
-        await self.db.create_snapshot(snapshot)
-
-        # Cache latest snapshot
-        if self.cache:
-            cache_key = f"snapshot:{snapshot.monitor_id}:latest"
-            await self.cache.set(cache_key, snapshot, ttl=86400)  # 24h
+        """Store snapshot with compression and optimization."""
+        # Use time-series optimizer for compressed storage
+        await self.timeseries_optimizer.store_snapshot(
+            snapshot=snapshot,
+            compress=True,  # Auto-compress large snapshots
+            batch=False,    # Immediate write for monitoring
+        )
 
     def _calculate_next_check(self, frequency: MonitoringFrequency) -> datetime:
         """Calculate next scheduled check time."""
@@ -618,11 +980,160 @@ class IntelligenceMonitor:
         )
 
     async def _send_slack_alert(self, monitor: Monitor, alert: Alert) -> None:
-        """Send Slack notification (placeholder)."""
-        # TODO: Implement Slack webhook integration
-        pass
+        """Send Slack notification via webhook or bot token."""
+        try:
+            from consultantos.services.alerting.slack_channel import SlackAlertChannel
+            
+            # Get Slack configuration from monitor preferences
+            prefs = monitor.config.notification_preferences or {}
+            slack_config = prefs.get("slack", {})
+            
+            # Check if Slack is configured
+            if not slack_config.get("webhook_url") and not slack_config.get("bot_token"):
+                self.logger.warning(
+                    "Slack alert skipped - no webhook URL or bot token configured",
+                    extra={"monitor_id": monitor.id, "alert_id": alert.id}
+                )
+                return
+            
+            # Initialize Slack channel
+            channel = SlackAlertChannel(config=slack_config)
+            
+            # Prepare user preferences for channel
+            user_preferences = {
+                "user_id": monitor.user_id,
+                "slack_channel": slack_config.get("channel", "#alerts"),
+                "slack_user_id": slack_config.get("user_id"),
+                **slack_config
+            }
+            
+            # Convert alert to channel format
+            changes = [
+                {
+                    "change_type": change.change_type.value,
+                    "title": change.title,
+                    "description": change.description,
+                    "confidence": change.confidence,
+                    "detected_at": change.detected_at,
+                    "previous_value": change.previous_value,
+                    "current_value": change.current_value,
+                    "source_urls": change.source_urls
+                }
+                for change in alert.changes
+            ]
+            
+            # Send alert
+            result = await channel.send_alert(
+                alert_id=alert.id,
+                monitor_id=monitor.id,
+                title=alert.title,
+                summary=alert.summary,
+                confidence=alert.confidence,
+                changes=changes,
+                user_preferences=user_preferences
+            )
+            
+            if result.status.value == "sent":
+                self.logger.info(
+                    "Slack alert sent successfully",
+                    extra={
+                        "monitor_id": monitor.id,
+                        "alert_id": alert.id,
+                        "channel": result.metadata.get("channel") if result.metadata else None
+                    }
+                )
+            else:
+                self.logger.warning(
+                    "Slack alert delivery failed",
+                    extra={
+                        "monitor_id": monitor.id,
+                        "alert_id": alert.id,
+                        "error": result.error_message
+                    }
+                )
+        except Exception as e:
+            self.logger.error(
+                "Failed to send Slack alert",
+                extra={"monitor_id": monitor.id, "alert_id": alert.id, "error": str(e)},
+                exc_info=True
+            )
 
     async def _send_webhook_alert(self, monitor: Monitor, alert: Alert) -> None:
-        """Send webhook notification (placeholder)."""
-        # TODO: Implement webhook delivery
-        pass
+        """Send webhook notification to custom endpoint."""
+        try:
+            from consultantos.services.alerting.webhook_channel import WebhookAlertChannel
+            
+            # Get webhook configuration from monitor preferences
+            prefs = monitor.config.notification_preferences or {}
+            webhook_config = prefs.get("webhook", {})
+            
+            # Check if webhook URL is configured
+            webhook_url = webhook_config.get("url")
+            if not webhook_url:
+                self.logger.warning(
+                    "Webhook alert skipped - no webhook URL configured",
+                    extra={"monitor_id": monitor.id, "alert_id": alert.id}
+                )
+                return
+            
+            # Initialize webhook channel
+            channel = WebhookAlertChannel(config={})
+            
+            # Prepare user preferences for channel
+            user_preferences = {
+                "user_id": monitor.user_id,
+                "webhook_url": webhook_url,
+                "webhook_headers": webhook_config.get("headers", {}),
+                "webhook_timeout": webhook_config.get("timeout", 10)
+            }
+            
+            # Convert alert to channel format
+            changes = [
+                {
+                    "change_type": change.change_type.value,
+                    "title": change.title,
+                    "description": change.description,
+                    "confidence": change.confidence,
+                    "detected_at": change.detected_at,
+                    "previous_value": change.previous_value,
+                    "current_value": change.current_value,
+                    "source_urls": change.source_urls
+                }
+                for change in alert.changes
+            ]
+            
+            # Send alert
+            result = await channel.send_alert(
+                alert_id=alert.id,
+                monitor_id=monitor.id,
+                title=alert.title,
+                summary=alert.summary,
+                confidence=alert.confidence,
+                changes=changes,
+                user_preferences=user_preferences
+            )
+            
+            if result.status.value == "sent":
+                self.logger.info(
+                    "Webhook alert sent successfully",
+                    extra={
+                        "monitor_id": monitor.id,
+                        "alert_id": alert.id,
+                        "webhook_url": webhook_url[:50] + "..." if len(webhook_url) > 50 else webhook_url
+                    }
+                )
+            else:
+                self.logger.warning(
+                    "Webhook alert delivery failed",
+                    extra={
+                        "monitor_id": monitor.id,
+                        "alert_id": alert.id,
+                        "error": result.error_message
+                    }
+                )
+        except Exception as e:
+            self.logger.error(
+                "Failed to send webhook alert",
+                extra={"monitor_id": monitor.id, "alert_id": alert.id, "error": str(e)},
+                exc_info=True
+            )

@@ -1,0 +1,155 @@
+groups:
+  - name: consultantos_alerts
+    interval: 15s
+    rules:
+      # High API error rate
+      - alert: HighAPIErrorRate
+        expr: |
+          (rate(consultantos_api_requests_total{status=~"5.."}[5m]) /
+           rate(consultantos_api_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High API error rate detected"
+          description: "API error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # High API latency
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95, rate(consultantos_api_request_duration_seconds_bucket[5m])) > 2
+        for: 3m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency detected"
+          description: "p95 latency is {{ $value | humanizeDuration }} (threshold: 2s)"
+
+      # Agent execution failures
+      - alert: AgentExecutionFailureRate
+        expr: |
+          (rate(consultantos_agent_executions_total{status="failure"}[5m]) /
+           rate(consultantos_agent_executions_total[5m])) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: agents
+        annotations:
+          summary: "High agent execution failure rate"
+          description: "Agent {{ $labels.agent_name }} failure rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      # Low agent success rate
+      - alert: LowAgentSuccessRate
+        expr: consultantos_agent_success_rate < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: agents
+        annotations:
+          summary: "Low agent success rate"
+          description: "Agent {{ $labels.agent_name }} success rate is {{ $value | humanizePercentage }} (threshold: 80%)"
+
+      # Monitor check failures
+      - alert: MonitorCheckFailure
+        expr: |
+          (rate(consultantos_monitor_checks_total{status="failure"}[5m]) /
+           rate(consultantos_monitor_checks_total[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: "Monitor check failures detected"
+          description: "Monitor {{ $labels.monitor_id }} failure rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      # High monitor check latency
+      - alert: HighMonitorCheckLatency
+        expr: |
+          histogram_quantile(0.95, rate(consultantos_monitor_check_duration_seconds_bucket[5m])) > 120
+        for: 3m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "High monitor check latency"
+          description: "Monitor {{ $labels.monitor_id }} p95 latency is {{ $value | humanizeDuration }} (threshold: 2m)"
+
+      # Low alert quality
+      - alert: LowAlertQuality
+        expr: consultantos_alert_quality_score < 0.6
+        for: 10m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "Low alert quality detected"
+          description: "Monitor {{ $labels.monitor_id }} alert quality is {{ $value }} (threshold: 0.6)"
+
+      # Data source reliability issue
+      - alert: DataSourceReliabilityIssue
+        expr: consultantos_data_source_reliability < 0.7
+        for: 5m
+        labels:
+          severity: warning
+          component: data_sources
+        annotations:
+          summary: "Data source reliability issue"
+          description: "Data source {{ $labels.source_name }} reliability is {{ $value }} (threshold: 0.7)"
+
+      # High cache miss rate
+      - alert: HighCacheMissRate
+        expr: consultantos_cache_hit_rate < 0.5
+        for: 5m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "High cache miss rate"
+          description: "{{ $labels.cache_type }} cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+
+      # Job queue building up
+      - alert: JobQueueBackup
+        expr: consultantos_queue_size > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: jobs
+        annotations:
+          summary: "Job queue building up"
+          description: "{{ $labels.queue_name }} queue size is {{ $value }} (threshold: 100 jobs)"
+
+      # High error rate in last hour
+      - alert: HighErrorRateLastHour
+        expr: |
+          (rate(consultantos_errors_total[1h])) > 10
+        for: 10m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "High error rate in last hour"
+          description: "{{ $labels.component }} error rate is {{ $value }} errors/sec (threshold: 10/sec)"
+
+      # Instance down
+      - alert: InstanceDown
+        expr: up{job="consultantos-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "ConsultantOS API instance is down"
+          description: "ConsultantOS API at {{ $labels.instance }} has been down for more than 1 minute"
+
+      # High active requests
+      - alert: HighActiveRequests
+        expr: consultantos_active_requests > 100
+        for: 2m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High number of active requests"
+          description: "Active request count is {{ $value }} (threshold: 100)"

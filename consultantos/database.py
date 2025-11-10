@@ -468,9 +468,14 @@ class InMemoryDatabaseService:
                         if isinstance(item_data.get("created_at"), str):
                             try:
                                 item_data["created_at"] = datetime.fromisoformat(item_data["created_at"])
-                            except (ValueError, AttributeError):
-                                # If parsing fails, use current time as fallback
-                                item_data["created_at"] = datetime.utcnow()
+                            except (ValueError, AttributeError) as e:
+                                # Skip items with unparsable created_at to avoid masking data issues
+                                item_id = item_dict.get("id", "unknown")
+                                logger.warning(
+                                    f"Skipping knowledge item with invalid created_at: item_id={item_id}, "
+                                    f"user_id={user_id}, created_at={item_data.get('created_at')}, error={e}"
+                                )
+                                continue
                         items.append(KnowledgeItem(**item_data))
                     except (TypeError, ValueError, KeyError) as e:
                         # Skip items with missing required fields or invalid data
@@ -636,6 +641,240 @@ class InMemoryDatabaseService:
                 if h.get("search_id") == search_id
             ]
             return sorted(history, key=lambda x: x.get("created_at", ""), reverse=True)[:limit]
+
+    # Time-Series Monitoring Operations (in-memory implementation)
+    async def create_monitor(self, monitor) -> bool:
+        """Create intelligence monitor"""
+        with self._lock:
+            if not hasattr(self, '_monitors'):
+                self._monitors = {}
+            self._monitors[monitor.id] = monitor.dict()
+        return True
+
+    async def get_monitor(self, monitor_id: str):
+        """Get monitor by ID"""
+        from consultantos.models.monitoring import Monitor
+        with self._lock:
+            if not hasattr(self, '_monitors'):
+                return None
+            if monitor_id in self._monitors:
+                return Monitor(**self._monitors[monitor_id])
+        return None
+
+    async def get_monitor_by_company(self, user_id: str, company: str):
+        """Get monitor for user and company"""
+        from consultantos.models.monitoring import Monitor
+        with self._lock:
+            if not hasattr(self, '_monitors'):
+                return None
+            for monitor_data in self._monitors.values():
+                if monitor_data.get("user_id") == user_id and monitor_data.get("company") == company:
+                    return Monitor(**monitor_data)
+        return None
+
+    async def update_monitor(self, monitor) -> bool:
+        """Update monitor"""
+        with self._lock:
+            if not hasattr(self, '_monitors'):
+                return False
+            if monitor.id in self._monitors:
+                self._monitors[monitor.id] = monitor.dict()
+                return True
+        return False
+
+    async def list_monitors(self, user_id: str, status: Optional[str] = None):
+        """List monitors for user"""
+        from consultantos.models.monitoring import Monitor
+        with self._lock:
+            if not hasattr(self, '_monitors'):
+                return []
+            monitors = [
+                Monitor(**v) for v in self._monitors.values()
+                if v.get("user_id") == user_id
+            ]
+            if status:
+                monitors = [m for m in monitors if m.status.value == status]
+            monitors.sort(key=lambda m: m.created_at, reverse=True)
+            return monitors
+
+    async def create_snapshot(self, snapshot) -> bool:
+        """Create monitoring snapshot"""
+        with self._lock:
+            if not hasattr(self, '_snapshots'):
+                self._snapshots = {}
+            doc_id = f"{snapshot.monitor_id}_{int(snapshot.timestamp.timestamp())}"
+            self._snapshots[doc_id] = snapshot.dict()
+        return True
+
+    async def get_latest_snapshot(self, monitor_id: str):
+        """Get most recent snapshot for monitor"""
+        from consultantos.models.monitoring import MonitorAnalysisSnapshot
+        with self._lock:
+            if not hasattr(self, '_snapshots'):
+                return None
+            snapshots = [
+                MonitorAnalysisSnapshot(**v) for v in self._snapshots.values()
+                if v.get("monitor_id") == monitor_id
+            ]
+            if snapshots:
+                return max(snapshots, key=lambda s: s.timestamp)
+        return None
+
+    async def get_snapshots_in_range(
+        self,
+        monitor_id: str,
+        start_time: datetime,
+        end_time: datetime,
+        limit: Optional[int] = None,
+    ):
+        """Get snapshots within time range"""
+        from consultantos.models.monitoring import MonitorAnalysisSnapshot
+        with self._lock:
+            if not hasattr(self, '_snapshots'):
+                return []
+            snapshots = [
+                MonitorAnalysisSnapshot(**v) for v in self._snapshots.values()
+                if v.get("monitor_id") == monitor_id
+                and start_time <= v.get("timestamp") <= end_time
+            ]
+            snapshots.sort(key=lambda s: s.timestamp, reverse=True)
+            if limit:
+                return snapshots[:limit]
+            return snapshots
+
+    async def get_snapshots_history(
+        self,
+        monitor_id: str,
+        days_back: int = 30,
+        limit: Optional[int] = None,
+    ):
+        """
+        Get historical snapshots for a monitor.
+
+        Convenience method for anomaly detection - returns snapshots from
+        the last N days.
+
+        Args:
+            monitor_id: Monitor identifier
+            days_back: Number of days to look back (default: 30)
+            limit: Optional limit on number of snapshots
+
+        Returns:
+            List of snapshots ordered by timestamp (newest first)
+        """
+        from datetime import timedelta
+        end_time = datetime.utcnow()
+        start_time = end_time - timedelta(days=days_back)
+
+        return await self.get_snapshots_in_range(
+            monitor_id=monitor_id,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
+        )
+
+    async def delete_snapshots_before(self, monitor_id: str, before_time: datetime) -> int:
+        """Delete snapshots older than specified time"""
+        with self._lock:
+            if not hasattr(self, '_snapshots'):
+                return 0
+            to_delete = [
+                doc_id for doc_id, v in self._snapshots.items()
+                if v.get("monitor_id") == monitor_id and v.get("timestamp") < before_time
+            ]
+            for doc_id in to_delete:
+                del self._snapshots[doc_id]
+            return len(to_delete)
+
+    async def create_alert(self, alert) -> bool:
+        """Create monitoring alert"""
+        with self._lock:
+            if not hasattr(self, '_alerts'):
+                self._alerts = {}
+            self._alerts[alert.id] = alert.dict()
+        return True
+
+    async def get_alert(self, alert_id: str):
+        """Get alert by ID"""
+        from consultantos.models.monitoring import Alert
+        with self._lock:
+            if not hasattr(self, '_alerts'):
+                return None
+            if alert_id in self._alerts:
+                return Alert(**self._alerts[alert_id])
+        return None
+
+    async def list_alerts(
+        self,
+        monitor_id: str,
+        unread_only: bool = False,
+        limit: int = 50,
+    ):
+        """List alerts for monitor"""
+        from consultantos.models.monitoring import Alert
+        with self._lock:
+            if not hasattr(self, '_alerts'):
+                return []
+            alerts = [
+                Alert(**v) for v in self._alerts.values()
+                if v.get("monitor_id") == monitor_id
+            ]
+            if unread_only:
+                alerts = [a for a in alerts if not a.read]
+            alerts.sort(key=lambda a: a.created_at, reverse=True)
+            return alerts[:limit]
+
+    async def update_alert(self, alert_id: str, **updates) -> bool:
+        """Update alert fields"""
+        with self._lock:
+            if not hasattr(self, '_alerts'):
+                return False
+            if alert_id in self._alerts:
+                self._alerts[alert_id].update(updates)
+                return True
+        return False
+
+    async def create_aggregation(self, aggregation) -> bool:
+        """Create snapshot aggregation"""
+        with self._lock:
+            if not hasattr(self, '_aggregations'):
+                self._aggregations = {}
+            doc_id = f"{aggregation.monitor_id}_{aggregation.period.value}_{int(aggregation.start_time.timestamp())}"
+            self._aggregations[doc_id] = aggregation.dict()
+        return True
+
+    async def get_aggregation(self, monitor_id: str, period: str, start_time: datetime):
+        """Get aggregation for specific period"""
+        from consultantos.monitoring.snapshot_aggregator import SnapshotAggregation
+        with self._lock:
+            if not hasattr(self, '_aggregations'):
+                return None
+            for v in self._aggregations.values():
+                if (v.get("monitor_id") == monitor_id and
+                    v.get("period") == period and
+                    v.get("start_time") == start_time):
+                    return SnapshotAggregation(**v)
+        return None
+
+    async def list_aggregations(
+        self,
+        monitor_id: str,
+        period: Optional[str] = None,
+        limit: int = 30,
+    ):
+        """List aggregations for monitor"""
+        from consultantos.monitoring.snapshot_aggregator import SnapshotAggregation
+        with self._lock:
+            if not hasattr(self, '_aggregations'):
+                return []
+            aggregations = [
+                SnapshotAggregation(**v) for v in self._aggregations.values()
+                if v.get("monitor_id") == monitor_id
+            ]
+            if period:
+                aggregations = [a for a in aggregations if a.period.value == period]
+            aggregations.sort(key=lambda a: a.start_time, reverse=True)
+            return aggregations[:limit]
 
 
 class DatabaseService:
@@ -1150,6 +1389,297 @@ class DatabaseService:
             return [LearningPattern(**doc.to_dict()) for doc in docs]
         except Exception as e:
             logger.error(f"Failed to get learning patterns: {e}")
+            return []
+
+    # Time-Series Monitoring Operations (for continuous intelligence)
+    async def create_monitor(self, monitor) -> bool:
+        """Create intelligence monitor"""
+        try:
+            monitors_collection = self.db.collection("monitors")
+            doc_ref = monitors_collection.document(monitor.id)
+            doc_ref.set(monitor.dict())
+            logger.info(f"Created monitor: {monitor.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create monitor: {e}")
+            return False
+
+    async def get_monitor(self, monitor_id: str):
+        """Get monitor by ID"""
+        from consultantos.models.monitoring import Monitor
+        try:
+            monitors_collection = self.db.collection("monitors")
+            doc_ref = monitors_collection.document(monitor_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                return Monitor(**doc.to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get monitor: {e}")
+            return None
+
+    async def get_monitor_by_company(self, user_id: str, company: str):
+        """Get monitor for user and company"""
+        from consultantos.models.monitoring import Monitor
+        try:
+            monitors_collection = self.db.collection("monitors")
+            query = monitors_collection.where("user_id", "==", user_id).where("company", "==", company).limit(1)
+            docs = list(query.stream())
+            if docs:
+                return Monitor(**docs[0].to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get monitor by company: {e}")
+            return None
+
+    async def update_monitor(self, monitor) -> bool:
+        """Update monitor"""
+        try:
+            monitors_collection = self.db.collection("monitors")
+            doc_ref = monitors_collection.document(monitor.id)
+            doc_ref.update(monitor.dict())
+            logger.info(f"Updated monitor: {monitor.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update monitor: {e}")
+            return False
+
+    async def list_monitors(self, user_id: str, status: Optional[str] = None):
+        """List monitors for user"""
+        from consultantos.models.monitoring import Monitor
+        try:
+            monitors_collection = self.db.collection("monitors")
+            query = monitors_collection.where("user_id", "==", user_id)
+            if status:
+                query = query.where("status", "==", status)
+            query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
+            docs = query.stream()
+            return [Monitor(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to list monitors: {e}")
+            return []
+
+    async def create_snapshot(self, snapshot) -> bool:
+        """Create monitoring snapshot"""
+        try:
+            snapshots_collection = self.db.collection("snapshots")
+            # Use monitor_id + timestamp as document ID for efficient queries
+            doc_id = f"{snapshot.monitor_id}_{int(snapshot.timestamp.timestamp())}"
+            doc_ref = snapshots_collection.document(doc_id)
+            doc_ref.set(snapshot.dict())
+            logger.debug(f"Created snapshot: {doc_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create snapshot: {e}")
+            return False
+
+    async def get_latest_snapshot(self, monitor_id: str):
+        """Get most recent snapshot for monitor"""
+        from consultantos.models.monitoring import MonitorAnalysisSnapshot
+        try:
+            snapshots_collection = self.db.collection("snapshots")
+            query = snapshots_collection.where("monitor_id", "==", monitor_id)
+            query = query.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
+            docs = list(query.stream())
+            if docs:
+                return MonitorAnalysisSnapshot(**docs[0].to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get latest snapshot: {e}")
+            return None
+
+    async def get_snapshots_in_range(
+        self,
+        monitor_id: str,
+        start_time: datetime,
+        end_time: datetime,
+        limit: Optional[int] = None,
+    ):
+        """Get snapshots within time range"""
+        from consultantos.models.monitoring import MonitorAnalysisSnapshot
+        try:
+            snapshots_collection = self.db.collection("snapshots")
+            query = snapshots_collection.where("monitor_id", "==", monitor_id)
+            query = query.where("timestamp", ">=", start_time)
+            query = query.where("timestamp", "<=", end_time)
+            query = query.order_by("timestamp", direction=firestore.Query.DESCENDING)
+            if limit:
+                query = query.limit(limit)
+            docs = query.stream()
+            return [MonitorAnalysisSnapshot(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get snapshots in range: {e}")
+            return []
+
+    async def get_snapshots_history(
+        self,
+        monitor_id: str,
+        days_back: int = 30,
+        limit: Optional[int] = None,
+    ):
+        """
+        Get historical snapshots for a monitor.
+
+        Convenience method for anomaly detection - returns snapshots from
+        the last N days.
+
+        Args:
+            monitor_id: Monitor identifier
+            days_back: Number of days to look back (default: 30)
+            limit: Optional limit on number of snapshots
+
+        Returns:
+            List of snapshots ordered by timestamp (newest first)
+        """
+        from datetime import timedelta
+        end_time = datetime.utcnow()
+        start_time = end_time - timedelta(days=days_back)
+
+        return await self.get_snapshots_in_range(
+            monitor_id=monitor_id,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
+        )
+
+    async def delete_snapshots_before(self, monitor_id: str, before_time: datetime) -> int:
+        """Delete snapshots older than specified time"""
+        try:
+            snapshots_collection = self.db.collection("snapshots")
+            query = snapshots_collection.where("monitor_id", "==", monitor_id)
+            query = query.where("timestamp", "<", before_time)
+
+            # Firestore doesn't support bulk delete, so we need to delete in batches
+            batch = self.db.batch()
+            deleted_count = 0
+
+            for doc in query.stream():
+                batch.delete(doc.reference)
+                deleted_count += 1
+
+                # Commit in batches of 500 (Firestore limit)
+                if deleted_count % 500 == 0:
+                    batch.commit()
+                    batch = self.db.batch()
+
+            # Commit remaining
+            if deleted_count % 500 != 0:
+                batch.commit()
+
+            logger.info(f"Deleted {deleted_count} snapshots before {before_time}")
+            return deleted_count
+        except Exception as e:
+            logger.error(f"Failed to delete snapshots: {e}")
+            return 0
+
+    async def create_alert(self, alert) -> bool:
+        """Create monitoring alert"""
+        try:
+            alerts_collection = self.db.collection("alerts")
+            doc_ref = alerts_collection.document(alert.id)
+            doc_ref.set(alert.dict())
+            logger.info(f"Created alert: {alert.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create alert: {e}")
+            return False
+
+    async def get_alert(self, alert_id: str):
+        """Get alert by ID"""
+        from consultantos.models.monitoring import Alert
+        try:
+            alerts_collection = self.db.collection("alerts")
+            doc_ref = alerts_collection.document(alert_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                return Alert(**doc.to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get alert: {e}")
+            return None
+
+    async def list_alerts(
+        self,
+        monitor_id: str,
+        unread_only: bool = False,
+        limit: int = 50,
+    ):
+        """List alerts for monitor"""
+        from consultantos.models.monitoring import Alert
+        try:
+            alerts_collection = self.db.collection("alerts")
+            query = alerts_collection.where("monitor_id", "==", monitor_id)
+            if unread_only:
+                query = query.where("read", "==", False)
+            query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
+            query = query.limit(limit)
+            docs = query.stream()
+            return [Alert(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to list alerts: {e}")
+            return []
+
+    async def update_alert(self, alert_id: str, **updates) -> bool:
+        """Update alert fields"""
+        try:
+            alerts_collection = self.db.collection("alerts")
+            doc_ref = alerts_collection.document(alert_id)
+            doc_ref.update(updates)
+            logger.info(f"Updated alert: {alert_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update alert: {e}")
+            return False
+
+    async def create_aggregation(self, aggregation) -> bool:
+        """Create snapshot aggregation"""
+        try:
+            aggregations_collection = self.db.collection("aggregations")
+            # Use monitor_id + period + start_time as document ID
+            doc_id = f"{aggregation.monitor_id}_{aggregation.period.value}_{int(aggregation.start_time.timestamp())}"
+            doc_ref = aggregations_collection.document(doc_id)
+            doc_ref.set(aggregation.dict())
+            logger.debug(f"Created aggregation: {doc_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create aggregation: {e}")
+            return False
+
+    async def get_aggregation(self, monitor_id: str, period: str, start_time: datetime):
+        """Get aggregation for specific period"""
+        from consultantos.monitoring.snapshot_aggregator import SnapshotAggregation
+        try:
+            aggregations_collection = self.db.collection("aggregations")
+            query = aggregations_collection.where("monitor_id", "==", monitor_id)
+            query = query.where("period", "==", period)
+            query = query.where("start_time", "==", start_time).limit(1)
+            docs = list(query.stream())
+            if docs:
+                return SnapshotAggregation(**docs[0].to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get aggregation: {e}")
+            return None
+
+    async def list_aggregations(
+        self,
+        monitor_id: str,
+        period: Optional[str] = None,
+        limit: int = 30,
+    ):
+        """List aggregations for monitor"""
+        from consultantos.monitoring.snapshot_aggregator import SnapshotAggregation
+        try:
+            aggregations_collection = self.db.collection("aggregations")
+            query = aggregations_collection.where("monitor_id", "==", monitor_id)
+            if period:
+                query = query.where("period", "==", period)
+            query = query.order_by("start_time", direction=firestore.Query.DESCENDING)
+            query = query.limit(limit)
+            docs = query.stream()
+            return [SnapshotAggregation(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to list aggregations: {e}")
             return []
 
 

@@ -1,3 +1,6 @@
+# Numpy - Install first to prevent binary compatibility issues
+numpy>=1.24.0,<2.0.0
+
 # Core Framework
 fastapi==0.120.4
 uvicorn[standard]==0.35.0
@@ -13,10 +16,12 @@ instructor>=0.4.0
 tavily-python>=0.3.0
 pytrends>=4.9.0
 yfinance>=0.2.0
+finnhub-python>=2.4.0
 edgartools>=2.0.0
 finviz>=1.4.0
 pandas>=2.1.0
 pandas-datareader>=0.10.0
+alpha-vantage>=2.3.0  # Technical indicators, sector performance, economic data
 
 # Vector Store and Caching
 chromadb>=0.4.0
@@ -26,10 +31,12 @@ diskcache>=5.6.0
 reportlab>=4.0.0
 plotly>=5.18.0
 kaleido>=0.2.1
+openpyxl>=3.1.0  # Excel export
+python-docx>=1.1.0  # Word export
 
 # API and Security
 slowapi>=0.1.9
-python-multipart>=0.0.6
+python-multipart>=0.0.9
 starlette>=0.27.0
 itsdangerous>=2.1.0  # For secure session signing
 
@@ -41,16 +48,72 @@ google-cloud-firestore>=2.13.0
 google-cloud-tasks>=2.14.0
 
 # Utilities
-python-dotenv>=1.0.0
+python-dotenv>=1.1.0
 structlog>=23.2.0
 httpx>=0.25.0
+
+# PII Detection and Security (Phase 1 Week 5-6)
+presidio-analyzer==2.2.360  # PII detection - pinned version for faster deployment
+presidio-anonymizer==2.2.0  # PII anonymization - pinned version
+
+# Email Connectors
+google-auth>=2.17.0  # Gmail OAuth
+google-auth-oauthlib>=1.0.0  # OAuth flow
+google-auth-httplib2>=0.1.0  # HTTP transport
+google-api-python-client>=2.80.0  # Gmail API
+
+# Sentiment Analysis and NLP
+textblob>=0.17.0  # Sentiment analysis
+
+# Encryption
+cryptography>=41.0.0  # Encryption for credentials
 passlib[bcrypt]>=1.7.4
 python-jose[cryptography]>=3.3.0
+slack-sdk>=3.23.0  # Slack integration for alerts
+aiohttp>=3.9.0  # Async HTTP for webhooks
+
+# Data Validation
+pandera==0.17.0  # Pinned version for faster deployment
+multimethod>=1.9.0,<2.0.0  # Required by pandera - pin compatible version
+
+# Anomaly Detection & Forecasting
+# prophet>=1.1.0  # Time series forecasting - TEMPORARILY DISABLED for faster deployment
+# ForecastingAgent will use basic statistical methods instead
+
+# NLP and Text Analysis
+spacy==3.6.1  # NLP for entity extraction and sentiment analysis - pinned for faster deployment
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.6.0/en_core_web_sm-3.6.0-py3-none-any.whl  # English language model - updated for spacy 3.6.1
+# sentence-transformers>=2.2.2  # Embeddings for RAG - TEMPORARILY DISABLED (requires PyTorch)
+# transformers>=4.35.0  # BERT-based models - TEMPORARILY DISABLED for faster deployment
+# torch>=2.0.0  # PyTorch - TEMPORARILY DISABLED for faster deployment
+# ConversationalAgentMVP will use alternative embedding method or basic ChromaDB
+
+# Social Media Integration
+tweepy>=4.14.0  # Twitter API v2 client
+praw>=7.7.1  # Python Reddit API Wrapper
+openai>=1.0.0  # OpenAI-compatible API client (for Grok via laozhang.ai)
 
 # Testing
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 pytest-cov>=4.1.0
+vcrpy>=4.4.0  # HTTP interaction recording for API tests
+Faker>=20.0.0  # Realistic test data generation
+hypothesis>=6.90.0  # Property-based testing
+
+# Observability & Monitoring
+prometheus-client>=0.18.0  # Prometheus metrics
+prometheus-fastapi-instrumentator>=6.1.0  # FastAPI Prometheus integration
+sentry-sdk>=1.38.0  # Error tracking and performance monitoring
+
+# Task Queue (Celery + Redis)
+celery[redis]>=5.3.0  # Distributed task queue
+redis>=5.0.0  # Message broker and result backend
+flower>=2.0.0  # Celery monitoring web UI
+
+# Performance Optimization
+aiocache>=0.12.0  # Multi-level async caching (L1/L2)
+locust>=2.15.0  # Load testing framework
 
 # Local packages
 # Note: consultantos_core is copied into Docker image, not installed as editable

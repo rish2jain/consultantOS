@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Redis - Message broker and result backend
+  redis:
+    image: redis:7-alpine
+    container_name: consultantos-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - consultantos-network
+
+  # Celery Worker - Task execution
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: consultantos-celery-worker
+    command: celery -A consultantos.jobs.celery_app worker --loglevel=info --concurrency=4 --max-tasks-per-child=1000
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./consultantos:/app/consultantos
+      - celery-worker-logs:/var/log/celery
+    networks:
+      - consultantos-network
+    restart: unless-stopped
+
+  # Celery Beat - Periodic task scheduler
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: consultantos-celery-beat
+    command: celery -A consultantos.jobs.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./consultantos:/app/consultantos
+      - celery-beat-schedule:/var/celery
+    networks:
+      - consultantos-network
+    restart: unless-stopped
+
+  # Flower - Celery monitoring UI
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: consultantos-flower
+    command: celery -A consultantos.jobs.celery_app flower --port=5555
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - consultantos-network
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+    driver: local
+  celery-worker-logs:
+    driver: local
+  celery-beat-schedule:
+    driver: local
+
+networks:
+  consultantos-network:
+    driver: bridge

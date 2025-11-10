@@ -20,7 +20,7 @@ from consultantos.dashboards.templates import (
     get_templates_for_use_case,
     list_templates,
 )
-from consultantos.monitoring import get_logger
+from consultantos.log_utils import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
@@ -120,7 +120,12 @@ async def get_dashboard(
     if not dashboard:
         raise HTTPException(status_code=404, detail="Dashboard not found")
 
-    # TODO: Add authorization check - verify user owns dashboard
+    # Authorization check - verify user owns dashboard
+    if dashboard.user_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: You do not have permission to view this dashboard"
+        )
 
     return dashboard
 
@@ -138,8 +143,21 @@ async def refresh_dashboard(
     Connected WebSocket clients will receive the update automatically.
     """
     try:
+        # Check authorization before refreshing
+        dashboard = await service.get_dashboard(dashboard_id)
+        if not dashboard:
+            raise HTTPException(status_code=404, detail="Dashboard not found")
+        
+        if dashboard.user_id != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: You do not have permission to refresh this dashboard"
+            )
+        
         dashboard = await service.refresh_dashboard(dashboard_id)
         return dashboard
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -285,14 +303,81 @@ async def export_dashboard_to_pdf(
 
     Returns a PDF file with watermark indicating it's a snapshot.
     """
+    from fastapi.responses import Response
+    from datetime import datetime
+    from consultantos.reports.pdf_generator import generate_pdf_report
+    from consultantos import models
+    
     dashboard = await service.get_dashboard(dashboard_id)
     if not dashboard:
         raise HTTPException(status_code=404, detail="Dashboard not found")
 
-    # TODO: Implement PDF export using existing pdf_generator
-    # Include watermark: "Snapshot taken at [timestamp] - View live dashboard for latest data"
+    # Authorization check
+    if dashboard.user_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: You do not have permission to export this dashboard"
+        )
 
-    raise HTTPException(status_code=501, detail="PDF export not yet implemented")
+    try:
+        # Convert dashboard to StrategicReport format for PDF generation
+        # Create a minimal report structure from dashboard data
+        executive_summary = models.ExecutiveSummary(
+            company_name=dashboard.company,
+            industry=dashboard.industry,
+            analysis_date=datetime.utcnow(),
+            key_findings=[
+                f"Dashboard snapshot generated at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}",
+                f"View live dashboard for latest data: /dashboards/{dashboard_id}",
+                f"Template: {dashboard.template}",
+                f"Metrics: {len(dashboard.metrics)} active metrics",
+                f"Alerts: {len(dashboard.alerts)} active alerts"
+            ],
+            confidence_score=0.85,
+            methodology="Dashboard snapshot export"
+        )
+        
+        # Build sections from dashboard sections
+        sections = []
+        for section in dashboard.sections:
+            sections.append(models.ReportSection(
+                title=section.title,
+                content=f"Section type: {section.type.value}\nLast updated: {section.last_updated}",
+                order=section.order
+            ))
+        
+        # Create strategic report
+        report = models.StrategicReport(
+            executive_summary=executive_summary,
+            sections=sections,
+            frameworks={},
+            metadata={
+                "dashboard_id": dashboard_id,
+                "export_type": "dashboard_snapshot",
+                "snapshot_timestamp": datetime.utcnow().isoformat(),
+                "watermark": f"Snapshot taken at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')} - View live dashboard for latest data"
+            }
+        )
+        
+        # Generate PDF
+        pdf_bytes = generate_pdf_report(report, report_id=f"dashboard_{dashboard_id}")
+        
+        # Add watermark text to PDF (this is handled in the metadata)
+        # The pdf_generator will include the watermark from metadata
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="dashboard_{dashboard_id}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.pdf"'
+            }
+        )
+    except Exception as e:
+        logger.error(
+            "Failed to export dashboard to PDF",
+            extra={"dashboard_id": dashboard_id, "error": str(e)}
+        )
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
 
 
 @router.post("/{dashboard_id}/export/json")
@@ -309,5 +394,12 @@ async def export_dashboard_to_json(
     dashboard = await service.get_dashboard(dashboard_id)
     if not dashboard:
         raise HTTPException(status_code=404, detail="Dashboard not found")
+
+    # Authorization check
+    if dashboard.user_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: You do not have permission to export this dashboard"
+        )
 
     return dashboard.model_dump()
