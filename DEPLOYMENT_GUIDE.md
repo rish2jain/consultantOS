@@ -1,10 +1,11 @@
 # ConsultantOS Deployment Guide
 
 **Version**: 0.4.0
-**Last Updated**: November 2025
-**Status**: 🚀 **READY FOR DEPLOYMENT** (Strategic Intelligence Enhanced)
-**Live Service**: https://consultantos-api-bdndyf33xa-uc.a.run.app
+**Last Updated**: November 10, 2025
+**Status**: ✅ **DEPLOYED** (Strategic Intelligence v0.4.0 Live)
+**Live Service**: https://consultantos-api-187550875653.us-central1.run.app
 **Platform**: Google Cloud Run (us-central1)
+**Current Revision**: consultantos-api-00014-7lv
 **Previous Revision**: consultantos-api-00012-whm
 
 ## 🎉 Current Production Status
@@ -19,19 +20,20 @@
 - 📈 **Advanced Analytics**: Momentum tracking, flywheel analysis, pattern matching
 
 ### System Components
-- ✅ **API Endpoint**: https://consultantos-api-bdndyf33xa-uc.a.run.app
-- ✅ **Health Check**: Ready for deployment (version 0.4.0)
-- ✅ **Database**: Firestore configured
-- ✅ **Storage**: Cloud Storage configured
-- ✅ **Cache**: Disk + Semantic cache
-- ✅ **Background Worker**: Ready
+- ✅ **API Endpoint**: https://consultantos-api-187550875653.us-central1.run.app
+- ✅ **Health Check**: Healthy (verified November 10, 2025)
+- ✅ **Database**: Firestore (connected)
+- ✅ **Storage**: Cloud Storage (available)
+- ✅ **Cache**: Disk + Semantic cache (initialized)
+- ✅ **Background Worker**: Running
 - ✅ **New Agents**: DisruptionAgent, PositioningAgent, SystemsAgent
 - ✅ **Integration Tests**: All passing (14/14)
+- ✅ **Strategic Intelligence Endpoints**: 12 endpoints deployed
 
 **Test the Live API:**
 
 ```bash
-curl "https://consultantos-api-bdndyf33xa-uc.a.run.app/health"
+curl "https://consultantos-api-187550875653.us-central1.run.app/health"
 ```
 
 ---
