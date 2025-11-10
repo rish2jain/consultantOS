@@ -9,6 +9,19 @@ REGION=${GCP_REGION:-"us-central1"}
 API_URL=${API_URL:-"https://consultantos-api-bdndyf33xa-uc.a.run.app"}
 SERVICE_NAME="consultantos-frontend"
 
+# Validate PROJECT_ID is set and not the placeholder
+if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "your-project-id" ]; then
+    echo "❌ Error: PROJECT_ID is not set or still set to placeholder value"
+    echo ""
+    echo "Please set GCP_PROJECT_ID environment variable:"
+    echo "  export GCP_PROJECT_ID=your-actual-project-id"
+    echo ""
+    echo "Or set PROJECT_ID directly:"
+    echo "  export PROJECT_ID=your-actual-project-id"
+    echo ""
+    exit 1
+fi
+
 echo "🚀 Deploying ConsultantOS Frontend to Cloud Run"
 echo "Project: $PROJECT_ID"
 echo "Region: $REGION"

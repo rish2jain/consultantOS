@@ -2,19 +2,23 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
-    // Allow builds to succeed even with ESLint errors (for MVP demo)
-    ignoreDuringBuilds: true,
+    // Only ignore ESLint errors in non-production environments
+    // Production builds should fail on lint errors
+    ignoreDuringBuilds:
+      process.env.NODE_ENV !== "production" || process.env.DEV_DEMO === "true",
   },
   typescript: {
-    // Allow builds to succeed even with TypeScript errors (for MVP demo)
-    ignoreBuildErrors: true,
+    // Only ignore TypeScript errors in non-production environments
+    // Production builds should fail on type errors
+    ignoreBuildErrors:
+      process.env.NODE_ENV !== "production" || process.env.DEV_DEMO === "true",
   },
   // Enable standalone output for Cloud Run deployment
-  output: 'standalone',
+  output: "standalone",
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
   },
-}
+};
 
-module.exports = nextConfig
-
+module.exports = nextConfig;

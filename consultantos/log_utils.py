@@ -408,8 +408,8 @@ def log_request_success(request_id: str, execution_time: float, confidence: floa
     try:
         metrics.increment("requests_success")
     except Exception as e:
-        # Fallback if metrics fails
-        pass
+        # Log metrics failure but don't interrupt request flow
+        logger.error(f"Failed to increment metrics for request success: {e}", exc_info=True)
     
     try:
         logger.info(

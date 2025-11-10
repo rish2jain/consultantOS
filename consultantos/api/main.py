@@ -587,27 +587,17 @@ async def analyze_company(
             user_id
         )
         
-        # Log success - use keyword arguments to avoid binding issues
+        # Log success - use keyword arguments (log_request_success has stable signature)
         try:
-            if callable(log_request_success):
-                # Try calling with keyword arguments first
-                try:
-                    log_request_success(
-                        request_id=report_id,
-                        execution_time=execution_time,
-                        confidence=report.executive_summary.confidence_score
-                    )
-                except TypeError:
-                    # Fallback to positional if keyword fails
-                    log_request_success(report_id, execution_time, report.executive_summary.confidence_score)
-            else:
-                logger.info(f"Analysis completed: report_id={report_id}, execution_time={execution_time:.2f}, confidence={report.executive_summary.confidence_score}")
-        except TypeError as e:
-            # Handle signature mismatch gracefully
-            logger.warning(f"log_request_success signature mismatch: {e}. Logging directly instead.")
-            logger.info(f"Analysis completed: report_id={report_id}, execution_time={execution_time:.2f}, confidence={report.executive_summary.confidence_score}")
+            log_request_success(
+                request_id=report_id,
+                execution_time=execution_time,
+                confidence=report.executive_summary.confidence_score
+            )
         except Exception as e:
-            logger.error(f"Failed to log request success: {e}", exc_info=True)
+            # Fallback to direct logging if log_request_success fails
+            logger.warning(f"Failed to log request success via log_request_success: {e}", exc_info=True)
+            logger.info(f"Analysis completed: report_id={report_id}, execution_time={execution_time:.2f}, confidence={report.executive_summary.confidence_score}")
         
         # Store report metadata (synchronously for immediate access)
         try:
