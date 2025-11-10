@@ -405,13 +405,28 @@ def log_request(request_id: str, company: str, frameworks: list, user_ip: str):
 
 def log_request_success(request_id: str, execution_time: float, confidence: float):
     """Log successful analysis request"""
-    metrics.increment("requests_success")
-    logger.info(
-        "analysis_completed",
-        report_id=request_id,
-        execution_time_seconds=round(execution_time, 2),
-        confidence_score=confidence
-    )
+    try:
+        metrics.increment("requests_success")
+    except Exception as e:
+        # Fallback if metrics fails
+        pass
+    
+    try:
+        logger.info(
+            "analysis_completed",
+            report_id=request_id,
+            execution_time_seconds=round(execution_time, 2),
+            confidence_score=confidence
+        )
+    except Exception as e:
+        # Fallback to basic logging if structlog fails
+        import logging
+        basic_logger = logging.getLogger(__name__)
+        basic_logger.info(
+            f"analysis_completed: report_id={request_id}, "
+            f"execution_time={round(execution_time, 2)}, "
+            f"confidence={confidence}"
+        )
 
 
 def log_request_failure(request_id: str, error: Exception):

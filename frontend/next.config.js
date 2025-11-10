@@ -9,6 +9,8 @@ const nextConfig = {
     // Allow builds to succeed even with TypeScript errors (for MVP demo)
     ignoreBuildErrors: true,
   },
+  // Enable standalone output for Cloud Run deployment
+  output: 'standalone',
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
   },

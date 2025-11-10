@@ -23,36 +23,15 @@ from consultantos import auth, config, database, models, storage
 from consultantos.orchestrator import AnalysisOrchestrator
 from consultantos.reports import generate_pdf_report
 
-# Import monitoring functions from monitoring module (not package)
-# Note: There's both a monitoring.py file and monitoring/ package
-# We need to import from the .py file directly
+# Import logging functions from log_utils module
+# Note: metrics is imported from observability above
 try:
-    import importlib.util
-    from pathlib import Path
-    # Get the path to monitoring.py file
-    consultantos_path = Path(__file__).parent.parent
-    monitoring_file_path = consultantos_path / "monitoring.py"
-    # Load the file as a module
-    spec = importlib.util.spec_from_file_location("monitoring_file", monitoring_file_path)
-    if spec and spec.loader:
-        monitoring_file = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(monitoring_file)
-        logger = monitoring_file.logger
-        metrics = monitoring_file.metrics
-        log_request = monitoring_file.log_request
-        log_request_success = monitoring_file.log_request_success
-        # Ensure log_request_failure accepts the correct signature
-        if hasattr(monitoring_file, 'log_request_failure'):
-            import inspect
-            sig = inspect.signature(monitoring_file.log_request_failure)
-            # Create a wrapper if needed to ensure compatibility
-            original_log_failure = monitoring_file.log_request_failure
-            def log_request_failure(request_id: str, error: Exception):
-                return original_log_failure(request_id, error)
-        else:
-            raise AttributeError("log_request_failure not found in monitoring.py")
-    else:
-        raise ImportError("Could not load monitoring.py")
+    from consultantos import log_utils
+    logger = log_utils.logger
+    log_request = log_utils.log_request
+    # Import function directly to avoid any binding issues
+    from consultantos.log_utils import log_request_success
+    log_request_failure = log_utils.log_request_failure
 except (ImportError, AttributeError, Exception) as e:
     # Fallback for hackathon demo
     logger = logging.getLogger(__name__)
@@ -62,10 +41,10 @@ except (ImportError, AttributeError, Exception) as e:
         """Lightweight no-op metrics object that implements all metrics methods"""
         def record_error(self, error_type: str, error_message: str) -> None:
             pass
-        
+
         def get_metrics(self) -> Dict[str, Any]:
             return {"timestamp": datetime.now().isoformat()}
-        
+
         def get_summary(self) -> Dict[str, Any]:
             return {
                 "total_requests": 0,
@@ -76,19 +55,36 @@ except (ImportError, AttributeError, Exception) as e:
                 "api_success_rates": {},
                 "total_cost": 0.0
             }
-        
+
+        def get_prometheus_metrics(self) -> str:
+            """Return empty Prometheus metrics"""
+            return "# No metrics available\n"
+
         def track_job_status(self, status: str, increment: int = 1) -> None:
             pass
-        
+
         def track_user_activity(self, user_id: str, action: str) -> None:
+            pass
+
+        def increment_active_requests(self) -> None:
+            pass
+
+        def decrement_active_requests(self) -> None:
+            pass
+
+        def record_api_request(self, endpoint: str, method: str, status_code: int, duration: float) -> None:
             pass
     
     metrics = NoOpMetrics()
     
     def log_request(request_id: str, **kwargs):
         pass
-    def log_request_success(request_id: str, **kwargs):
+    
+    # Define as a proper function, not a method
+    def _log_request_success_impl(request_id: str, execution_time: float, confidence: float):
         pass
+    log_request_success = _log_request_success_impl
+    
     def log_request_failure(*args, **kwargs):
         # Accept any arguments to prevent signature mismatches
         pass
@@ -591,8 +587,27 @@ async def analyze_company(
             user_id
         )
         
-        # Log success
-        log_request_success(report_id, execution_time, report.executive_summary.confidence_score)
+        # Log success - use keyword arguments to avoid binding issues
+        try:
+            if callable(log_request_success):
+                # Try calling with keyword arguments first
+                try:
+                    log_request_success(
+                        request_id=report_id,
+                        execution_time=execution_time,
+                        confidence=report.executive_summary.confidence_score
+                    )
+                except TypeError:
+                    # Fallback to positional if keyword fails
+                    log_request_success(report_id, execution_time, report.executive_summary.confidence_score)
+            else:
+                logger.info(f"Analysis completed: report_id={report_id}, execution_time={execution_time:.2f}, confidence={report.executive_summary.confidence_score}")
+        except TypeError as e:
+            # Handle signature mismatch gracefully
+            logger.warning(f"log_request_success signature mismatch: {e}. Logging directly instead.")
+            logger.info(f"Analysis completed: report_id={report_id}, execution_time={execution_time:.2f}, confidence={report.executive_summary.confidence_score}")
+        except Exception as e:
+            logger.error(f"Failed to log request success: {e}", exc_info=True)
         
         # Store report metadata (synchronously for immediate access)
         try:
@@ -1290,12 +1305,17 @@ async def analyze_company_async(
         if user_id:
             metrics.track_user_activity(user_id, "job_created")
         
-        logger.info(
-            "job_enqueued",
-            job_id=job_id,
-            company=analysis_request.company,
-            user_id=user_id
-        )
+        # Log job enqueued - use format compatible with both structlog and standard logger
+        try:
+            logger.info(
+                "job_enqueued",
+                job_id=job_id,
+                company=analysis_request.company,
+                user_id=user_id
+            )
+        except TypeError:
+            # Fallback for standard logger
+            logger.info(f"Job {job_id} enqueued for company {analysis_request.company} (user: {user_id})")
         
         return {
             "job_id": job_id,
