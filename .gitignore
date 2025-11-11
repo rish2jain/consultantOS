@@ -47,9 +47,17 @@ venv.bak/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
+*.cover
 htmlcov/
 .tox/
 .hypothesis/
+# Test artifacts
+tests/e2e/screenshots/
+*.vcr
+*.cassette
+**/vcr_cassettes/
+tests/fixtures/vcr_cassettes/
 
 # Logs
 *.log
@@ -78,6 +86,8 @@ dist/*.pdf
 Temp/*.pdf
 *.docx
 *.xlsx
+# Test screenshots and generated images
+tests/e2e/screenshots/
 # Keep specific PDFs if needed (uncomment and list them)
 # !ConsultantOS_Hackathon_Complete.pdf
 
@@ -94,10 +104,14 @@ yarn-error.log*
 build.log
 out/
 
-# Archive folder (temporary docs and scripts)
+# Archive folders (temporary docs and scripts)
 archive/
+**/archive/
+docs/archive/
 
-# AI agent cache directories
+# AI agent cache directories and documentation
 .claude/
 .serena/
+CLAUDE.md
+**/CLAUDE.md
 
