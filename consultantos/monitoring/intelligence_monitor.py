@@ -25,6 +25,29 @@ from consultantos.orchestrator.analysis_orchestrator import AnalysisOrchestrator
 from consultantos.database import DatabaseService
 from consultantos.cache import CacheService
 from consultantos.monitoring import logger
+# Optional monitoring modules (may not exist in all versions)
+try:
+    from consultantos.monitoring.anomaly_detector import AnomalyDetector, AnomalyScore
+except ImportError:
+    AnomalyDetector = None
+    AnomalyScore = None
+try:
+    from consultantos.monitoring.alert_scorer import AlertScorer
+except ImportError:
+    AlertScorer = None
+try:
+    from consultantos.monitoring.timeseries_optimizer import TimeSeriesOptimizer
+except ImportError:
+    TimeSeriesOptimizer = None
+try:
+    from consultantos.monitoring.snapshot_aggregator import SnapshotAggregator, AggregationPeriod
+except ImportError:
+    SnapshotAggregator = None
+    AggregationPeriod = None
+try:
+    from consultantos.monitoring.root_cause_analyzer import RootCauseAnalyzer
+except ImportError:
+    RootCauseAnalyzer = None
 from consultantos.utils.validators import AnalysisRequestValidator
 
 
@@ -54,6 +77,9 @@ class IntelligenceMonitor:
         self.db = db_service
         self.cache = cache_service
         self.logger = logger.bind(component="intelligence_monitor")
+
+        # Initialize root cause analyzer (always enabled)
+        self.root_cause_analyzer = RootCauseAnalyzer()
 
     async def create_monitor(
         self,
@@ -559,6 +585,7 @@ class IntelligenceMonitor:
         change_types = set(c.change_type.value for c in changes)
         summary = f"Detected {len(changes)} changes in {monitor.company}: {', '.join(change_types)}"
 
+        # Create initial alert
         alert = Alert(
             id=alert_id,
             monitor_id=monitor.id,
@@ -569,6 +596,26 @@ class IntelligenceMonitor:
             created_at=datetime.utcnow(),
             read=False,
         )
+
+        # Perform root cause analysis
+        try:
+            enhanced_explanation = self.root_cause_analyzer.analyze_alert(
+                alert=alert,
+                historical_data=None  # TODO: Pass historical data when available
+            )
+
+            # Convert to dict for storage
+            alert.root_cause_analysis = enhanced_explanation.dict()
+
+            # Optionally enhance alert title and summary with root cause insights
+            alert.title = f"🔔 {enhanced_explanation.root_cause_analysis.severity.upper()}: {monitor.company}"
+            alert.summary = enhanced_explanation.summary
+
+        except Exception as e:
+            self.logger.warning(
+                f"root_cause_analysis_failed: alert_id={alert_id}, error={str(e)}"
+            )
+            # Continue without root cause analysis if it fails
 
         # Persist alert
         await self.db.create_alert(alert)

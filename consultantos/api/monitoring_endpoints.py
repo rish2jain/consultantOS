@@ -439,6 +439,56 @@ async def mark_alert_read(
         raise HTTPException(status_code=500, detail="Failed to mark alert as read")
 
 
+@router.get("/alerts/{alert_id}/details")
+async def get_alert_details(
+    alert_id: str,
+    user_id: str = Depends(get_current_user_id),
+    monitor_service: IntelligenceMonitor = Depends(get_intelligence_monitor),
+) -> Alert:
+    """
+    Get detailed alert information including root cause analysis.
+
+    Returns enhanced alert with:
+    - Root cause analysis
+    - Contributing factors
+    - Impact assessment
+    - Recommended actions
+    - Mitigation strategies
+
+    Args:
+        alert_id: Alert ID
+        user_id: Authenticated user ID
+        monitor_service: Intelligence monitor service
+
+    Returns:
+        Complete alert with root cause analysis
+
+    Raises:
+        HTTPException: 404 if not found or unauthorized
+    """
+    try:
+        alert = await monitor_service.db.get_alert(alert_id)
+        if not alert:
+            raise HTTPException(status_code=404, detail="Alert not found")
+
+        # Verify ownership
+        monitor = await monitor_service.db.get_monitor(alert.monitor_id)
+        if not monitor or monitor.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Alert not found")
+
+        return alert
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "get_alert_details_failed",
+            alert_id=alert_id,
+            error=str(e),
+        )
+        raise HTTPException(status_code=500, detail="Failed to get alert details")
+
+
 @router.post("/alerts/{alert_id}/feedback")
 async def submit_alert_feedback(
     alert_id: str,

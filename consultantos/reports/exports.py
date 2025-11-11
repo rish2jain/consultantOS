@@ -1,5 +1,5 @@
 """
-Export formats for reports (JSON, Excel, Word)
+Export formats for reports (JSON, Excel, Word, PowerPoint)
 """
 import json
 import logging
@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 async def export_to_json(report: StrategicReport) -> Dict[str, Any]:
     """
     Export report as JSON
-    
+
     Args:
         report: Strategic report to export
-    
+
     Returns:
         Dictionary representation of the report
     """
@@ -24,6 +24,105 @@ async def export_to_json(report: StrategicReport) -> Dict[str, Any]:
         return report.model_dump()
     except Exception as e:
         logger.error(f"JSON export failed: {e}", exc_info=True)
+        raise
+
+
+async def export_to_powerpoint(report: StrategicReport) -> bytes:
+    """
+    Export report as PowerPoint presentation
+
+    Args:
+        report: Strategic report to export
+
+    Returns:
+        PowerPoint file as bytes
+    """
+    try:
+        from pptx import Presentation
+        from pptx.util import Inches, Pt
+        from pptx.enum.text import PP_ALIGN
+
+        # Create presentation
+        prs = Presentation()
+        prs.slide_width = Inches(10)
+        prs.slide_height = Inches(7.5)
+
+        # Slide 1: Title
+        title_slide_layout = prs.slide_layouts[0]
+        slide = prs.slides.add_slide(title_slide_layout)
+        title = slide.shapes.title
+        subtitle = slide.placeholders[1]
+
+        title.text = "Strategic Analysis Report"
+        subtitle.text = (
+            f"{report.executive_summary.company_name}\n"
+            f"{report.executive_summary.industry}\n"
+            f"Confidence Score: {report.executive_summary.confidence_score:.0%}"
+        )
+
+        # Slide 2: Executive Summary
+        bullet_slide_layout = prs.slide_layouts[1]
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Executive Summary"
+
+        tf = body_shape.text_frame
+        tf.text = f"Company: {report.executive_summary.company_name}"
+
+        p = tf.add_paragraph()
+        p.text = f"Industry: {report.executive_summary.industry}"
+        p.level = 0
+
+        p = tf.add_paragraph()
+        p.text = f"Confidence: {report.executive_summary.confidence_score:.0%}"
+        p.level = 0
+
+        # Slide 3: Key Findings
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Key Findings"
+
+        tf = body_shape.text_frame
+        tf.clear()
+
+        for i, finding in enumerate(report.executive_summary.key_findings[:6]):
+            if i == 0:
+                tf.text = finding
+            else:
+                p = tf.add_paragraph()
+                p.text = finding
+                p.level = 0
+
+        # Slide 4: Strategic Recommendation
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Strategic Recommendation"
+
+        tf = body_shape.text_frame
+        tf.text = report.executive_summary.strategic_recommendation
+
+        # Save to bytes
+        output = BytesIO()
+        prs.save(output)
+        output.seek(0)
+        return output.getvalue()
+    except ImportError:
+        logger.error("python-pptx not installed. Install with: pip install python-pptx")
+        raise ImportError("PowerPoint export requires python-pptx package")
+    except Exception as e:
+        logger.error(f"PowerPoint export failed: {e}", exc_info=True)
         raise
 
 
