@@ -32,18 +32,109 @@ const StrategicIntelligenceDashboard: React.FC = () => {
   const fetchStrategicIntelligence = async () => {
     try {
       setLoading(true);
-      // In production, replace with actual API call
-      // const response = await fetch('/api/strategic-intelligence/overview');
-      // const data = await response.json();
-      // setData(data);
+      setError(null);
 
-      // Demo data
-      setData(generateDemoData());
+      // Try to fetch real data from API
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+        // TODO: Get monitor_id from user context or URL params
+        // For now, try to fetch from a test monitor or use demo data
+        const monitorId = 'demo-monitor'; // Replace with actual monitor selection
+
+        const response = await fetch(`${apiUrl}/strategic-intelligence/overview/${monitorId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            // Add API key if available
+            ...(localStorage.getItem('api_key') && {
+              'X-API-Key': localStorage.getItem('api_key') || ''
+            })
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
+
+        const apiData = await response.json();
+
+        // Transform API data to match frontend interface
+        const transformedData = transformApiDataToUI(apiData);
+        setData(transformedData);
+
+      } catch (apiError) {
+        console.warn('Failed to fetch from API, falling back to demo data:', apiError);
+        // Fall back to demo data if API fails
+        setData(generateDemoData());
+      }
+
       setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
       setLoading(false);
     }
+  };
+
+  const transformApiDataToUI = (apiData: any): StrategicIntelligenceOverview => {
+    // Transform backend API data to frontend UI format
+    return {
+      executive_brief: {
+        strategic_health_score: apiData.strategic_health_score || 50,
+        trend: apiData.health_trend === 'improving' ? 'up' : apiData.health_trend === 'declining' ? 'down' : 'stable',
+        top_threats: (apiData.top_threats || []).slice(0, 3).map((threat: string, idx: number) => ({
+          id: `threat-${idx}`,
+          title: threat,
+          severity: 70 - (idx * 10), // Decreasing severity
+          category: 'strategic' as const,
+          source: 'Strategic Analysis',
+          timeline_months: 6 + (idx * 3),
+          mitigation_available: idx === 0,
+          details: threat,
+        })),
+        top_opportunities: (apiData.top_opportunities || []).slice(0, 3).map((opp: string, idx: number) => ({
+          id: `opp-${idx}`,
+          title: opp,
+          value_score: 85 - (idx * 10),
+          category: 'strategic' as const,
+          estimated_value: 40000000 - (idx * 10000000),
+          timeframe_months: 6 + (idx * 3),
+          roi_estimate: 3.0 - (idx * 0.3),
+          requirements: ['Strategic planning', 'Resource allocation'],
+          details: opp,
+        })),
+        decisions_required: apiData.critical_decision ? [{
+          id: 'decision-1',
+          title: 'Critical Strategic Decision',
+          urgency_days: 30,
+          impact_value: 5000000,
+          category: 'strategic' as const,
+          options: [
+            {
+              option_id: 'a',
+              title: apiData.critical_decision,
+              pros: ['Addresses urgent need', 'High impact potential'],
+              cons: ['Requires immediate action', 'Resource intensive'],
+              estimated_cost: 1000000,
+              expected_outcome: 'Resolved strategic issue',
+              risk_level: 'medium' as const,
+              implementation_time_days: 90,
+            },
+          ],
+          recommendation: apiData.critical_decision,
+          decision_deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'pending' as const,
+        }] : [],
+        last_updated: apiData.generated_at || new Date().toISOString(),
+      },
+      strategic_context: generateDemoData().strategic_context, // Use demo context for now
+      intelligence_feed: {
+        cards: [],
+        unread_count: 0,
+        last_updated: new Date().toISOString(),
+      },
+      company: apiData.company || 'Unknown',
+      industry: apiData.industry || 'Unknown',
+      analysis_date: apiData.generated_at || new Date().toISOString(),
+    };
   };
 
   const handleDecisionAction = (decisionId: string, action: 'accept' | 'view') => {

@@ -92,6 +92,7 @@ except (ImportError, AttributeError, Exception) as e:
 from consultantos.api.user_endpoints import router as user_router
 from consultantos.api.template_endpoints import router as template_router
 from consultantos.api.sharing_endpoints import router as sharing_router
+from consultantos.api.comparison_endpoints import router as comparison_router
 from consultantos.utils.validators import AnalysisRequestValidator
 from consultantos.utils.sanitize import sanitize_input
 from consultantos.reports.exports import export_to_json, export_to_excel, export_to_word
@@ -354,6 +355,7 @@ app.include_router(health_router)  # Health endpoints first for monitoring
 app.include_router(user_router)
 app.include_router(template_router)
 app.include_router(sharing_router)
+app.include_router(comparison_router)  # Report comparison and evolution tracking
 app.include_router(versioning_router)
 app.include_router(comments_router)
 app.include_router(community_router)
