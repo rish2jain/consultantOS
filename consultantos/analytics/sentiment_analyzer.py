@@ -6,16 +6,49 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import asyncio
 import statistics
+import importlib
 
 logger = logging.getLogger(__name__)
 
-try:
-    from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-    import torch
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
-    logger.warning("transformers not installed - sentiment analysis will use rule-based fallback")
+# NOTE: Importing transformers/torch eagerly makes application startup hang on systems
+# without optimized wheels. We defer those imports until sentiment analysis is actually
+# requested so the rest of the API can continue to load quickly.
+pipeline = None
+AutoTokenizer = None
+AutoModelForSequenceClassification = None
+torch = None
+TRANSFORMERS_AVAILABLE = False
+_transformers_checked = False
+
+
+def _ensure_transformers_loaded() -> bool:
+    """Lazy-load heavy transformers/torch dependencies exactly once."""
+    global pipeline, AutoTokenizer, AutoModelForSequenceClassification
+    global torch, TRANSFORMERS_AVAILABLE, _transformers_checked
+
+    if TRANSFORMERS_AVAILABLE:
+        return True
+    if _transformers_checked:
+        return False
+
+    _transformers_checked = True
+    try:
+        transformers_module = importlib.import_module("transformers")
+        torch_module = importlib.import_module("torch")
+        pipeline = transformers_module.pipeline
+        AutoTokenizer = transformers_module.AutoTokenizer
+        AutoModelForSequenceClassification = transformers_module.AutoModelForSequenceClassification
+        torch = torch_module
+        TRANSFORMERS_AVAILABLE = True
+        logger.info("transformers library loaded lazily for sentiment analysis")
+        return True
+    except ImportError:
+        logger.warning(
+            "transformers not installed - sentiment analysis will use rule-based fallback"
+        )
+        TRANSFORMERS_AVAILABLE = False
+        return False
+
 
 try:
     from textblob import TextBlob
@@ -43,12 +76,13 @@ class SentimentAnalyzer:
             use_gpu: Whether to use GPU for inference (requires CUDA)
         """
         self.model_name = model_name
-        self.use_gpu = use_gpu and torch.cuda.is_available() if TRANSFORMERS_AVAILABLE else False
         self.pipeline = None
+        self.use_gpu = False
 
-        if TRANSFORMERS_AVAILABLE:
+        if _ensure_transformers_loaded():
+            self.use_gpu = bool(use_gpu and torch and torch.cuda.is_available())
             try:
-                # Initialize sentiment analysis pipeline
+                # Initialize sentiment analysis pipeline lazily
                 device = 0 if self.use_gpu else -1
                 self.pipeline = pipeline(
                     "sentiment-analysis",
@@ -57,7 +91,11 @@ class SentimentAnalyzer:
                     truncation=True,
                     max_length=512
                 )
-                logger.info(f"Loaded sentiment model: {model_name} (GPU: {self.use_gpu})")
+                logger.info(
+                    "Loaded sentiment model %s (GPU=%s) after lazy transformers import",
+                    model_name,
+                    self.use_gpu,
+                )
             except Exception as e:
                 logger.warning(f"Failed to load BERT model, using fallback: {e}")
                 self.pipeline = None

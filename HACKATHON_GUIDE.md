@@ -36,7 +36,7 @@ npm run dev
 ### 1. Multi-Agent Analysis ✅
 **Endpoint**: `POST /analyze`
 
-Generate McKinsey-grade business framework analyses using 5 specialized AI agents:
+Generate professional-grade business framework analyses using 5 specialized AI agents:
 
 ```bash
 curl -X POST "http://localhost:8080/analyze" \
@@ -198,7 +198,7 @@ These features exist in the codebase but require `get_current_user` authenticati
 - **Speedup**: 3840x faster
 
 ### Quality
-- McKinsey-grade framework analysis
+- Professional-grade framework analysis
 - Evidence-based recommendations
 - Multi-source data synthesis
 - Professional PDF formatting

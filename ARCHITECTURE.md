@@ -2,11 +2,14 @@
 
 ## Executive Summary
 
-ConsultantOS is a **Continuous Competitive Intelligence Platform** that evolved from a one-time report generation system to a real-time monitoring dashboard. The platform orchestrates 5 specialized AI agents to deliver ongoing competitive analysis with automated change detection and intelligent alerting.
+ConsultantOS is a **Comprehensive Competitive Intelligence Platform** that orchestrates multiple specialized AI agents to provide comprehensive business intelligence. The platform has evolved from a simple report generator to a full-featured intelligence platform with advanced analytics, conversational AI, and strategic planning capabilities.
 
-**Key Paradigm Shift:**
-- **Legacy**: Generate PDF reports on-demand (32 hours → 30 minutes execution)
-- **Current**: Continuous monitoring with dashboard-first experience, PDF as secondary export
+**Key Capabilities:**
+- **Core Analysis**: 5 specialized agents (Research, Market, Financial, Framework, Synthesis)
+- **Advanced Analytics**: Forecasting, Wargaming, Social Media Analysis, Dark Data Extraction
+- **Conversational AI**: RAG-based chat with intelligent query routing
+- **Strategic Intelligence**: Comprehensive competitive intelligence dashboards
+- **Report Generation**: PDF, Excel, Word exports with interactive visualizations
 
 ---
 
@@ -60,7 +63,9 @@ class BaseAgent(ABC):
         # Implemented by each agent
 ```
 
-### 1.3 Five Agent Implementations
+### 1.3 Core Agent Implementations
+
+The platform includes 5 core agents plus multiple advanced agents:
 
 #### ResearchAgent
 - **Purpose**: Gather company intelligence using web search
@@ -121,7 +126,65 @@ class BaseAgent(ABC):
   - Prioritized next steps
   - Risk/opportunity assessment
 
-### 1.4 Orchestrator Pattern
+### 1.4 Advanced Agent Implementations
+
+#### ForecastingAgent
+- **Purpose**: Multi-scenario financial forecasting using Monte Carlo simulation
+- **Input**: Company financial data, historical metrics
+- **Output**: `ForecastResult` with multiple scenarios (optimistic, base, pessimistic)
+- **Tools Used**: NumPy, SciPy for statistical analysis
+- **Features**:
+  - Monte Carlo simulation (1000+ iterations)
+  - Statistical validation with confidence intervals
+  - Multiple scenario modeling
+  - P-value and confidence interval calculations
+
+#### WargamingAgent
+- **Purpose**: Competitive scenario planning and simulation
+- **Input**: Company context, competitive scenario definition
+- **Output**: `WargamingResult` with win probability and risk assessment
+- **Tools Used**: NumPy, SciPy for Monte Carlo simulation
+- **Features**:
+  - Monte Carlo simulation for competitive scenarios
+  - Win probability calculations
+  - Risk assessment
+  - Statistical validation
+
+#### SocialMediaAgent
+- **Purpose**: Social media sentiment analysis and trend tracking
+- **Input**: Company name, keywords, platforms
+- **Output**: `SocialMediaInsights` with sentiment scores and trends
+- **Tools Used**: Reddit (PRAW), Twitter (Tweepy), Grok API (via laozhang.ai)
+- **Features**:
+  - Reddit sentiment analysis
+  - Twitter sentiment tracking
+  - Trend identification
+  - Influencer detection
+  - Real-time sentiment monitoring
+
+#### DarkDataAgent
+- **Purpose**: Extract insights from unstructured data sources
+- **Input**: Unstructured documents, emails, files
+- **Output**: `DarkDataInsights` with extracted intelligence
+- **Tools Used**: NLP libraries (spaCy, TextBlob)
+- **Features**:
+  - Email parsing and analysis
+  - Document extraction
+  - Hidden insights discovery
+  - Entity extraction from unstructured sources
+
+#### ConversationalAgent
+- **Purpose**: RAG-based conversational AI with intelligent query routing
+- **Input**: User query, company context, conversation history
+- **Output**: `ConversationalResponse` with AI response and sources
+- **Tools Used**: ChromaDB for vector storage, RAG retrieval
+- **Features**:
+  - RAG-based retrieval from historical reports
+  - Intelligent routing to specialized agents
+  - Conversation history management
+  - Source citation and transparency
+
+### 1.5 Orchestrator Pattern
 
 **AnalysisOrchestrator** manages:
 
@@ -249,6 +312,11 @@ User creates Monitor (POST /monitors)
 | **yfinance** | Stock/financial data | FinancialAgent | Direct library calls |
 | **Finnhub** | Analyst data | FinancialAgent | `finnhub_tool()` - with caching |
 | **Alpha Vantage** | Technical indicators | FinancialAgent | `alpha_vantage_tool()` - optional |
+| **Reddit (PRAW)** | Social media | SocialMediaAgent | Reddit API wrapper |
+| **Twitter (Tweepy)** | Social media | SocialMediaAgent | Twitter API v2 client |
+| **Grok (laozhang.ai)** | Sentiment analysis | SocialMediaAgent | Grok API integration |
+| **ChromaDB** | Vector storage | ConversationalAgent | RAG retrieval |
+| **NumPy/SciPy** | Statistical analysis | ForecastingAgent, WargamingAgent | Monte Carlo simulation |
 
 ### 3.2 Tool Patterns
 
@@ -475,8 +543,21 @@ Alert Generated
 ```
 POST   /analyze              # Sync analysis
 POST   /analyze/async        # Async analysis (returns job_id)
+POST   /integration/comprehensive-analysis  # Full-featured analysis
 GET    /jobs/{job_id}       # Job status
 GET    /reports/{report_id} # Report retrieval
+```
+
+**Advanced Analytics Endpoints:**
+```
+POST   /forecasting/multi-scenario  # Multi-scenario forecasting
+POST   /wargaming/simulate          # Competitive scenario simulation
+POST   /wargaming/scenarios         # Create scenario
+GET    /wargaming/scenarios         # List scenarios
+GET    /social-media/insights       # Social media analysis
+POST   /dark-data/extract          # Dark data extraction
+POST   /conversational/chat         # Conversational AI
+GET    /api/strategic-intelligence/{company}  # Strategic intelligence
 ```
 
 **Monitoring Endpoints:**
@@ -973,8 +1054,11 @@ Add to monitoring:
 
 | Layer | Component | Technology | Key Pattern |
 |-------|-----------|-----------|------------|
-| **Agents** | 5 specialized agents | Python + Gemini | Orchestrator + Base class |
+| **Agents** | 10+ specialized agents | Python + Gemini | Orchestrator + Base class |
 | **Orchestration** | AnalysisOrchestrator | asyncio + Pydantic | 3-phase execution + cache |
+| **Advanced Analytics** | Forecasting, Wargaming | NumPy + SciPy | Monte Carlo simulation |
+| **Conversational AI** | RAG-based chat | ChromaDB + Gemini | Vector retrieval + routing |
+| **Social Media** | Sentiment analysis | Reddit + Twitter + Grok | Multi-platform aggregation |
 | **Monitoring** | IntelligenceMonitor | Prophet + scoring | Change detection + alerts |
 | **Database** | Firestore | Google Cloud | Document-based + indexing |
 | **Cache** | Disk + Semantic | diskcache + ChromaDB | Multi-level + TTL |
@@ -982,19 +1066,22 @@ Add to monitoring:
 | **API** | FastAPI | Python | Router + middleware |
 | **Frontend** | Next.js 14 | React + Tailwind | Component-based + React Query |
 | **Jobs** | Job queue + workers | Async + Celery | Queue pattern + retries |
-| **Monitoring** | Sentry + Prometheus | Observability stack | Transactions + metrics |
+| **Observability** | Sentry + Prometheus | Observability stack | Transactions + metrics |
 
 ---
 
 ## ARCHITECTURE STRENGTHS
 
 1. **Scalable Multi-Agent**: Independent agents with timeout + graceful degradation
-2. **Intelligent Caching**: Multi-level cache reduces API calls significantly
-3. **Real-time Monitoring**: Continuous intelligence with smart alerting
-4. **Error Resilience**: Circuit breakers, retries, partial result handling
-5. **Modular Design**: Clear separation of concerns (agents, tools, orchestrator, API)
-6. **Observable**: Comprehensive logging, Sentry integration, Prometheus metrics
-7. **Cloud Native**: GCP-integrated, scalable, serverless-ready
+2. **Advanced Analytics**: Monte Carlo simulation, statistical validation, multi-scenario forecasting
+3. **Intelligent Caching**: Multi-level cache reduces API calls significantly
+4. **Conversational AI**: RAG-based retrieval with intelligent query routing
+5. **Real-time Monitoring**: Continuous intelligence with smart alerting
+6. **Error Resilience**: Circuit breakers, retries, partial result handling
+7. **Modular Design**: Clear separation of concerns (agents, tools, orchestrator, API)
+8. **Observable**: Comprehensive logging, Sentry integration, Prometheus metrics
+9. **Cloud Native**: GCP-integrated, scalable, serverless-ready
+10. **Comprehensive Intelligence**: Social media, dark data, wargaming, forecasting capabilities
 
 ---
 

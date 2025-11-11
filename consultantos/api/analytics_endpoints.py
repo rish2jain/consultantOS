@@ -3,8 +3,8 @@ Access analytics API endpoints (v0.5.0)
 Extended with productivity and business metrics (v1.0.0)
 """
 from typing import Dict, List, Optional, Tuple
-from fastapi import APIRouter, HTTPException, status, Security, Query
-from consultantos.auth import verify_api_key
+from fastapi import APIRouter, HTTPException, status, Security, Query, Depends
+from consultantos.auth import verify_api_key, get_optional_user_id
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 import logging
@@ -160,7 +160,7 @@ async def get_report_analytics(
 @router.get("/productivity")
 async def get_productivity_metrics(
     days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
-    user_info: dict = Security(verify_api_key)
+    user_id: Optional[str] = Depends(get_optional_user_id)
 ):
     """
     Get productivity metrics:
@@ -178,7 +178,20 @@ async def get_productivity_metrics(
         if not db_service:
             raise HTTPException(status_code=500, detail="Database service unavailable")
         
-        user_id = user_info.get("user_id")
+        if not user_id:
+            # Return empty metrics if not authenticated
+            return {
+                "period_days": days,
+                "reports_per_user": {},
+                "total_reports": 0,
+                "templates_used": 0,
+                "templates_created": 0,
+                "template_adoption_rate": 0,
+                "estimated_time_saved_hours": 0,
+                "avg_batch_processing_time_seconds": 0,
+                "total_batch_jobs": 0
+            }
+        
         start_date = datetime.now() - timedelta(days=days)
         
         # Get all reports for user
@@ -241,7 +254,7 @@ async def get_productivity_metrics(
 @router.get("/business")
 async def get_business_metrics(
     days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
-    user_info: dict = Security(verify_api_key)
+    user_id: Optional[str] = Depends(get_optional_user_id)
 ):
     """
     Get business metrics:
@@ -257,7 +270,23 @@ async def get_business_metrics(
         if not db_service:
             raise HTTPException(status_code=500, detail="Database service unavailable")
         
-        user_id = user_info.get("user_id")
+        if not user_id:
+            # Return empty metrics if not authenticated
+            return {
+                "period_days": days,
+                "top_industries": [],
+                "most_used_frameworks": [],
+                "peak_usage_times": {
+                    "by_hour": {},
+                    "peak_hour": None
+                },
+                "user_adoption": {
+                    "total_unique_users": 0,
+                    "new_users_this_period": 0,
+                    "users_by_date": {}
+                }
+            }
+        
         start_date = datetime.now() - timedelta(days=days)
         
         # Get all reports
@@ -335,7 +364,7 @@ async def get_business_metrics(
 @router.get("/dashboard")
 async def get_dashboard_analytics(
     days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
-    user_info: dict = Security(verify_api_key)
+    user_id: Optional[str] = Depends(get_optional_user_id)
 ):
     """
     Get comprehensive dashboard analytics including:
@@ -354,7 +383,40 @@ async def get_dashboard_analytics(
         if not db_service:
             raise HTTPException(status_code=500, detail="Database service unavailable")
         
-        user_id = user_info.get("user_id")
+        if not user_id:
+            # Return empty metrics if not authenticated
+            return {
+                "period_days": days,
+                "report_status_pipeline": {
+                    "submitted": 0,
+                    "processing": 0,
+                    "completed": 0,
+                    "archived": 0,
+                    "failed": 0
+                },
+                "confidence_score_distribution": {
+                    "mean": 0,
+                    "median": 0,
+                    "min": 0,
+                    "max": 0,
+                    "scores": []
+                },
+                "analysis_type_breakdown": {
+                    "quick": 0,
+                    "standard": 0,
+                    "deep": 0
+                },
+                "industries_breakdown": {},
+                "job_queue_performance": {
+                    "avg_wait_time_seconds": 0,
+                    "avg_processing_time_seconds": 0,
+                    "queue_length": 0,
+                    "throughput_per_hour": 0
+                },
+                "framework_effectiveness": {},
+                "user_activity_calendar": {}
+            }
+        
         start_date = datetime.now() - timedelta(days=days)
         
         # Get all reports
@@ -559,7 +621,7 @@ async def get_dashboard_analytics(
 @router.get("/insights")
 async def get_ai_insights(
     days: int = Query(7, ge=1, le=90, description="Number of days to analyze for insights"),
-    user_info: dict = Security(verify_api_key)
+    user_id: Optional[str] = Depends(get_optional_user_id)
 ):
     """
     Get AI-driven insights and recommendations
@@ -571,7 +633,14 @@ async def get_ai_insights(
         if not db_service:
             raise HTTPException(status_code=500, detail="Database service unavailable")
         
-        user_id = user_info.get("user_id")
+        if not user_id:
+            # Return empty insights if not authenticated
+            return {
+                "period_days": days,
+                "insights": [],
+                "generated_at": datetime.now().isoformat()
+            }
+        
         start_date = datetime.now() - timedelta(days=days)
         previous_start = datetime.now() - timedelta(days=days * 2)
         

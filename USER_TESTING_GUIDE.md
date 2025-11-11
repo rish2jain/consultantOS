@@ -1,12 +1,13 @@
 # ConsultantOS - User Testing Guide (Hackathon Demo)
 
 **Version**: 1.0.0-hackathon
-**Last Updated**: 2025-11-08
-**Status**: Demo-Ready
+**Last Updated**: 2025-11-10
+**Status**: ✅ **DEPLOYED & LIVE**
+**Deployment**: Google Cloud Run (Production)
 
 ## Overview
 
-This guide provides testing scenarios for ConsultantOS hackathon demonstration. The focus is on core multi-agent analysis features that are currently enabled and working.
+This guide provides testing scenarios for ConsultantOS hackathon demonstration. The system is **fully deployed and operational** on Google Cloud Run. The focus is on core multi-agent analysis features that are currently enabled and working.
 
 ### What's Enabled for Testing ✅
 
@@ -33,32 +34,56 @@ The following features exist in the codebase but are disabled for demo simplicit
 
 ## Quick Setup
 
-### Prerequisites
+### Deployed System (Production)
 
-1. **Backend Setup**
+**✅ Backend is LIVE and Ready to Use**
 
-   ```bash
-   # Install dependencies
-   pip install -r requirements.txt
+No local setup required! The backend API is deployed to Google Cloud Run and fully operational.
 
-   # Set API keys
-   export GEMINI_API_KEY="your-gemini-key"
-   export TAVILY_API_KEY="your-tavily-key"
+**Access Points**:
 
-   # Start server
-   python main.py
-   ```
+- **Production API**: https://consultantos-api-bdndyf33xa-uc.a.run.app
+- **Swagger UI**: https://consultantos-api-bdndyf33xa-uc.a.run.app/docs
+- **ReDoc**: https://consultantos-api-bdndyf33xa-uc.a.run.app/redoc
+- **Health Check**: https://consultantos-api-bdndyf33xa-uc.a.run.app/health
 
-2. **Access Points**
-   - API: http://localhost:8080
-   - Swagger UI: http://localhost:8080/docs
-   - ReDoc: http://localhost:8080/redoc
+**Frontend Dashboard** (if running locally):
+
+- Local: http://localhost:3000
+- Configured to connect to production backend automatically
+
+### Local Development (Optional)
+
+If you need to run the backend locally:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Set API keys
+export GEMINI_API_KEY="your-gemini-key"
+export TAVILY_API_KEY="your-tavily-key"
+
+# Start server
+python main.py
+```
+
+Local access points:
+
+- API: http://localhost:8080
+- Swagger UI: http://localhost:8080/docs
+- ReDoc: http://localhost:8080/redoc
 
 ### Test Account Setup
 
+**Using Production API:**
+
 ```bash
+# Set the API URL for convenience
+export API_URL="https://consultantos-api-bdndyf33xa-uc.a.run.app"
+
 # Register test user
-curl -X POST "http://localhost:8080/users/register" \
+curl -X POST "$API_URL/users/register" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@consultantos.com",
@@ -67,12 +92,19 @@ curl -X POST "http://localhost:8080/users/register" \
   }'
 
 # Login and get API key
-curl -X POST "http://localhost:8080/users/login" \
+curl -X POST "$API_URL/users/login" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@consultantos.com",
     "password": "SecurePass123!"
   }'
+```
+
+**For Local Testing:**
+
+```bash
+export API_URL="http://localhost:8080"
+# Then run the same commands above
 ```
 
 Save the `access_token` from login response for subsequent requests.
@@ -83,10 +115,22 @@ Save the `access_token` from login response for subsequent requests.
 
 **Objective**: Generate a strategic analysis with 2 frameworks
 
-**Steps**:
+**Steps** (Production):
 
 ```bash
-curl -X POST "http://localhost:8080/analyze" \
+curl -X POST "https://consultantos-api-bdndyf33xa-uc.a.run.app/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "company": "Tesla",
+    "industry": "Electric Vehicles",
+    "frameworks": ["porter", "swot"]
+  }'
+```
+
+**Or using the environment variable:**
+
+```bash
+curl -X POST "$API_URL/analyze" \
   -H "Content-Type: application/json" \
   -d '{
     "company": "Tesla",
@@ -122,7 +166,7 @@ curl -X POST "http://localhost:8080/analyze" \
 **Steps**:
 
 ```bash
-curl -X POST "http://localhost:8080/analyze" \
+curl -X POST "$API_URL/analyze" \
   -H "Content-Type: application/json" \
   -d '{
     "company": "OpenAI",
@@ -161,7 +205,7 @@ curl -X POST "http://localhost:8080/analyze" \
 1. **Enqueue Job**
 
    ```bash
-   curl -X POST "http://localhost:8080/analyze/async" \
+   curl -X POST "$API_URL/analyze/async" \
      -H "Content-Type: application/json" \
      -d '{
        "company": "SpaceX",
@@ -185,7 +229,7 @@ curl -X POST "http://localhost:8080/analyze" \
 
    ```bash
    # Poll status (repeat until completed)
-   curl "http://localhost:8080/jobs/{job_id}/status"
+   curl "$API_URL/jobs/{job_id}/status"
    ```
 
    Status progression:
@@ -195,7 +239,7 @@ curl -X POST "http://localhost:8080/analyze" \
 3. **Retrieve Completed Report**
    ```bash
    # Once status is "completed"
-   curl "http://localhost:8080/reports/{report_id}"
+   curl "$API_URL/reports/{report_id}"
    ```
 
 **Expected Results**:
@@ -220,7 +264,7 @@ curl -X POST "http://localhost:8080/analyze" \
 **Test 4A: PDF Export**
 
 ```bash
-curl "http://localhost:8080/reports/{report_id}/pdf" -o report.pdf
+curl "$API_URL/reports/{report_id}/pdf" -o report.pdf
 ```
 
 Expected:
@@ -233,7 +277,7 @@ Expected:
 **Test 4B: JSON Export**
 
 ```bash
-curl "http://localhost:8080/reports/{report_id}/export?format=json" -o report.json
+curl "$API_URL/reports/{report_id}/export?format=json" -o report.json
 ```
 
 Expected:
@@ -245,7 +289,7 @@ Expected:
 **Test 4C: Excel Export**
 
 ```bash
-curl "http://localhost:8080/reports/{report_id}/export?format=excel" -o report.xlsx
+curl "$API_URL/reports/{report_id}/export?format=excel" -o report.xlsx
 ```
 
 Expected:
@@ -257,7 +301,7 @@ Expected:
 **Test 4D: Word Export**
 
 ```bash
-curl "http://localhost:8080/reports/{report_id}/export?format=word" -o report.docx
+curl "$API_URL/reports/{report_id}/export?format=word" -o report.docx
 ```
 
 Expected:
@@ -282,14 +326,39 @@ Expected:
 **Steps**:
 
 ```bash
-# Health check
-curl "http://localhost:8080/health"
+# Health check (Production - Live Now!)
+curl "https://consultantos-api-bdndyf33xa-uc.a.run.app/health"
 
 # Readiness check
-curl "http://localhost:8080/health/ready"
+curl "$API_URL/health/ready"
 
 # Liveness check
-curl "http://localhost:8080/health/live"
+curl "$API_URL/health/live"
+```
+
+**Expected Production Response:**
+
+```json
+{
+  "status": "healthy",
+  "version": "0.3.0",
+  "timestamp": "2025-11-10T15:39:48.867389",
+  "cache": {
+    "disk_cache_initialized": true,
+    "semantic_cache_available": true
+  },
+  "storage": {
+    "available": true
+  },
+  "database": {
+    "available": true,
+    "type": "firestore"
+  },
+  "worker": {
+    "running": true,
+    "task_exists": true
+  }
+}
 ```
 
 **Expected Results**:
@@ -312,7 +381,7 @@ curl "http://localhost:8080/health/live"
 **Test 6A: Missing Required Fields**
 
 ```bash
-curl -X POST "http://localhost:8080/analyze" \
+curl -X POST "$API_URL/analyze" \
   -H "Content-Type: application/json" \
   -d '{"company": ""}'
 ```
@@ -322,7 +391,7 @@ Expected: `400 Bad Request` with clear error message
 **Test 6B: Invalid Framework Names**
 
 ```bash
-curl -X POST "http://localhost:8080/analyze" \
+curl -X POST "$API_URL/analyze" \
   -H "Content-Type: application/json" \
   -d '{
     "company": "Tesla",
@@ -336,7 +405,7 @@ Expected: `422 Validation Error` listing valid frameworks
 **Test 6C: Private Company (Limited Data)**
 
 ```bash
-curl -X POST "http://localhost:8080/analyze" \
+curl -X POST "$API_URL/analyze" \
   -H "Content-Type: application/json" \
   -d '{
     "company": "Local Small Business",
@@ -389,7 +458,7 @@ Submit 3-5 analyses simultaneously:
 ```bash
 # In parallel terminals or script
 for i in {1..5}; do
-  curl -X POST "http://localhost:8080/analyze/async" \
+  curl -X POST "$API_URL/analyze/async" \
     -H "Content-Type: application/json" \
     -d "{\"company\": \"Company$i\", \"industry\": \"Tech\", \"frameworks\": [\"swot\"]}" &
 done
@@ -419,7 +488,7 @@ Try registering with weak passwords:
 
 ```bash
 # Weak password (should fail)
-curl -X POST "http://localhost:8080/users/register" \
+curl -X POST "$API_URL/users/register" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test2@example.com",
@@ -442,7 +511,7 @@ Expected:
 
 ```bash
 # Register
-curl -X POST "http://localhost:8080/users/register" \
+curl -X POST "$API_URL/users/register" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "verify@example.com",
@@ -452,7 +521,7 @@ curl -X POST "http://localhost:8080/users/register" \
 
 # Response includes verification_token
 # Verify email
-curl -X POST "http://localhost:8080/users/verify-email" \
+curl -X POST "$API_URL/users/verify-email" \
   -H "Content-Type: application/json" \
   -d '{"token": "verification_token_here"}'
 ```
@@ -461,12 +530,12 @@ curl -X POST "http://localhost:8080/users/verify-email" \
 
 ```bash
 # Request reset
-curl -X POST "http://localhost:8080/users/password-reset/request" \
+curl -X POST "$API_URL/users/password-reset/request" \
   -H "Content-Type: application/json" \
   -d '{"email": "test@consultantos.com"}'
 
 # Confirm reset (with token from email)
-curl -X POST "http://localhost:8080/users/password-reset/confirm" \
+curl -X POST "$API_URL/users/password-reset/confirm" \
   -H "Content-Type: application/json" \
   -d '{
     "token": "reset_token_here",
@@ -732,10 +801,25 @@ For hackathon demonstration, the system should:
 - **[HACKATHON_GUIDE.md](HACKATHON_GUIDE.md)** - Complete demo setup
 - **[README.md](README.md)** - Project overview
 - **[API Documentation](API_Documentation.md)** - Full API reference
-- **Swagger UI**: http://localhost:8080/docs
+
+### Live Resources
+
+- **Production API**: https://consultantos-api-bdndyf33xa-uc.a.run.app
+- **Swagger UI**: https://consultantos-api-bdndyf33xa-uc.a.run.app/docs
+- **ReDoc**: https://consultantos-api-bdndyf33xa-uc.a.run.app/redoc
+- **Health Check**: https://consultantos-api-bdndyf33xa-uc.a.run.app/health
+
+### Deployment Information
+
+- **Platform**: Google Cloud Run
+- **Region**: us-central1
+- **Revision**: consultantos-api-00011-lxr
+- **Status**: ✅ Healthy and responding
+- **Deployment Date**: November 10, 2025
+- **Response Time**: <100ms (health checks)
 
 ---
 
 **Version**: 1.0.0-hackathon
-**Last Updated**: 2025-11-08
-**Status**: Ready for hackathon demonstration testing
+**Last Updated**: 2025-11-10
+**Status**: ✅ **DEPLOYED TO PRODUCTION - READY FOR TESTING**

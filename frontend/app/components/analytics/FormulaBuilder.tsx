@@ -127,7 +127,7 @@ export const FormulaBuilder: React.FC<FormulaBuilderProps> = ({
           rows={4}
         />
         <p className="mt-2 text-sm text-gray-600">
-          Supported: +, -, *, /, ^, %, >, <, >=, <=, ==, !=, SUM, AVG, MIN, MAX, COUNT, ABS, SQRT, ROUND
+          Supported: +, -, *, /, ^, %, &gt;, &lt;, &gt;=, &lt;=, ==, !=, SUM, AVG, MIN, MAX, COUNT, ABS, SQRT, ROUND
         </p>
       </div>
 

@@ -11,6 +11,7 @@ from consultantos.models.versioning import (
     VersionStatus
 )
 from consultantos.auth import verify_api_key, get_api_key
+from consultantos.config import settings
 from consultantos.database import get_db_service
 import secrets
 from datetime import datetime
@@ -174,9 +175,15 @@ async def get_version_history(
 @router.get("/{version_id}", response_model=ReportVersion)
 async def get_version(
     version_id: str,
-    user_info: dict = Security(verify_api_key)
+    api_key: Optional[str] = Security(get_api_key, use_cache=False)
 ):
-    """Get a specific version"""
+    """Get a specific version (auth required in production, optional elsewhere)"""
+    if settings.environment == "production":
+        await verify_api_key(api_key)
+    elif api_key:
+        # If a key is supplied in non-prod, still validate to aid debugging
+        await verify_api_key(api_key)
+
     if version_id not in _versions:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -283,4 +290,3 @@ async def create_branch(
     )
     
     return await create_version(request, user_info)
-

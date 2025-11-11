@@ -36,23 +36,72 @@ export default function ForecastChart() {
 
     try {
       const forecastData = await forecastApi(periods);
+      
+      // Validate response structure with detailed checks
+      if (!forecastData) {
+        throw new Error('Invalid forecast data: response is null or undefined');
+      }
+      
+      if (!forecastData.dates || !Array.isArray(forecastData.dates)) {
+        console.error('Invalid forecast data structure:', forecastData);
+        throw new Error('Invalid forecast data: dates array is missing or invalid');
+      }
+      
+      if (!forecastData.predictions || !Array.isArray(forecastData.predictions)) {
+        console.error('Invalid forecast data structure:', forecastData);
+        throw new Error('Invalid forecast data: predictions array is missing or invalid');
+      }
+      
+      if (!forecastData.lower_bound || !Array.isArray(forecastData.lower_bound)) {
+        console.error('Invalid forecast data structure:', forecastData);
+        throw new Error('Invalid forecast data: lower_bound array is missing or invalid');
+      }
+      
+      if (!forecastData.upper_bound || !Array.isArray(forecastData.upper_bound)) {
+        console.error('Invalid forecast data structure:', forecastData);
+        throw new Error('Invalid forecast data: upper_bound array is missing or invalid');
+      }
+      
+      // Ensure arrays have the same length
+      const length = forecastData.dates.length;
+      if (forecastData.predictions.length !== length ||
+          forecastData.lower_bound.length !== length ||
+          forecastData.upper_bound.length !== length) {
+        throw new Error(`Invalid forecast data: arrays have mismatched lengths (dates: ${length}, predictions: ${forecastData.predictions.length}, lower_bound: ${forecastData.lower_bound.length}, upper_bound: ${forecastData.upper_bound.length})`);
+      }
+      
+      // Ensure we have at least one data point
+      if (length === 0) {
+        throw new Error('Invalid forecast data: no data points available');
+      }
+      
       setData(forecastData);
 
-      // Transform data for Recharts
-      const transformed: ChartDataPoint[] = forecastData.dates.map((date, idx) => ({
-        date: new Date(date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }),
-        prediction: forecastData.predictions[idx],
-        lowerBound: forecastData.lower_bound[idx],
-        upperBound: forecastData.upper_bound[idx],
-      }));
+      // Transform data for Recharts with safety checks
+      const transformed: ChartDataPoint[] = forecastData.dates.map((date, idx) => {
+        const prediction = forecastData.predictions[idx] ?? 0;
+        const lowerBound = forecastData.lower_bound[idx] ?? 0;
+        const upperBound = forecastData.upper_bound[idx] ?? 0;
+        
+        return {
+          date: new Date(date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          }),
+          prediction,
+          lowerBound,
+          upperBound,
+        };
+      });
 
       setChartData(transformed);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load forecast');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load forecast';
+      setError(errorMessage);
       console.error('Forecast error:', err);
+      // Reset state on error
+      setData(null);
+      setChartData([]);
     } finally {
       setLoading(false);
     }

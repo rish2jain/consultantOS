@@ -17,7 +17,7 @@ from consultantos.models.integration import (
     IntegrationHealthCheck
 )
 from consultantos.agents import get_available_agents, is_agent_available
-from consultantos.database import get_firestore_client
+from consultantos.database import get_db_service
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -286,7 +286,7 @@ async def store_comprehensive_analysis(result: ComprehensiveAnalysisResult):
         result: Comprehensive analysis result to store
     """
     try:
-        db = get_firestore_client()
+        db = get_db_service()
         if not db:
             logger.warning("Firestore not available, skipping storage")
             return
@@ -314,7 +314,7 @@ async def retrieve_comprehensive_analysis(analysis_id: str) -> Optional[Comprehe
         Comprehensive analysis result or None if not found
     """
     try:
-        db = get_firestore_client()
+        db = get_db_service()
         if not db:
             logger.warning("Firestore not available")
             return None

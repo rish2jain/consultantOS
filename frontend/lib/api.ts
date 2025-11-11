@@ -23,10 +23,11 @@ export class APIError extends Error {
   }
 }
 
-// Generic API request function
+// Generic API request function with retry logic
 async function apiRequest<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: RequestInit,
+  retries: number = 2
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
@@ -44,35 +45,88 @@ async function apiRequest<T>(
     headers['X-API-Key'] = apiKey;
   }
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+  // Retry logic for network errors
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Add timeout to fetch requests (10 seconds)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    // Handle non-JSON responses (like health check)
-    const contentType = response.headers.get('content-type');
-    const isJson = contentType?.includes('application/json');
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      const error = isJson ? await response.json() : { detail: response.statusText };
+      clearTimeout(timeoutId);
+
+      // Handle non-JSON responses (like health check)
+      const contentType = response.headers.get('content-type');
+      const isJson = contentType?.includes('application/json');
+
+      if (!response.ok) {
+        // Don't retry on client errors (4xx) except 429 (rate limit)
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          const error = isJson ? await response.json() : { detail: response.statusText };
+          throw new APIError(
+            error.detail || error.message || 'API request failed',
+            response.status,
+            error
+          );
+        }
+        // Retry on server errors (5xx) and rate limits (429)
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          continue;
+        }
+        const error = isJson ? await response.json() : { detail: response.statusText };
+        throw new APIError(
+          error.detail || error.message || 'API request failed',
+          response.status,
+          error
+        );
+      }
+
+      return isJson ? response.json() : response.text();
+    } catch (error) {
+      // Handle network errors and timeouts
+      if (error instanceof APIError) {
+        throw error;
+      }
+
+      // Retry on network errors
+      if (attempt < retries && (error instanceof TypeError || error instanceof DOMException)) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        continue;
+      }
+
+      // Final error handling
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new APIError(
+          `Unable to connect to the server. Please check if the backend is running at ${API_BASE_URL}`,
+          0,
+          { originalError: error.message }
+        );
+      }
+
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new APIError(
+          'Request timed out. Please try again.',
+          0,
+          { originalError: 'Timeout' }
+        );
+      }
+
       throw new APIError(
-        error.detail || error.message || 'API request failed',
-        response.status,
-        error
+        error instanceof Error ? error.message : 'Network error',
+        0,
+        { originalError: String(error) }
       );
     }
-
-    return isJson ? response.json() : response.text();
-  } catch (error) {
-    if (error instanceof APIError) {
-      throw error;
-    }
-    throw new APIError(
-      error instanceof Error ? error.message : 'Network error',
-      0
-    );
   }
+
+  // This should never be reached, but TypeScript needs it
+  throw new APIError('Request failed after retries', 0);
 }
 
 // Analysis API

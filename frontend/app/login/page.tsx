@@ -152,7 +152,7 @@ export default function LoginPage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold text-primary-600">ConsultantOS</h1>
           <p className="mt-2 text-sm text-gray-600">
-            McKinsey-grade business framework analysis
+            Professional-grade business framework analysis
           </p>
         </div>
 

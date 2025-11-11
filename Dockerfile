@@ -46,8 +46,9 @@ ENV PATH=/root/.local/bin:$PATH
 EXPOSE 8080
 
 # Health check (use PORT env var if set, default to 8080)
+# Use urllib instead of requests (no extra dependency needed)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD python -c "import os, requests; port = os.getenv('PORT', '8080'); requests.get(f'http://localhost:{port}/health', timeout=5)" || exit 1
+  CMD python -c "import os, urllib.request; port = os.getenv('PORT', '8080'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read()" || exit 1
 
 # Run application (respect PORT env var set by Cloud Run, default to 8080)
 CMD ["sh", "-c", "uvicorn consultantos.api.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

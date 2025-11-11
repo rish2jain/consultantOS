@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # API Keys - LLM Providers
     gemini_api_key: Optional[str] = None
-    gemini_model: Optional[str] = "gemini-1.5-flash-002"
+    gemini_model: Optional[str] = "gemini-2.0-flash-exp"  # Latest model (Dec 2024) - 2x faster, better quality
 
     # API Keys - Alerting
     slack_bot_token: Optional[str] = None

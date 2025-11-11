@@ -126,7 +126,7 @@ export const CardDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement
 }) => {
   return (
     <p
-      className={`text-sm text-gray-500 mt-1 ${className}`}
+      className={`text-sm text-gray-600 mt-1 ${className}`}
       {...props}
     >
       {children}

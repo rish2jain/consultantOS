@@ -56,7 +56,16 @@ export default function AnalysisPage() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        setRecentAnalyses(parsed.slice(0, 3)); // Show last 3
+        // Normalize data to ensure frameworks is always an array
+        const normalized = parsed.slice(0, 3).map((analysis: any) => ({
+          ...analysis,
+          frameworks: Array.isArray(analysis.frameworks)
+            ? analysis.frameworks
+            : typeof analysis.frameworks === 'string'
+            ? [analysis.frameworks]
+            : [],
+        }));
+        setRecentAnalyses(normalized);
       } catch (error) {
         console.error('Failed to parse recent analyses:', error);
       }
@@ -65,12 +74,18 @@ export default function AnalysisPage() {
 
   // Save analysis to recent list
   const saveToRecent = (analysis: Omit<RecentAnalysis, 'timestamp'>) => {
-    const newAnalysis: RecentAnalysis = {
+    // Ensure frameworks is always an array
+    const normalizedAnalysis: RecentAnalysis = {
       ...analysis,
+      frameworks: Array.isArray(analysis.frameworks)
+        ? analysis.frameworks
+        : typeof analysis.frameworks === 'string'
+        ? [analysis.frameworks]
+        : [],
       timestamp: new Date().toISOString(),
     };
 
-    const updated = [newAnalysis, ...recentAnalyses].slice(0, 10);
+    const updated = [normalizedAnalysis, ...recentAnalyses].slice(0, 10);
     setRecentAnalyses(updated.slice(0, 3));
     localStorage.setItem('recent_analyses', JSON.stringify(updated));
   };
@@ -82,12 +97,19 @@ export default function AnalysisPage() {
     setSuccessMessage(`Analysis completed successfully! Redirecting to report...`);
     setErrorMessage('');
 
+    // Normalize frameworks to ensure it's always an array
+    const frameworks = Array.isArray(reportData.frameworks)
+      ? reportData.frameworks
+      : typeof reportData.frameworks === 'string'
+      ? [reportData.frameworks]
+      : [];
+
     // Save to recent
     saveToRecent({
       id: reportId,
       company: reportData.company || 'Unknown',
       industry: reportData.industry || 'Unknown',
-      frameworks: reportData.frameworks || [],
+      frameworks,
       status: 'completed',
     });
 
@@ -148,7 +170,7 @@ export default function AnalysisPage() {
             Request Strategic Analysis
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Generate McKinsey-grade business framework analyses powered by AI.
+            Generate professional-grade business framework analyses powered by AI.
             Choose between instant analysis or background processing for complex reports.
           </p>
         </div>
@@ -230,7 +252,7 @@ export default function AnalysisPage() {
                   {/* Show job status if available */}
                   {currentJobId && (
                     <div className="mt-6">
-                      <JobStatusIndicator jobId={currentJobId} autoRefresh />
+                      <JobStatusIndicator jobId={currentJobId} />
                     </div>
                   )}
                 </TabPanel>
@@ -281,19 +303,25 @@ export default function AnalysisPage() {
                               {analysis.industry}
                             </p>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              {analysis.frameworks.slice(0, 2).map((framework) => (
-                                <Badge
-                                  key={framework}
-                                  variant="secondary"
-                                  size="sm"
-                                >
-                                  {framework}
-                                </Badge>
-                              ))}
-                              {analysis.frameworks.length > 2 && (
-                                <span className="text-xs text-gray-400">
-                                  +{analysis.frameworks.length - 2} more
-                                </span>
+                              {Array.isArray(analysis.frameworks) && analysis.frameworks.length > 0 ? (
+                                <>
+                                  {analysis.frameworks.slice(0, 2).map((framework: string) => (
+                                    <Badge
+                                      key={framework}
+                                      variant="secondary"
+                                      size="sm"
+                                    >
+                                      {framework}
+                                    </Badge>
+                                  ))}
+                                  {analysis.frameworks.length > 2 && (
+                                    <span className="text-xs text-gray-400">
+                                      +{analysis.frameworks.length - 2} more
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-xs text-gray-400">No frameworks</span>
                               )}
                             </div>
                           </div>

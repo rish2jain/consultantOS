@@ -7,9 +7,9 @@
     "dev:backend": "(lsof -ti:8080 | xargs kill -9 2>/dev/null || true) && uvicorn consultantos.api.main:app --host 0.0.0.0 --port 8080",
     "dev:frontend": "cd frontend && npm run dev",
     "install:frontend": "cd frontend && npm install",
-    "test": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e",
-    "test:e2e": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e",
-    "test:smoke": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e/smoke-test.test.js"
+    "test": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e --watch=false",
+    "test:e2e": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e --watch=false",
+    "test:smoke": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e/smoke-test.test.js --watch=false"
   },
   "devDependencies": {
     "axios": "^1.6.0",

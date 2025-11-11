@@ -347,8 +347,20 @@ gcloud run services update consultantos-frontend \
 
 ```bash
 # Create alert for high error rate (>5%)
-gcloud alpha monitoring policies create \
-  --notification-channels=YOUR_CHANNEL_ID \
+# First, create a notification channel (if not exists)
+gcloud monitoring channels create \
+  --display-name="Frontend Alerts" \
+  --type=email \
+  --channel-labels=email_address=your-email@example.com
+
+# Get the channel ID
+CHANNEL_ID=$(gcloud monitoring channels list \
+  --filter='displayName="Frontend Alerts"' \
+  --format='value(name)' | cut -d'/' -f4)
+
+# Create alert policy using stable API
+gcloud monitoring policies create \
+  --notification-channels=$CHANNEL_ID \
   --display-name="Frontend Error Rate Alert" \
   --condition-display-name="Error rate > 5%" \
   --condition-threshold-value=5 \
@@ -357,6 +369,37 @@ gcloud alpha monitoring policies create \
     resource.labels.service_name="consultantos-frontend" AND
     metric.type="run.googleapis.com/request_count" AND
     metric.labels.response_code_class="5xx"'
+```
+
+**Alternative: Using Cloud Console (Recommended for Production)**:
+1. Navigate to [Cloud Monitoring > Alerting](https://console.cloud.google.com/monitoring/alerting)
+2. Click "Create Policy"
+3. Select "Cloud Run Revision" as resource type
+4. Filter: `service_name="consultantos-frontend"`
+5. Metric: `Request Count` with filter `response_code_class="5xx"`
+6. Condition: Threshold > 5% for 60 seconds
+7. Configure notification channels
+8. Save policy
+
+**Alternative: Using Terraform (Infrastructure as Code)**:
+```hcl
+resource "google_monitoring_alert_policy" "frontend_error_rate" {
+  display_name = "Frontend Error Rate Alert"
+  combiner     = "OR"
+  
+  conditions {
+    display_name = "Error rate > 5%"
+    
+    condition_threshold {
+      filter          = 'resource.type="cloud_run_revision" AND resource.labels.service_name="consultantos-frontend" AND metric.type="run.googleapis.com/request_count" AND metric.labels.response_code_class="5xx"'
+      duration        = "60s"
+      comparison      = "COMPARISON_GT"
+      threshold_value = 5
+    }
+  }
+  
+  notification_channels = [google_monitoring_notification_channel.email.id]
+}
 ```
 
 **Logging**:
@@ -646,9 +689,9 @@ gcloud run services delete consultantos-frontend \
 ## 📚 References
 
 ### Documentation Links
-- [Next.js Deployment](https://nextjs.org/docs/deployment)
+- [Next.js Deployment](https://nextjs.org/docs/app/building-your-application/deploying)
 - [Cloud Run Documentation](https://cloud.google.com/run/docs)
-- [Next.js Standalone Output](https://nextjs.org/docs/advanced-features/output-file-tracing)
+- [Next.js Standalone Output](https://nextjs.org/docs/app/api-reference/next-config-js/output)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 
 ### Internal Documentation

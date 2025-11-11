@@ -99,6 +99,7 @@ export default function DashboardPage() {
       }
 
       setRecentReports(reports);
+      console.log('Loaded reports:', reports); // Debug: Check if data is loading
 
       // Fetch active jobs (handle errors gracefully)
       let activeJobs = [];
@@ -149,11 +150,11 @@ export default function DashboardPage() {
     {
       key: 'company',
       label: 'Company',
-      render: (report: RecentReport) => (
+      render: (value: any, report: RecentReport) => (
         <div>
-          <div className="font-medium text-gray-900">{report.company}</div>
+          <div className="font-semibold text-black" style={{ color: '#000000' }}>{report.company || value || '-'}</div>
           {report.industry && (
-            <div className="text-sm text-gray-500">{report.industry}</div>
+            <div className="text-sm text-gray-800" style={{ color: '#1f2937' }}>{report.industry}</div>
           )}
         </div>
       ),
@@ -161,7 +162,7 @@ export default function DashboardPage() {
     {
       key: 'frameworks',
       label: 'Frameworks',
-      render: (report: RecentReport) => (
+      render: (value: any, report: RecentReport) => (
         <div className="flex flex-wrap gap-1">
           {(report.frameworks || []).map((f) => (
             <Badge key={f} variant="primary">
@@ -174,23 +175,24 @@ export default function DashboardPage() {
     {
       key: 'created_at',
       label: 'Date',
-      render: (report: RecentReport) => {
-        if (!report.created_at) return '-';
+      render: (value: any, report: RecentReport) => {
+        const dateStr = report.created_at || value;
+        if (!dateStr) return <span style={{ color: '#000000' }}>-</span>;
         try {
-          const date = new Date(report.created_at);
-          if (isNaN(date.getTime())) return '-';
-          return format(date, 'MMM d, yyyy');
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return <span style={{ color: '#000000' }}>-</span>;
+          return <span style={{ color: '#000000' }}>{format(date, 'MMM d, yyyy')}</span>;
         } catch {
-          return '-';
+          return <span style={{ color: '#000000' }}>-</span>;
         }
       },
     },
     {
       key: 'status',
       label: 'Status',
-      render: (report: RecentReport) => (
+      render: (value: any, report: RecentReport) => (
         <Badge variant={report.status === 'completed' ? 'success' : 'warning'}>
-          {report.status}
+          {report.status || value || '-'}
         </Badge>
       ),
     },
@@ -208,24 +210,24 @@ export default function DashboardPage() {
               Welcome to ConsultantOS
             </h1>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Generate McKinsey-grade business framework analyses in 30 minutes
+              Generate professional-grade business framework analyses in 30 minutes
               with our multi-agent AI system
             </p>
             <div className="flex justify-center gap-4">
               <Button
-                variant="secondary"
+                variant="outline"
                 size="lg"
                 onClick={() => router.push('/mvp-demo')}
-                className="bg-white text-blue-600 hover:bg-blue-50"
+                className="!bg-white !text-blue-900 !border-white hover:!bg-blue-50 hover:!text-blue-900 focus:ring-blue-300 shadow-md"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Try MVP Demo
               </Button>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="lg"
                 onClick={() => router.push('/analysis')}
-                className="bg-white text-blue-600 hover:bg-blue-50"
+                className="!bg-white !text-blue-900 !border-white hover:!bg-blue-50 hover:!text-blue-900 focus:ring-blue-300 shadow-md"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Create Analysis

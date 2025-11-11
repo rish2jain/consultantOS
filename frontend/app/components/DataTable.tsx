@@ -160,10 +160,10 @@ export function DataTable<T>({
             {selectionMode !== 'none' && (
               <th
                 className={`
-                  text-left font-medium text-gray-700
+                  text-left font-medium text-black
                   ${compact ? 'px-3 py-2' : 'px-6 py-3'}
                 `}
-                style={{ width: '48px' }}
+                style={{ width: '48px', color: '#000000' }}
               >
                 {selectionMode === 'multi' && (
                   <input
@@ -185,20 +185,20 @@ export function DataTable<T>({
               <th
                 key={column.key}
                 className={`
-                  text-left text-xs font-medium text-gray-700 uppercase tracking-wider
+                  text-left text-xs font-semibold text-black uppercase tracking-wider
                   ${compact ? 'px-3 py-2' : 'px-6 py-3'}
                   ${column.align === 'center' ? 'text-center' : ''}
                   ${column.align === 'right' ? 'text-right' : ''}
                   ${column.hideOnMobile ? 'hidden md:table-cell' : ''}
                 `}
-                style={{ width: column.width }}
+                style={{ width: column.width, color: '#000000' }}
               >
                 {column.label}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white divide-y divide-gray-200" style={{ backgroundColor: '#ffffff' }}>
           {isLoading ? (
             <tr key="loading-row">
               <td
@@ -248,12 +248,15 @@ export function DataTable<T>({
                   key={key}
                   onClick={onRowClick ? () => onRowClick(row, index) : undefined}
                   className={`
-                    ${striped && index % 2 === 0 ? 'bg-gray-50' : ''}
+                    ${striped && index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
                     ${hoverable ? 'hover:bg-gray-50 transition-colors' : ''}
                     ${isSelected ? 'bg-primary-50' : ''}
                     ${onRowClick ? 'cursor-pointer' : ''}
                     ${customClassName}
                   `}
+                  style={{ 
+                    backgroundColor: striped && index % 2 === 0 ? '#f9fafb' : '#ffffff'
+                  }}
                 >
                   {selectionMode !== 'none' && (
                     <td className={compact ? 'px-3 py-2' : 'px-6 py-4'}>
@@ -279,13 +282,14 @@ export function DataTable<T>({
                         onRowClick(row, index);
                       } : undefined}
                       className={`
-                        text-sm text-gray-900
+                        text-sm font-medium text-black
                         ${compact ? 'px-3 py-2' : 'px-6 py-4'}
                         ${column.align === 'center' ? 'text-center' : ''}
                         ${column.align === 'right' ? 'text-right' : ''}
                         ${column.hideOnMobile ? 'hidden md:table-cell' : ''}
                         ${onRowClick ? 'cursor-pointer' : ''}
                       `}
+                      style={{ color: '#000000' }}
                     >
                       {renderCell(row, column, index)}
                     </td>
@@ -320,7 +324,8 @@ export const DataTableSkeleton: React.FC<DataTableSkeletonProps> = ({
             {Array.from({ length: columns }).map((_, i) => (
               <th
                 key={i}
-                className={compact ? 'px-3 py-2' : 'px-6 py-3'}
+                className={`text-black ${compact ? 'px-3 py-2' : 'px-6 py-3'}`}
+                style={{ color: '#000000' }}
               >
                 <div className="h-4 bg-gray-200 rounded animate-pulse" />
               </th>

@@ -12,6 +12,32 @@ logger = logging.getLogger(__name__)
 
 from consultantos.cache import get_cache_stats
 
+# Local NoOpMetrics fallback class to avoid circular imports
+class NoOpMetrics:
+    """Lightweight no-op metrics object that implements methods used in this module"""
+    
+    def get_summary(self) -> Dict[str, Any]:
+        """Return empty metrics summary"""
+        return {
+            "total_requests": 0,
+            "success_rate": 0.0,
+            "cache_hit_rate": 0.0,
+            "average_execution_times": {},
+            "error_count_by_type": {},
+            "api_success_rates": {},
+            "total_cost": 0.0
+        }
+    
+    def get_prometheus_metrics(self) -> str:
+        """Return empty Prometheus metrics"""
+        return "# No metrics available\n"
+
+# Import metrics - will use NoOpMetrics fallback if observability not available
+try:
+    from consultantos.observability import metrics
+except (ImportError, AttributeError):
+    metrics = NoOpMetrics()
+
 router = APIRouter(prefix="/health", tags=["health"])
 
 # Startup flag

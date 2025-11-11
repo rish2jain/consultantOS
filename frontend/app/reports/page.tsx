@@ -401,11 +401,45 @@ export default function ReportsPage() {
           </p>
         </div>
 
-        {/* Error Alert */}
+        {/* Error Alert with Retry */}
         {error && (
-          <ErrorAlert className="mb-6">
-            {error}
-          </ErrorAlert>
+          <Alert
+            variant="error"
+            title="Failed to Load Reports"
+            description={
+              <div>
+                <p className="mb-2">{error}</p>
+                {error.includes('Unable to connect') || error.includes('Network error') ? (
+                  <p className="text-sm text-red-700 mt-2">
+                    Please ensure the backend server is running at {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}
+                  </p>
+                ) : null}
+              </div>
+            }
+            actions={
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={fetchReports}
+                  className="bg-white text-red-700 hover:bg-red-50"
+                >
+                  Retry
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => router.push('/analysis')}
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Create New Report
+                </Button>
+              </div>
+            }
+            dismissible
+            onClose={() => setError(null)}
+            className="mb-6"
+          />
         )}
 
         {/* Toolbar */}

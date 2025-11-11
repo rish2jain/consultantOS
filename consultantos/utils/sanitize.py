@@ -3,7 +3,7 @@ Input sanitization utilities
 """
 import html
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Optional
 
 
 def sanitize_input(text: str, max_length: int = 1000) -> str:
@@ -39,6 +39,13 @@ def sanitize_input(text: str, max_length: int = 1000) -> str:
         text = text[:max_length]
     
     return text.strip()
+
+
+def sanitize_string(text: Optional[str], max_length: int = 1000) -> str:
+    """Convenience wrapper for sanitizing optional string inputs."""
+    if text is None:
+        return ""
+    return sanitize_input(text, max_length)
 
 
 def sanitize_dict(data: Dict[str, Any], max_length: int = 1000) -> Dict[str, Any]:

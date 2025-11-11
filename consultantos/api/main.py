@@ -112,7 +112,7 @@ from consultantos.api.saved_searches_endpoints import router as saved_searches_r
 
 # Disabled for hackathon demo - require additional dependencies
 # from consultantos.api.dashboard_endpoints import router as dashboard_router
-# from consultantos.api.monitoring_endpoints import router as monitoring_router
+from consultantos.api.monitoring_endpoints import router as monitoring_router
 # from consultantos.api.feedback_endpoints import router as feedback_router
 # from consultantos.api.teams_endpoints import router as teams_router
 # from consultantos.api.history_endpoints import router as history_router
@@ -356,7 +356,7 @@ app.include_router(custom_frameworks_router)
 app.include_router(saved_searches_router)
 # Disabled for hackathon demo - require additional dependencies
 # app.include_router(dashboard_router)
-# app.include_router(monitoring_router)
+app.include_router(monitoring_router)  # Enable monitoring endpoints for dashboard
 # app.include_router(teams_router)
 # app.include_router(history_router)
 # app.include_router(digest_router)
@@ -367,6 +367,18 @@ app.include_router(conversational_router)  # Conversational AI with RAG
 app.include_router(forecasting_router)  # Enhanced multi-scenario forecasting (Phase 1 Week 3-4)
 app.include_router(wargaming_router)  # Wargaming simulator with Monte Carlo (Phase 2 Week 11-12)
 app.include_router(integration_router)  # Comprehensive system integration (Phase 1 & 2 complete)
+
+# Dashboard agents endpoints
+from consultantos.api.dashboard_agents_endpoints import router as dashboard_agents_router
+app.include_router(dashboard_agents_router)  # Dashboard agents for feature gaps
+
+# Phase 2 & 3 dashboard agents endpoints
+from consultantos.api.phase2_3_agents_endpoints import router as phase2_3_agents_router
+app.include_router(phase2_3_agents_router)  # Phase 2 & 3 agents (notifications, versions, templates, visualizations, feedback)
+
+# Strategic Intelligence endpoints
+from consultantos.api.strategic_intelligence_endpoints import router as strategic_intelligence_router
+app.include_router(strategic_intelligence_router, prefix="/api/strategic-intelligence", tags=["Strategic Intelligence"])
 
 # app.include_router(storytelling_router)  # AI storytelling with persona adaptation (Phase 2 Week 15-16) - Not yet implemented
 
@@ -405,16 +417,21 @@ async def startup():
     except Exception as e:
         logger.warning(f"Failed to initialize Sentry: {e}")
 
-    # Start background worker for async job processing
+    # Start background worker for async job processing (non-blocking)
+    # Delay worker start to avoid blocking server startup
     global _worker_task
     try:
-        from consultantos.jobs.worker import get_worker
-        worker = get_worker()
-        # Start worker in background task and store reference
-        _worker_task = asyncio.create_task(worker.start(poll_interval=10))
-        logger.info("Background worker started for async job processing")
+        async def start_worker_delayed():
+            """Start worker after a short delay to ensure server is ready"""
+            await asyncio.sleep(2)  # Give server time to start
+            from consultantos.jobs.worker import get_worker
+            worker = get_worker()
+            await worker.start(poll_interval=10)
+        
+        _worker_task = asyncio.create_task(start_worker_delayed())
+        logger.info("Background worker task scheduled for async job processing")
     except Exception as e:
-        logger.warning(f"Failed to start background worker: {e}. Async jobs will not be processed.")
+        logger.warning(f"Failed to schedule background worker: {e}. Async jobs will not be processed.")
         logger.warning("To process async jobs, start the worker separately or restart the API server.")
 
     # Mark startup as complete for health checks

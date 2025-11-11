@@ -257,7 +257,7 @@ export const AnalysisRequestForm: React.FC<AnalysisRequestFormProps> = ({
       <CardHeader>
         <CardTitle>Request Business Analysis</CardTitle>
         <CardDescription>
-          Generate a McKinsey-grade strategic analysis using AI-powered business frameworks
+          Generate a professional-grade strategic analysis using AI-powered business frameworks
         </CardDescription>
       </CardHeader>
 

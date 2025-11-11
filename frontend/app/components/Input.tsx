@@ -51,7 +51,8 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const [showPassword, setShowPassword] = React.useState(false);
-  const inputId = id || `input-${React.useId()}`;
+  const generatedId = React.useId();
+  const inputId = id || `input-${generatedId}`;
 
   const hasError = Boolean(error);
   const hasSuccess = success && !hasError;

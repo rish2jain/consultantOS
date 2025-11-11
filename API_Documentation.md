@@ -1,7 +1,7 @@
 # ConsultantOS - API Documentation
 
 **Version**: 0.3.0  
-**Base URL**: `http://localhost:8080` (development) or your Cloud Run URL (production)  
+**Base URL**: `http://localhost:8080` (development) or `https://consultantos-api-bdndyf33xa-uc.a.run.app` (production)  
 **API Documentation**: Interactive docs available at `/docs` (Swagger UI) and `/redoc` (ReDoc)
 
 ---
@@ -10,17 +10,24 @@
 
 1. [Authentication](#authentication)
 2. [Core Endpoints](#core-endpoints)
-3. [Report Management](#report-management)
-4. [User Management](#user-management)
-5. [Templates](#templates)
-6. [Sharing & Collaboration](#sharing--collaboration)
-7. [Versioning](#versioning)
-8. [Comments](#comments)
-9. [Community](#community)
-10. [Analytics](#analytics)
-11. [Job Queue](#job-queue)
-12. [Error Handling](#error-handling)
-13. [Rate Limiting](#rate-limiting)
+3. [Integration Endpoints](#integration-endpoints)
+4. [Forecasting](#forecasting)
+5. [Wargaming](#wargaming)
+6. [Conversational AI](#conversational-ai)
+7. [Social Media](#social-media)
+8. [Strategic Intelligence](#strategic-intelligence)
+9. [Report Management](#report-management)
+10. [User Management](#user-management)
+11. [Templates](#templates)
+12. [Sharing & Collaboration](#sharing--collaboration)
+13. [Versioning](#versioning)
+14. [Comments](#comments)
+15. [Community](#community)
+16. [Analytics](#analytics)
+17. [Knowledge Base](#knowledge-base)
+18. [Job Queue](#job-queue)
+19. [Error Handling](#error-handling)
+20. [Rate Limiting](#rate-limiting)
 
 ---
 
@@ -112,6 +119,347 @@ Generate strategic analysis report for a company.
 ```
 
 **Response Time**: 30-60 seconds (may timeout for complex analyses)
+
+---
+
+## Integration Endpoints
+
+### Comprehensive Analysis
+
+```bash
+POST /integration/comprehensive-analysis
+```
+
+Execute comprehensive analysis using all enabled agents and features.
+
+**Authentication**: Optional  
+**Rate Limit**: 10 requests/hour per IP
+
+**Request Body**:
+```json
+{
+  "company": "Tesla",
+  "industry": "Electric Vehicles",
+  "frameworks": ["porter", "swot"],
+  "enable_forecasting": true,
+  "enable_social_media": true,
+  "enable_dark_data": false,
+  "enable_wargaming": false,
+  "generate_dashboard": true,
+  "generate_narratives": false
+}
+```
+
+**Response**:
+```json
+{
+  "status": "success",
+  "report_id": "Tesla_20240101120000",
+  "core_analysis": {...},
+  "forecasting": {...},
+  "social_media": {...},
+  "dashboard": {...},
+  "execution_time_seconds": 120.5
+}
+```
+
+### Integration Health Check
+
+```bash
+GET /integration/health
+```
+
+Check availability of all agents and system capabilities.
+
+**Response**:
+```json
+{
+  "status": "healthy",
+  "agents": {
+    "research": true,
+    "market": true,
+    "financial": true,
+    "framework": true,
+    "synthesis": true,
+    "forecasting": true,
+    "wargaming": true,
+    "social_media": true
+  },
+  "capabilities": {
+    "forecasting": true,
+    "wargaming": true,
+    "social_media": true,
+    "dark_data": true
+  }
+}
+```
+
+---
+
+## Forecasting
+
+### Multi-Scenario Forecasting
+
+```bash
+POST /forecasting/multi-scenario
+```
+
+Generate financial forecasts with multiple scenarios using Monte Carlo simulation.
+
+**Authentication**: Optional  
+**Rate Limit**: 10 requests/hour per IP
+
+**Request Body**:
+```json
+{
+  "company": "Tesla",
+  "metric": "Revenue",
+  "periods": 12,
+  "scenarios": ["optimistic", "base", "pessimistic"],
+  "confidence_level": 0.95
+}
+```
+
+**Response**:
+```json
+{
+  "company": "Tesla",
+  "metric": "Revenue",
+  "forecasts": {
+    "optimistic": {
+      "mean": 12000000000,
+      "p5": 10000000000,
+      "p95": 14000000000
+    },
+    "base": {...},
+    "pessimistic": {...}
+  },
+  "confidence_score": 0.92
+}
+```
+
+---
+
+## Wargaming
+
+### Create Scenario
+
+```bash
+POST /wargaming/scenarios
+```
+
+Create a competitive scenario for simulation.
+
+**Request Body**:
+```json
+{
+  "company": "Tesla",
+  "scenario_name": "New Competitor Entry",
+  "description": "Major automaker enters EV market",
+  "variables": {
+    "market_share_impact": -0.1,
+    "price_pressure": 0.05
+  }
+}
+```
+
+### Simulate Scenario
+
+```bash
+POST /wargaming/simulate
+```
+
+Run Monte Carlo simulation for a competitive scenario.
+
+**Request Body**:
+```json
+{
+  "company": "Tesla",
+  "scenario": "New competitor enters market",
+  "simulations": 1000,
+  "time_horizon": 12
+}
+```
+
+**Response**:
+```json
+{
+  "scenario_id": "550e8400-e29b-41d4-a716-446655440000",
+  "results": {
+    "win_probability": 0.65,
+    "expected_outcome": "positive",
+    "risk_assessment": "moderate",
+    "statistical_validation": {
+      "p_value": 0.03,
+      "confidence_interval": [0.60, 0.70]
+    }
+  },
+  "simulations_run": 1000
+}
+```
+
+### List Scenarios
+
+```bash
+GET /wargaming/scenarios
+```
+
+List all available scenarios.
+
+---
+
+## Conversational AI
+
+### Chat
+
+```bash
+POST /conversational/chat
+```
+
+Conversational AI chat with RAG and query routing.
+
+**Authentication**: Optional
+
+**Request Body**:
+```json
+{
+  "query": "What are the main competitive threats to Tesla?",
+  "company": "Tesla",
+  "industry": "Electric Vehicles",
+  "conversation_id": "optional-conversation-id",
+  "enable_rag": true,
+  "route_to_agent": true
+}
+```
+
+**Response**:
+```json
+{
+  "response": "Based on the analysis, Tesla faces several competitive threats...",
+  "sources": [
+    {
+      "type": "report",
+      "report_id": "Tesla_20240101",
+      "relevance": 0.95
+    }
+  ],
+  "agent_used": "framework",
+  "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
+  "confidence": 0.88
+}
+```
+
+---
+
+## Social Media
+
+### Get Social Media Insights
+
+```bash
+GET /social-media/insights
+```
+
+Get combined insights from Reddit and Twitter.
+
+**Query Parameters**:
+- `company` (string, required): Company name
+- `keywords` (array, optional): Keywords to track
+- `subreddits` (array, optional): Subreddits to monitor
+- `days_back` (integer, default: 7): Days of history
+
+**Response**:
+```json
+{
+  "company": "Tesla",
+  "sentiment": {
+    "overall": 0.72,
+    "reddit": 0.68,
+    "twitter": 0.76
+  },
+  "trends": [...],
+  "key_topics": [...],
+  "influencers": [...]
+}
+```
+
+---
+
+## Strategic Intelligence
+
+### Get Strategic Intelligence
+
+```bash
+GET /api/strategic-intelligence/{company}
+```
+
+Get comprehensive strategic intelligence for a company.
+
+**Query Parameters**:
+- `company` (string, required): Company name
+- `include_forecasting` (boolean, default: false)
+- `include_wargaming` (boolean, default: false)
+
+**Response**:
+```json
+{
+  "company": "Tesla",
+  "strategic_position": {...},
+  "competitive_landscape": {...},
+  "forecasting": {...},
+  "scenarios": [...]
+}
+```
+
+---
+
+## Knowledge Base
+
+### Search Knowledge Base
+
+```bash
+POST /knowledge/search
+```
+
+Search the knowledge base for relevant information.
+
+**Authentication**: Required
+
+**Request Body**:
+```json
+{
+  "query": "Tesla competitive advantages",
+  "company": "Tesla",
+  "limit": 10
+}
+```
+
+**Response**:
+```json
+{
+  "results": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "content": "...",
+      "relevance": 0.92,
+      "source": "report",
+      "report_id": "Tesla_20240101"
+    }
+  ],
+  "total": 15
+}
+```
+
+### Get Company Timeline
+
+```bash
+GET /knowledge/timeline/{company}
+```
+
+Get chronological timeline of analyses for a company.
+
+**Authentication**: Required
+
+---
 
 ### Generate Analysis (Async)
 
@@ -967,3 +1315,46 @@ Both provide:
 **API Version**: 0.3.0  
 **Backend Version**: 0.3.0  
 **Frontend Version**: 0.4.0
+
+## Additional Endpoints
+
+### MVP Endpoints
+
+- `POST /mvp/chat` - Simplified chat interface
+- `GET /mvp/forecast` - Quick forecasting endpoint
+
+### Dashboard Agents
+
+- `GET /dashboard-agents/overview` - Dashboard overview
+- `GET /dashboard-agents/analytics` - Dashboard analytics
+
+### Phase 2 & 3 Agents
+
+- Endpoints for notifications, versions, templates, visualizations, and feedback
+
+### Enhanced Reports
+
+- `GET /enhanced-reports/{report_id}` - Get enhanced report with actionable insights
+- `POST /enhanced-reports/{report_id}/insights` - Generate additional insights
+
+### Dark Data
+
+- `POST /dark-data/extract` - Extract insights from unstructured sources
+
+### Storytelling
+
+- `POST /storytelling/generate` - Generate AI-powered narratives with persona adaptation
+
+### Custom Frameworks
+
+- `GET /custom-frameworks` - List custom frameworks
+- `POST /custom-frameworks` - Create custom framework
+- `GET /custom-frameworks/{id}` - Get framework details
+
+### Saved Searches
+
+- `GET /saved-searches` - List saved searches
+- `POST /saved-searches` - Create saved search
+- `DELETE /saved-searches/{id}` - Delete saved search
+
+For complete endpoint documentation, visit `/docs` (Swagger UI) when the server is running.

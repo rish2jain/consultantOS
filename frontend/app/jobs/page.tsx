@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+
+// Force dynamic rendering to avoid static generation issues with useSearchParams
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import {
   JobQueue,
@@ -209,7 +212,7 @@ function JobDetailsModal({ job, isOpen, onClose, onCancel }: JobDetailsModalProp
   );
 }
 
-export default function JobsPage() {
+function JobsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobId = searchParams.get('id');
@@ -406,9 +409,38 @@ export default function JobsPage() {
 
       {/* Alerts */}
       {error && (
-        <ErrorAlert className="mb-6" onDismiss={() => setError(null)}>
-          {error}
-        </ErrorAlert>
+        <Alert
+          variant="error"
+          title="Failed to Load Jobs"
+          description={
+            <div>
+              <p className="mb-2">{error}</p>
+              {error.includes('Unable to connect') || error.includes('Network error') ? (
+                <p className="text-sm text-red-700 mt-2">
+                  Please ensure the backend server is running at {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}
+                </p>
+              ) : null}
+            </div>
+          }
+          actions={
+            <div className="flex gap-2 mt-3">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setError(null);
+                  Promise.all([fetchActiveJobs(), fetchJobHistory()]);
+                }}
+                className="bg-white text-red-700 hover:bg-red-50"
+              >
+                Retry
+              </Button>
+            </div>
+          }
+          dismissible
+          onClose={() => setError(null)}
+          className="mb-6"
+        />
       )}
 
       {successMessage && (
@@ -423,7 +455,7 @@ export default function JobsPage() {
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center">
               <Spinner />
-              <p className="text-gray-600 mt-4">Loading jobs...</p>
+              <p className="text-gray-700 font-medium mt-4">Loading jobs...</p>
             </div>
           </CardContent>
         </Card>
@@ -473,7 +505,7 @@ export default function JobsPage() {
 
                   {activeJobs.length === 0 && (
                     <div className="text-center py-12">
-                      <p className="text-gray-500">No active jobs</p>
+                      <p className="text-gray-700 font-medium">No active jobs</p>
                       <Link href="/analysis">
                         <Button className="mt-4">
                           Create New Analysis
@@ -524,5 +556,24 @@ export default function JobsPage() {
         onCancel={handleCancelJob}
       />
     </div>
+  );
+}
+
+export default function JobsPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Spinner />
+              <p className="text-gray-700 font-medium mt-4">Loading jobs...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <JobsPageContent />
+    </Suspense>
   );
 }

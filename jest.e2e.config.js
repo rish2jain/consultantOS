@@ -12,5 +12,9 @@ module.exports = {
   setupFilesAfterEnv: [],
   globalSetup: undefined,
   globalTeardown: undefined,
+  // Explicitly disable watch mode - tests should only run when explicitly invoked
+  watch: false,
+  watchAll: false,
+  watchman: false,
 };
 

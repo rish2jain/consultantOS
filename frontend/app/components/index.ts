@@ -219,3 +219,23 @@ export type { ProfileSettingsProps, ProfileData } from "./ProfileSettings";
 // Layout Components
 export { Navigation } from "./Navigation";
 export { KeyboardShortcuts } from "./KeyboardShortcuts";
+
+// Advanced Visualization Components
+export { default as CompetitivePositioningMap } from './CompetitivePositioningMap';
+export type { CompetitivePosition, PositioningData } from './CompetitivePositioningMap';
+
+export { default as DisruptionRadar } from './DisruptionRadar';
+export type { DisruptionThreat, DisruptionAssessment } from './DisruptionRadar';
+
+export { default as DecisionCard } from './DecisionCard';
+export type { DecisionOption, StrategicDecision } from './DecisionCard';
+
+export { default as StrategicHealthDashboard } from './StrategicHealthDashboard';
+export type {
+  HealthThreat,
+  HealthOpportunity,
+  CompetitivePositionSummary,
+  StrategicHealthData,
+} from './StrategicHealthDashboard';
+
+export { default as VisualizationDemo } from './VisualizationDemo';

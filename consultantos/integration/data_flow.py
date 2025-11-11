@@ -19,9 +19,10 @@ from consultantos.models.integration import (
     WargameResult,
     Dashboard,
     Narrative,
-    ComprehensiveAnalysisResult
+    ComprehensiveAnalysisResult,
+    FinancialSnapshot,
+    MarketTrendResult
 )
-from consultantos_core.models import FinancialSnapshot, MarketTrendResult
 
 logger = logging.getLogger(__name__)
 

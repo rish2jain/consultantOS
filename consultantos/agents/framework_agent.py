@@ -23,7 +23,7 @@ class FrameworkAgent(BaseAgent):
             name="framework_analyst"
         )
         self.instruction = """
-        You are a strategic framework expert trained in McKinsey/BCG methodologies.
+        You are a strategic framework expert trained in strategic consulting methodologies.
 
         Apply rigorous business frameworks:
         - Porter's Five Forces (competitive dynamics)
@@ -42,7 +42,7 @@ class FrameworkAgent(BaseAgent):
         """
         Execute strategic framework analysis using selected business frameworks.
 
-        Applies rigorous McKinsey/BCG-grade frameworks to analyze competitive
+        Applies rigorous professional-grade frameworks to analyze competitive
         positioning and strategic options. Each framework provides unique insights:
         - Porter's Five Forces: Industry competitive dynamics
         - SWOT: Internal strengths/weaknesses, external opportunities/threats

@@ -4,15 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**ConsultantOS is a Continuous Competitive Intelligence Platform**
+**ConsultantOS is a Comprehensive Competitive Intelligence Platform**
 
-The platform has evolved from a one-time report generation tool to a continuous monitoring system. It orchestrates 5 specialized agents (Research, Market, Financial, Framework, Synthesis) to provide ongoing competitive intelligence with automated change detection and smart alerts.
+The platform orchestrates multiple specialized AI agents to provide comprehensive business intelligence. It has evolved from a simple report generator to a full-featured intelligence platform with advanced analytics, conversational AI, and strategic planning capabilities.
 
-**Key Paradigm Shift**:
-- **Old**: Generate PDF reports on-demand (32 hours → 30 minutes)
-- **New**: Continuous monitoring with dashboard-first experience, PDF as secondary export option
+**Key Capabilities**:
+- **Core Analysis**: 5 specialized agents (Research, Market, Financial, Framework, Synthesis)
+- **Advanced Analytics**: Forecasting, Wargaming, Social Media Analysis, Dark Data Extraction
+- **Conversational AI**: RAG-based chat with intelligent query routing
+- **Strategic Intelligence**: Comprehensive competitive intelligence dashboards
+- **Report Generation**: PDF, Excel, Word exports with interactive visualizations
 
-**Tech Stack**: Python 3.11+, FastAPI, Google Gemini AI, Next.js 14 (frontend), Google Cloud Platform (Cloud Run, Firestore, Cloud Storage)
+**Tech Stack**: Python 3.11+, FastAPI, Google Gemini AI, Next.js 14 (frontend), Google Cloud Platform (Cloud Run, Firestore, Cloud Storage), Celery + Redis, Prometheus, Sentry
 
 ## Essential Commands
 
@@ -74,22 +77,33 @@ gcloud run deploy consultantos \
 
 ## Architecture
 
-### Continuous Intelligence Monitoring System
+### Advanced Analytics System
 
-**NEW PRIMARY WORKFLOW**: Dashboard-first continuous monitoring
+**Multi-Scenario Forecasting**:
+- Monte Carlo simulation for financial projections
+- Multiple scenarios (optimistic, base, pessimistic)
+- Statistical validation with confidence intervals
 
-1. **User Creates Monitor**: Company + industry + config (frequency, frameworks, alert threshold)
-2. **Baseline Analysis**: Initial analysis run automatically to establish snapshot
-3. **Background Worker**: Scheduled checks run at configured frequency (hourly/daily/weekly/monthly)
-4. **Change Detection**: Compare new snapshot with previous to detect material changes
-5. **Smart Alerts**: Only alert if confidence > threshold (avoid noise)
-6. **User Feedback Loop**: Users provide feedback on alert quality to improve system
+**Wargaming Simulator**:
+- Competitive scenario planning
+- Monte Carlo simulation with statistical validation
+- Risk assessment and win probability calculations
 
-**Key Components**:
-- `IntelligenceMonitor`: Core monitoring logic, change detection, alert generation
-- `MonitoringWorker`: Background scheduler processing monitors in batches
-- `MonitorAnalysisSnapshot`: Key metrics for change detection
-- Dashboard UI: Real-time monitoring status, alert feed, manual triggers
+**Social Media Analysis**:
+- Reddit and Twitter sentiment tracking
+- Trend analysis and influencer identification
+- Real-time sentiment monitoring
+
+**Dark Data Extraction**:
+- Unstructured data analysis
+- Email and document parsing
+- Hidden insights discovery
+
+**Conversational AI**:
+- RAG-based retrieval from historical reports
+- Intelligent query routing to specialized agents
+- Conversation history management
+- Source citation and transparency
 
 ### Multi-Agent Orchestration (Used by Monitoring System)
 
@@ -106,43 +120,71 @@ The system uses a **phased execution model** coordinated by `AnalysisOrchestrato
 
 ```
 consultantos/
-├── agents/          # 5 specialized agents inheriting from BaseAgent
-│   ├── research_agent.py    # Web research via Tavily
-│   ├── market_agent.py      # Trends via pytrends
-│   ├── financial_agent.py   # Financial data (yfinance, SEC EDGAR)
-│   ├── framework_agent.py   # Strategic framework analysis
-│   └── synthesis_agent.py   # Executive summary generation
+├── agents/          # Specialized agents inheriting from BaseAgent
+│   ├── research_agent.py         # Web research via Tavily
+│   ├── market_agent.py           # Trends via pytrends
+│   ├── financial_agent.py       # Financial data (yfinance, SEC EDGAR)
+│   ├── framework_agent.py        # Strategic framework analysis
+│   ├── synthesis_agent.py       # Executive summary generation
+│   ├── forecasting_agent.py     # Multi-scenario forecasting
+│   ├── wargaming_agent.py       # Competitive scenario simulation
+│   ├── social_media_agent.py    # Social media sentiment analysis
+│   ├── dark_data_agent.py       # Unstructured data extraction
+│   ├── conversational_agent.py # RAG-based conversational AI
+│   └── [many more specialized agents]
 ├── orchestrator/    # Multi-agent coordination with caching
-├── monitoring/      # **NEW**: Continuous intelligence monitoring system
+├── monitoring/      # Continuous intelligence monitoring system
 │   ├── intelligence_monitor.py  # Core monitoring, change detection, alerts
 │   └── __init__.py
 ├── api/             # FastAPI endpoints (thin layer - validation, auth, delegation)
-│   ├── main.py              # Main app, CORS, rate limiting, routes
-│   ├── monitoring_endpoints.py  # **NEW**: Monitor CRUD, alerts, feedback
+│   ├── main.py                    # Main app, CORS, rate limiting, routes
+│   ├── integration_endpoints.py  # Comprehensive analysis integration
+│   ├── forecasting_endpoints.py  # Forecasting endpoints
+│   ├── wargaming_endpoints.py    # Wargaming endpoints
+│   ├── conversational_endpoints.py # Conversational AI endpoints
+│   ├── social_media_endpoints.py # Social media endpoints
+│   ├── strategic_intelligence_endpoints.py # Strategic intelligence
+│   ├── monitoring_endpoints.py   # Monitor CRUD, alerts, feedback
 │   ├── user_endpoints.py
 │   ├── template_endpoints.py
 │   ├── sharing_endpoints.py
 │   ├── versioning_endpoints.py
 │   ├── comments_endpoints.py
 │   ├── community_endpoints.py
-│   └── analytics_endpoints.py
+│   ├── analytics_endpoints.py
+│   └── [many more endpoint modules]
 ├── models/          # Pydantic domain models (shared across app)
-│   └── monitoring.py        # **NEW**: Monitor, Alert, Change models
-├── tools/           # External data integrations (Tavily, Trends, SEC, yfinance)
+│   ├── monitoring.py             # Monitor, Alert, Change models
+│   ├── forecasting.py            # Forecasting models
+│   ├── wargaming.py              # Wargaming models
+│   ├── conversational.py         # Conversational AI models
+│   └── [many more model files]
+├── tools/           # External data integrations
+│   ├── tavily_tool.py           # Tavily search
+│   ├── trends_tool.py           # Google Trends
+│   ├── financial_tool.py        # yfinance, SEC EDGAR
+│   └── [more tool integrations]
+├── connectors/      # External service connectors
+│   ├── reddit_connector.py      # Reddit API
+│   ├── twitter_connector.py     # Twitter API
+│   └── grok_connector.py        # Grok API via laozhang.ai
 ├── reports/         # PDF generation and exports (JSON, Excel, Word)
 ├── visualizations/  # Plotly chart generation
 ├── jobs/            # Async job queue and worker
 │   ├── queue.py
 │   ├── worker.py
-│   └── monitoring_worker.py # **NEW**: Background monitoring scheduler
-├── services/        # Cross-cutting services (email)
+│   └── monitoring_worker.py      # Background monitoring scheduler
+├── services/        # Cross-cutting services (email, notifications)
 ├── utils/           # Validation, sanitization, retry, circuit breaker
 ├── cache.py         # Multi-level caching (disk + semantic)
 ├── storage.py       # Cloud Storage integration
 ├── database.py      # Firestore database layer
 ├── auth.py          # API key authentication
-├── monitoring.py    # Structured logging and metrics
-└── config.py        # Configuration management (pydantic-settings)
+├── log_utils.py     # Structured logging (renamed from monitoring.py)
+├── observability/   # Observability and monitoring
+│   ├── metrics.py               # Prometheus metrics
+│   └── sentry_integration.py    # Sentry error tracking
+└── config.py          # Configuration management (pydantic-settings)
 
 frontend/
 ├── app/             # Next.js 14 app directory
@@ -167,7 +209,9 @@ frontend/
 **Async Processing**:
 - `/analyze` - Synchronous (quick analyses, waits for completion)
 - `/analyze/async` - Asynchronous (enqueues job, returns job_id)
+- `/integration/comprehensive-analysis` - Full-featured analysis with all capabilities
 - Use async for >3 frameworks or deep analysis depth
+- Celery + Redis for distributed task processing
 
 **Error Handling**:
 - Convert internal exceptions to HTTPException at API boundary

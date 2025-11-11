@@ -17,29 +17,19 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  FunnelChart,
-  Funnel,
-  LabelList,
 } from 'recharts';
 import {
-  TrendingUp,
-  TrendingDown,
   Clock,
-  Users,
   FileText,
   Zap,
   AlertCircle,
-  CheckCircle,
-  XCircle,
   Activity,
-  Calendar,
   Target,
   BarChart3,
-  PieChart as PieChartIcon,
-  LineChart as LineChartIcon,
 } from 'lucide-react';
 import { Card } from '@/app/components/Card';
 import { Button } from '@/app/components/Button';
+import { Alert } from '@/app/components/Alert';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -134,6 +124,7 @@ export default function AnalyticsPage() {
     // Auto-refresh every 60 seconds
     const interval = setInterval(loadAnalytics, 60000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   async function loadAnalytics() {
@@ -229,10 +220,10 @@ export default function AnalyticsPage() {
   if (loading && !productivity && !business && !dashboard) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading analytics...</p>
-        </div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-700 font-medium">Loading analytics...</p>
+          </div>
       </div>
     );
   }
@@ -244,13 +235,13 @@ export default function AnalyticsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-            <p className="text-gray-600 mt-1">Comprehensive insights into your ConsultantOS usage</p>
+            <p className="text-gray-700 mt-1">Comprehensive insights into your ConsultantOS usage</p>
           </div>
           <div className="flex gap-2">
             <select
               value={period}
               onChange={(e) => setPeriod(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium"
             >
               <option value={7}>Last 7 days</option>
               <option value={30}>Last 30 days</option>
@@ -262,9 +253,43 @@ export default function AnalyticsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">{error}</p>
-          </div>
+          <Alert
+            variant="error"
+            title="Failed to Load Analytics"
+            description={
+              <div>
+                <p className="mb-2">{error}</p>
+                {error.includes('Unable to connect') || error.includes('Network error') || error.includes('Failed to load') ? (
+                  <p className="text-sm text-red-700 mt-2">
+                    Please ensure the backend server is running at {API_URL}
+                  </p>
+                ) : null}
+              </div>
+            }
+            actions={
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={loadAnalytics}
+                  className="bg-white text-red-700 hover:bg-red-50"
+                >
+                  Retry
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => router.push('/analysis')}
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Create Analysis
+                </Button>
+              </div>
+            }
+            dismissible
+            onClose={() => setError(null)}
+            className="mb-6"
+          />
         )}
 
         {/* Quick Action Cards */}
@@ -274,10 +299,10 @@ export default function AnalyticsPage() {
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Zap className="h-6 w-6 text-blue-600" />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Create Quick Analysis</p>
-                <p className="text-xs text-gray-400">Fast path to new analysis</p>
-              </div>
+          <div>
+            <p className="text-sm font-medium text-gray-800">Create Quick Analysis</p>
+            <p className="text-xs text-gray-600">Fast path to new analysis</p>
+          </div>
             </div>
           </Card>
 
@@ -286,10 +311,10 @@ export default function AnalyticsPage() {
               <div className="p-2 bg-yellow-100 rounded-lg">
                 <Clock className="h-6 w-6 text-yellow-600" />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">View Pending Reviews</p>
-                <p className="text-xs text-gray-400">Reports needing attention</p>
-              </div>
+          <div>
+            <p className="text-sm font-medium text-gray-800">View Pending Reviews</p>
+            <p className="text-xs text-gray-600">Reports needing attention</p>
+          </div>
             </div>
           </Card>
 
@@ -298,10 +323,10 @@ export default function AnalyticsPage() {
               <div className="p-2 bg-green-100 rounded-lg">
                 <FileText className="h-6 w-6 text-green-600" />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Export Latest Report</p>
-                <p className="text-xs text-gray-400">Quick access to most recent</p>
-              </div>
+          <div>
+            <p className="text-sm font-medium text-gray-800">Export Latest Report</p>
+            <p className="text-xs text-gray-600">Quick access to most recent</p>
+          </div>
             </div>
           </Card>
 
@@ -310,10 +335,10 @@ export default function AnalyticsPage() {
               <div className="p-2 bg-purple-100 rounded-lg">
                 <Activity className="h-6 w-6 text-purple-600" />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Check Job Status</p>
-                <p className="text-xs text-gray-400">Monitor active processing</p>
-              </div>
+          <div>
+            <p className="text-sm font-medium text-gray-800">Check Job Status</p>
+            <p className="text-xs text-gray-600">Monitor active processing</p>
+          </div>
             </div>
           </Card>
         </div>
@@ -324,7 +349,7 @@ export default function AnalyticsPage() {
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Reports</p>
+                  <p className="text-sm font-medium text-gray-700">Total Reports</p>
                   <p className="text-2xl font-bold text-gray-900">{productivity.total_reports}</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-600" />
@@ -334,9 +359,9 @@ export default function AnalyticsPage() {
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Templates Used</p>
+                  <p className="text-sm font-medium text-gray-700">Templates Used</p>
                   <p className="text-2xl font-bold text-gray-900">{productivity.templates_used}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600">
                     {productivity.template_adoption_rate > 0
                       ? `${(productivity.template_adoption_rate * 100).toFixed(1)}% adoption`
                       : 'No adoption data'}
@@ -349,9 +374,9 @@ export default function AnalyticsPage() {
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Time Saved</p>
+                  <p className="text-sm font-medium text-gray-700">Time Saved</p>
                   <p className="text-2xl font-bold text-gray-900">{productivity.estimated_time_saved_hours.toFixed(1)}h</p>
-                  <p className="text-xs text-gray-500">From templates</p>
+                  <p className="text-xs text-gray-600">From templates</p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600" />
               </div>
@@ -360,7 +385,7 @@ export default function AnalyticsPage() {
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Avg Processing</p>
+                  <p className="text-sm font-medium text-gray-700">Avg Processing</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {productivity.avg_batch_processing_time_seconds > 60
                       ? `${(productivity.avg_batch_processing_time_seconds / 60).toFixed(1)}m`
@@ -392,8 +417,8 @@ export default function AnalyticsPage() {
                       : 'bg-blue-50 border-blue-400'
                   }`}
                 >
-                  <p className="font-medium text-gray-900">{insight.message}</p>
-                  <p className="text-sm text-gray-600 mt-1">{insight.recommendation}</p>
+                  <p className="font-semibold text-gray-900">{insight.message}</p>
+                  <p className="text-sm text-gray-700 mt-1">{insight.recommendation}</p>
                 </div>
               ))}
             </div>
@@ -405,48 +430,66 @@ export default function AnalyticsPage() {
           {/* Report Status Pipeline (Funnel) */}
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Report Status Pipeline</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={funnelData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
+            {funnelData.length === 0 || funnelData.every(d => d.value === 0) ? (
+              <div className="flex flex-col items-center justify-center h-[300px] text-gray-600">
+                <BarChart3 className="w-12 h-12 mb-3 text-gray-500" />
+                <p className="text-sm font-medium text-gray-700">No report data available</p>
+                <p className="text-xs mt-1 text-gray-600">Create your first analysis to see data here</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={funnelData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#3b82f6" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </Card>
 
           {/* Confidence Score Distribution */}
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Confidence Score Distribution</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={confidenceBins}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="range" angle={-45} textAnchor="end" height={80} />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#10b981" />
-              </BarChart>
-            </ResponsiveContainer>
-            {dashboard && (
-              <div className="mt-4 grid grid-cols-4 gap-2 text-sm">
-                <div>
-                  <p className="text-gray-600">Mean</p>
-                  <p className="font-semibold">{(dashboard.confidence_score_distribution.mean * 100).toFixed(1)}%</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Median</p>
-                  <p className="font-semibold">{(dashboard.confidence_score_distribution.median * 100).toFixed(1)}%</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Min</p>
-                  <p className="font-semibold">{(dashboard.confidence_score_distribution.min * 100).toFixed(1)}%</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Max</p>
-                  <p className="font-semibold">{(dashboard.confidence_score_distribution.max * 100).toFixed(1)}%</p>
-                </div>
+            {!dashboard || confidenceBins.every(b => b.count === 0) ? (
+              <div className="flex flex-col items-center justify-center h-[300px] text-gray-600">
+                <Target className="w-12 h-12 mb-3 text-gray-500" />
+                <p className="text-sm font-medium text-gray-700">No confidence data available</p>
+                <p className="text-xs mt-1 text-gray-600">Complete analyses to see confidence scores</p>
               </div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={confidenceBins}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="range" angle={-45} textAnchor="end" height={80} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#10b981" />
+                  </BarChart>
+                </ResponsiveContainer>
+                {dashboard && (
+                  <div className="mt-4 grid grid-cols-4 gap-2 text-sm">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Mean</p>
+                      <p className="text-lg font-bold text-gray-900">{(dashboard.confidence_score_distribution.mean * 100).toFixed(1)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Median</p>
+                      <p className="text-lg font-bold text-gray-900">{(dashboard.confidence_score_distribution.median * 100).toFixed(1)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Min</p>
+                      <p className="text-lg font-bold text-gray-900">{(dashboard.confidence_score_distribution.min * 100).toFixed(1)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Max</p>
+                      <p className="text-lg font-bold text-gray-900">{(dashboard.confidence_score_distribution.max * 100).toFixed(1)}%</p>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </Card>
         </div>
@@ -456,39 +499,55 @@ export default function AnalyticsPage() {
           {/* Analysis Type Breakdown */}
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Analysis Type Breakdown</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={analysisTypeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {analysisTypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {analysisTypeData.length === 0 || analysisTypeData.every(d => d.value === 0) ? (
+              <div className="flex flex-col items-center justify-center h-[300px] text-gray-600">
+                <Zap className="w-12 h-12 mb-3 text-gray-500" />
+                <p className="text-sm font-medium text-gray-700">No analysis type data available</p>
+                <p className="text-xs mt-1 text-gray-600">Run analyses to see breakdown by type</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={analysisTypeData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {analysisTypeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </Card>
 
           {/* Top Industries */}
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Top Industries Analyzed</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={industriesData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={100} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
+            {industriesData.length === 0 || industriesData.every(d => d.value === 0) ? (
+              <div className="flex flex-col items-center justify-center h-[300px] text-gray-600">
+                <FileText className="w-12 h-12 mb-3 text-gray-500" />
+                <p className="text-sm font-medium text-gray-700">No industry data available</p>
+                <p className="text-xs mt-1 text-gray-600">Analyze companies from different industries to see trends</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={industriesData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="name" type="category" width={100} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#3b82f6" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </div>
 
@@ -508,8 +567,8 @@ export default function AnalyticsPage() {
               </LineChart>
             </ResponsiveContainer>
             {business && business.peak_usage_times.peak_hour !== null && (
-              <p className="mt-2 text-sm text-gray-600">
-                Peak hour: {business.peak_usage_times.peak_hour}:00
+              <p className="mt-2 text-sm font-medium text-gray-700">
+                Peak hour: <span className="font-bold text-gray-900">{business.peak_usage_times.peak_hour}:00</span>
               </p>
             )}
           </Card>
@@ -545,19 +604,19 @@ export default function AnalyticsPage() {
             <h2 className="text-xl font-semibold mb-4">Business Metrics Summary</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-gray-600">Total Unique Users</p>
+                <p className="text-sm font-medium text-gray-700">Total Unique Users</p>
                 <p className="text-2xl font-bold text-gray-900">{business.user_adoption.total_unique_users}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">New Users This Period</p>
+                <p className="text-sm font-medium text-gray-700">New Users This Period</p>
                 <p className="text-2xl font-bold text-gray-900">{business.user_adoption.new_users_this_period}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Top Industry</p>
+                <p className="text-sm font-medium text-gray-700">Top Industry</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {business.top_industries[0]?.industry || 'N/A'}
                 </p>
-                <p className="text-xs text-gray-500">{business.top_industries[0]?.count || 0} analyses</p>
+                <p className="text-xs text-gray-600">{business.top_industries[0]?.count || 0} analyses</p>
               </div>
             </div>
           </Card>

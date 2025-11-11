@@ -132,6 +132,14 @@ Or use other hosting services (Netlify, Cloudflare Pages, etc.)
 - `GOOGLE_APPLICATION_CREDENTIALS` - Path to service account JSON (for local development)
 - `LOG_LEVEL` - Logging level (default: INFO)
 - `RATE_LIMIT_PER_HOUR` - Rate limit per IP (default: 10)
+- `FINNHUB_API_KEY` - Finnhub API key for financial data
+- `ALPHA_VANTAGE_API_KEY` - Alpha Vantage API key for technical indicators
+- `LAOZHANG_API_KEY` - Grok API key (via laozhang.ai) for social media sentiment
+- `REDDIT_CLIENT_ID` - Reddit API client ID for social media analysis
+- `REDDIT_CLIENT_SECRET` - Reddit API client secret
+- `TWITTER_BEARER_TOKEN` - Twitter API bearer token for social media analysis
+- `GEMINI_MODEL` - Gemini model to use (default: gemini-1.5-flash-002)
+- `LAOZHANG_MODEL` - Grok model to use (default: grok-4-fast-reasoning-latest)
 
 ## Troubleshooting
 
@@ -191,4 +199,18 @@ Some features work without all dependencies:
 - SEC EDGAR: Optional (falls back gracefully if not available)
 - Google Secret Manager: Optional (uses environment variables as fallback)
 - Firestore Database: Optional (uses in-memory fallback for development)
+- Social Media APIs: Optional (Reddit/Twitter - required for social media analysis)
+- Grok API: Optional (required for advanced sentiment analysis)
+- Celery + Redis: Optional (required for distributed task processing)
+- Sentry: Optional (required for error tracking in production)
+
+## Advanced Features
+
+The following features require additional API keys:
+
+- **Forecasting**: Uses financial data from Finnhub/Alpha Vantage
+- **Social Media Analysis**: Requires Reddit and/or Twitter API keys
+- **Grok Sentiment**: Requires LAOZHANG_API_KEY for advanced sentiment analysis
+- **Wargaming**: Uses statistical libraries (scipy) - included in requirements.txt
+- **Conversational AI**: Uses ChromaDB for RAG - included in requirements.txt
 
