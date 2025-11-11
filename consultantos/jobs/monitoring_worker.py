@@ -1,89 +1,49 @@
 """
 Background worker for continuous intelligence monitoring.
 
-MIGRATION NOTICE: This worker now delegates task execution to Celery.
-Tasks are queued via Celery with priority-based execution and retry logic.
-
-For direct Celery execution, use:
-- celery -A consultantos.jobs.celery_app worker
-- celery -A consultantos.jobs.celery_app beat
-
-This worker maintains backward compatibility while leveraging Celery.
+Runs scheduled checks on all active monitors, detects changes,
+and sends alerts to users.
 """
 
 import asyncio
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from consultantos.models.monitoring import Monitor, MonitorStatus
 from consultantos.monitoring.intelligence_monitor import IntelligenceMonitor
 from consultantos.database import DatabaseService
 from consultantos.cache import CacheService
 from consultantos.orchestrator.analysis_orchestrator import AnalysisOrchestrator
-import logging
-
-logger = logging.getLogger(__name__)
-
-# Check if Celery is available
-try:
-    from consultantos.jobs.tasks import (
-        check_monitor_task,
-        check_scheduled_monitors_task,
-    )
-    CELERY_AVAILABLE = True
-except ImportError:
-    CELERY_AVAILABLE = False
-    logger.warning("Celery not available, using fallback direct execution")
+from consultantos.monitoring import logger
 
 
 class MonitoringWorker:
     """
     Background worker for scheduled monitoring checks.
 
-    UPDATED: Now uses Celery for task execution when available.
-    Falls back to direct execution if Celery is unavailable.
-
-    Celery provides:
-    - Retry logic with exponential backoff
-    - Priority-based task queuing
-    - Dead letter queue for failed tasks
-    - Distributed execution across multiple workers
+    Continuously polls for monitors that need checking and processes
+    them in batches with concurrency control.
     """
 
     def __init__(
         self,
-        intelligence_monitor: Optional[IntelligenceMonitor] = None,
+        intelligence_monitor: IntelligenceMonitor,
         check_interval: int = 60,  # seconds
         max_concurrent_checks: int = 5,
-        use_celery: bool = True,
     ):
         """
         Initialize monitoring worker.
 
         Args:
-            intelligence_monitor: Intelligence monitor service (for fallback)
+            intelligence_monitor: Intelligence monitor service
             check_interval: Seconds between check polls
             max_concurrent_checks: Max monitors to check concurrently
-            use_celery: Whether to use Celery (if available)
         """
         self.monitor_service = intelligence_monitor
         self.check_interval = check_interval
         self.max_concurrent_checks = max_concurrent_checks
-        self.use_celery = use_celery and CELERY_AVAILABLE
         self.is_running = False
-
-        # Use LoggerAdapter for structured context
-        from logging import LoggerAdapter
-        self.logger = LoggerAdapter(logger, {"component": "monitoring_worker"})
-
-        if self.use_celery:
-            self.logger.info("MonitoringWorker initialized with Celery execution")
-        else:
-            self.logger.info("MonitoringWorker initialized with fallback execution")
-            if intelligence_monitor is None:
-                raise ValueError(
-                    "intelligence_monitor is required when not using Celery"
-                )
+        self.logger = logger.bind(component="monitoring_worker")
 
     async def start(self) -> None:
         """
@@ -100,7 +60,7 @@ class MonitoringWorker:
                 await asyncio.sleep(self.check_interval)
 
         except Exception as e:
-            self.logger.error(f"worker_crashed: {str(e)}", extra={"error": str(e)})
+            self.logger.error("worker_crashed", error=str(e))
             raise
 
     async def stop(self) -> None:
@@ -112,16 +72,10 @@ class MonitoringWorker:
         """
         Find and process monitors scheduled for checking.
 
-        UPDATED: Delegates to Celery tasks when available.
+        Processes monitors in batches with concurrency control.
         """
         try:
-            if self.use_celery:
-                # Celery mode: Let Celery Beat handle scheduling
-                # This worker just ensures Celery is running
-                self.logger.debug("Using Celery Beat for scheduling")
-                return
-
-            # Fallback mode: Direct execution
+            # Get monitors that need checking
             monitors = await self._get_monitors_to_check()
 
             if not monitors:
@@ -129,8 +83,8 @@ class MonitoringWorker:
                 return
 
             self.logger.info(
-                f"processing_scheduled_monitors: {len(monitors)} monitors",
-                extra={"monitor_count": len(monitors)}
+                "processing_scheduled_monitors",
+                monitor_count=len(monitors),
             )
 
             # Process in batches with concurrency limit
@@ -140,8 +94,8 @@ class MonitoringWorker:
 
         except Exception as e:
             self.logger.error(
-                f"scheduled_check_processing_failed: {str(e)}",
-                extra={"error": str(e)}
+                "scheduled_check_processing_failed",
+                error=str(e),
             )
 
     async def _get_monitors_to_check(self) -> List[Monitor]:
@@ -164,8 +118,8 @@ class MonitoringWorker:
 
         except Exception as e:
             self.logger.error(
-                f"get_monitors_to_check_failed: {str(e)}",
-                extra={"error": str(e)}
+                "get_monitors_to_check_failed",
+                error=str(e),
             )
             return []
 
@@ -184,12 +138,10 @@ class MonitoringWorker:
         failures = len(results) - successes
 
         self.logger.info(
-            f"batch_processed: {successes} successes, {failures} failures",
-            extra={
-                "total": len(monitors),
-                "successes": successes,
-                "failures": failures
-            }
+            "batch_processed",
+            total=len(monitors),
+            successes=successes,
+            failures=failures,
         )
 
     async def _check_monitor_safe(self, monitor: Monitor) -> None:
@@ -201,11 +153,9 @@ class MonitoringWorker:
         """
         try:
             self.logger.info(
-                f"checking_monitor: {monitor.id}",
-                extra={
-                    "monitor_id": monitor.id,
-                    "company": monitor.company
-                }
+                "checking_monitor",
+                monitor_id=monitor.id,
+                company=monitor.company,
             )
 
             # Run monitoring check
@@ -217,30 +167,24 @@ class MonitoringWorker:
                     await self.monitor_service.send_alert(alert)
                 except Exception as e:
                     self.logger.error(
-                        f"alert_send_failed: {str(e)}",
-                        extra={
-                            "alert_id": alert.id,
-                            "monitor_id": monitor.id,
-                            "error": str(e)
-                        }
+                        "alert_send_failed",
+                        alert_id=alert.id,
+                        monitor_id=monitor.id,
+                        error=str(e),
                     )
 
             self.logger.info(
-                f"monitor_check_completed: {monitor.id}",
-                extra={
-                    "monitor_id": monitor.id,
-                    "alerts_generated": len(alerts)
-                }
+                "monitor_check_completed",
+                monitor_id=monitor.id,
+                alerts_generated=len(alerts),
             )
 
         except Exception as e:
             self.logger.error(
-                f"monitor_check_failed: {str(e)}",
-                extra={
-                    "monitor_id": monitor.id,
-                    "company": monitor.company,
-                    "error": str(e)
-                }
+                "monitor_check_failed",
+                monitor_id=monitor.id,
+                company=monitor.company,
+                error=str(e),
             )
 
 
@@ -273,7 +217,7 @@ async def run_monitoring_worker() -> None:
         max_concurrent_checks=5,  # Process up to 5 monitors concurrently
     )
 
-    logger.info("starting_monitoring_worker", extra={})
+    logger.info("starting_monitoring_worker")
 
     try:
         await worker.start()
@@ -281,7 +225,7 @@ async def run_monitoring_worker() -> None:
         logger.info("worker_interrupted")
         await worker.stop()
     except Exception as e:
-        logger.error(f"worker_error: {str(e)}", extra={"error": str(e)})
+        logger.error("worker_error", error=str(e))
         raise
 
 

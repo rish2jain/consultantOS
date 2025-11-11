@@ -13,7 +13,7 @@ from consultantos.models import (
 )
 from consultantos.database import get_db_service
 from consultantos.services.email import send_digest_email
-from consultantos.log_utils import get_logger
+from consultantos.monitoring import get_logger
 
 logger = get_logger(__name__)
 

@@ -89,7 +89,11 @@ from consultantos.models.switching_costs import (
     CreateCommentRequest,
     # Personal KB
     KnowledgeItem,
+<<<<<<< HEAD
     Timeline,  # Make Timeline available directly
+=======
+    Timeline,
+>>>>>>> origin/hackathon/critical-fixes
     KnowledgeGraph,
     ConnectionNode,
     ConnectionEdge,
@@ -112,6 +116,7 @@ from consultantos.models.switching_costs import (
     Alert,
     CreateAlertRequest,
 )
+<<<<<<< HEAD
 
 # Enhanced Report Models
 from consultantos.models.enhanced_reports import (
@@ -190,6 +195,8 @@ from consultantos.models.strategic_intelligence import (
     StrategicInsight,
     GeographicExpansionOpportunity
 )
+=======
+>>>>>>> origin/hackathon/critical-fixes
 
 __all__ = [
     # Core models from models.py
@@ -272,6 +279,7 @@ __all__ = [
     "DigestFrequency",
     "Alert",
     "CreateAlertRequest",
+<<<<<<< HEAD
     # Enhanced Reports
     "EnhancedPortersFiveForces",
     "EnhancedSWOTAnalysis",
@@ -334,5 +342,7 @@ __all__ = [
     "SI_EnhancedReport",
     "StrategicInsight",
     "GeographicExpansionOpportunity",
+=======
+>>>>>>> origin/hackathon/critical-fixes
 ]
 

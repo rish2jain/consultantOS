@@ -20,7 +20,7 @@ from consultantos.dashboards.models import (
     TrendDirection,
 )
 from consultantos.dashboards.templates import get_template
-from consultantos.log_utils import get_logger
+from consultantos.monitoring import get_logger
 from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
 
 logger = get_logger(__name__)

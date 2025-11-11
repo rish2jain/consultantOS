@@ -105,6 +105,7 @@ from consultantos.api.visualization_endpoints import router as visualization_rou
 from consultantos.api.auth_endpoints import router as auth_router
 from consultantos.api.health_endpoints import router as health_router, mark_startup_complete
 from consultantos.api.notifications_endpoints import router as notifications_router
+<<<<<<< HEAD
 # Advanced features (now enabled with authentication implementation)
 from consultantos.api.knowledge_endpoints import router as knowledge_router
 from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
@@ -124,6 +125,18 @@ from consultantos.api.conversational_endpoints import router as conversational_r
 from consultantos.api.forecasting_endpoints import router as forecasting_router  # Enhanced multi-scenario forecasting
 from consultantos.api.wargaming_endpoints import router as wargaming_router  # Wargaming simulator with Monte Carlo (Phase 2 Week 11-12)
 from consultantos.api.integration_endpoints import router as integration_router  # Comprehensive system integration (Phase 1 & 2 complete)
+=======
+from consultantos.api.dashboard_endpoints import router as dashboard_router
+from consultantos.api.monitoring_endpoints import router as monitoring_router
+from consultantos.api.feedback_endpoints import router as feedback_router
+from consultantos.api.saved_searches_endpoints import router as saved_searches_router
+from consultantos.api.teams_endpoints import router as teams_router
+from consultantos.api.knowledge_endpoints import router as knowledge_router
+from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
+from consultantos.api.history_endpoints import router as history_router
+from consultantos.api.digest_endpoints import router as digest_router
+from consultantos.api.jobs_endpoints import router as jobs_router
+>>>>>>> origin/hackathon/critical-fixes
 from consultantos.storage import LocalFileStorageService
 
 
@@ -345,6 +358,7 @@ app.include_router(versioning_router)
 app.include_router(comments_router)
 app.include_router(community_router)
 app.include_router(analytics_router)
+<<<<<<< HEAD
 # Disabled for hackathon demo - require additional dependencies
 # app.include_router(feedback_router)
 app.include_router(visualization_router)
@@ -381,6 +395,21 @@ from consultantos.api.strategic_intelligence_endpoints import router as strategi
 app.include_router(strategic_intelligence_router, prefix="/api/strategic-intelligence", tags=["Strategic Intelligence"])
 
 # app.include_router(storytelling_router)  # AI storytelling with persona adaptation (Phase 2 Week 15-16) - Not yet implemented
+=======
+app.include_router(feedback_router)  # User feedback and quality learning
+app.include_router(visualization_router)
+app.include_router(auth_router)
+app.include_router(notifications_router)
+app.include_router(dashboard_router)
+app.include_router(monitoring_router)  # Continuous intelligence monitoring
+app.include_router(saved_searches_router)  # Saved searches and monitoring
+app.include_router(teams_router)  # Team collaboration
+app.include_router(knowledge_router)  # Personal knowledge base
+app.include_router(custom_frameworks_router)  # Custom framework builder
+app.include_router(history_router)  # Analysis history and bookmarks
+app.include_router(digest_router)  # Email digests and alerts
+app.include_router(jobs_router)  # Job processing and status
+>>>>>>> origin/hackathon/critical-fixes
 
 # Initialize orchestrator (lazy initialization to avoid import-time errors)
 _orchestrator: Optional[AnalysisOrchestrator] = None
@@ -433,6 +462,10 @@ async def startup():
     except Exception as e:
         logger.warning(f"Failed to schedule background worker: {e}. Async jobs will not be processed.")
         logger.warning("To process async jobs, start the worker separately or restart the API server.")
+    
+    # Mark startup as complete for health checks
+    mark_startup_complete()
+    logger.info("Application startup complete")
 
     # Mark startup as complete for health checks
     mark_startup_complete()

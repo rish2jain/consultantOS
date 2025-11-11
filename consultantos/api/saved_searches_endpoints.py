@@ -15,10 +15,10 @@ from consultantos.models import (
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
 from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
-import logging
+from consultantos.monitoring import get_logger
 
 router = APIRouter(prefix="/saved-searches", tags=["saved-searches"])
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @router.post("", response_model=SavedSearch, status_code=201)

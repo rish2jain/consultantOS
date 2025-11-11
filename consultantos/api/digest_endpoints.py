@@ -15,7 +15,7 @@ from consultantos.models import (
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
 from consultantos.notifications.digest import DigestGenerator
-from consultantos.log_utils import get_logger
+from consultantos.monitoring import get_logger
 
 router = APIRouter(prefix="/digest", tags=["digest"])
 logger = get_logger(__name__)

@@ -14,10 +14,10 @@ from consultantos.models import (
 )
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
-import logging
+from consultantos.monitoring import get_logger
 
 router = APIRouter(prefix="/custom-frameworks", tags=["custom-frameworks"])
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @router.post("", response_model=CustomFramework, status_code=201)
@@ -63,11 +63,9 @@ async def create_custom_framework(
 
         logger.info(
             "custom_framework_created",
-            extra={
-                "framework_id": framework.id,
-                "user_id": user_id,
-                "is_public": framework.is_public
-            }
+            framework_id=framework.id,
+            user_id=user_id,
+            is_public=framework.is_public
         )
 
         return framework
@@ -75,10 +73,7 @@ async def create_custom_framework(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"create_framework_failed: {str(e)}",
-            extra={"user_id": user_id, "error": str(e)}
-        )
+        logger.error("create_framework_failed", user_id=user_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to create framework")
 
 
@@ -120,10 +115,7 @@ async def list_custom_frameworks(
         return user_frameworks
 
     except Exception as e:
-        logger.error(
-            f"list_frameworks_failed: {str(e)}",
-            extra={"user_id": user_id, "error": str(e)}
-        )
+        logger.error("list_frameworks_failed", user_id=user_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to list frameworks")
 
 
@@ -160,10 +152,7 @@ async def list_community_frameworks(
         return frameworks[:limit]
 
     except Exception as e:
-        logger.error(
-            f"list_community_frameworks_failed: {str(e)}",
-            extra={"error": str(e)}
-        )
+        logger.error("list_community_frameworks_failed", error=str(e))
         raise HTTPException(status_code=500, detail="Failed to list community frameworks")
 
 
@@ -199,10 +188,7 @@ async def get_custom_framework(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"get_framework_failed: {str(e)}",
-            extra={"framework_id": framework_id, "error": str(e)}
-        )
+        logger.error("get_framework_failed", framework_id=framework_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to get framework")
 
 
@@ -246,20 +232,14 @@ async def update_custom_framework(
         # Save
         await db.update_custom_framework(framework)
 
-        logger.info(
-            "framework_updated",
-            extra={"framework_id": framework_id, "user_id": user_id}
-        )
+        logger.info("framework_updated", framework_id=framework_id, user_id=user_id)
 
         return framework
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"update_framework_failed: {str(e)}",
-            extra={"framework_id": framework_id, "error": str(e)}
-        )
+        logger.error("update_framework_failed", framework_id=framework_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to update framework")
 
 
@@ -291,18 +271,12 @@ async def delete_custom_framework(
         # Delete
         await db.delete_custom_framework(framework_id)
 
-        logger.info(
-            "framework_deleted",
-            extra={"framework_id": framework_id, "user_id": user_id}
-        )
+        logger.info("framework_deleted", framework_id=framework_id, user_id=user_id)
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"delete_framework_failed: {str(e)}",
-            extra={"framework_id": framework_id, "error": str(e)}
-        )
+        logger.error("delete_framework_failed", framework_id=framework_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to delete framework")
 
 
@@ -352,11 +326,9 @@ async def rate_framework(
 
         logger.info(
             "framework_rated",
-            extra={
-                "framework_id": framework_id,
-                "user_id": user_id,
-                "rating": request.rating
-            }
+            framework_id=framework_id,
+            user_id=user_id,
+            rating=request.rating
         )
 
         return framework
@@ -364,10 +336,7 @@ async def rate_framework(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"rate_framework_failed: {str(e)}",
-            extra={"framework_id": framework_id, "error": str(e)}
-        )
+        logger.error("rate_framework_failed", framework_id=framework_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to rate framework")
 
 
@@ -399,18 +368,12 @@ async def use_framework(
         framework.usage_count += 1
         await db.update_custom_framework(framework)
 
-        logger.info(
-            "framework_used",
-            extra={"framework_id": framework_id, "user_id": user_id}
-        )
+        logger.info("framework_used", framework_id=framework_id, user_id=user_id)
 
         return {"message": "Usage recorded", "usage_count": framework.usage_count}
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"use_framework_failed: {str(e)}",
-            extra={"framework_id": framework_id, "error": str(e)}
-        )
+        logger.error("use_framework_failed", framework_id=framework_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to record usage")

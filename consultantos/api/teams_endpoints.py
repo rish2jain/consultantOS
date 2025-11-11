@@ -17,7 +17,7 @@ from consultantos.models import (
 )
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
-from consultantos.log_utils import get_logger
+from consultantos.monitoring import get_logger
 from consultantos.services.email import send_team_invite
 
 router = APIRouter(prefix="/teams", tags=["teams"])

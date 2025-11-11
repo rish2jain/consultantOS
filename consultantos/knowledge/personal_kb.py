@@ -16,9 +16,9 @@ from consultantos.models import (
     StrategicReport,
 )
 from consultantos.database import get_db_service
-import logging
+from consultantos.monitoring import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PersonalKnowledgeBase:

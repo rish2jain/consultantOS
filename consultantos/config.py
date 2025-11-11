@@ -24,33 +24,9 @@ class Settings(BaseSettings):
     # API Keys - Research Tools
     tavily_api_key: Optional[str] = None
 
-    # API Keys - Financial Data
-    finnhub_api_key: Optional[str] = None
-    alpha_vantage_api_key: Optional[str] = None
-
     # API Keys - LLM Providers
     gemini_api_key: Optional[str] = None
-    gemini_model: Optional[str] = "gemini-2.0-flash-exp"  # Latest model (Dec 2024) - 2x faster, better quality
-
-    # API Keys - Alerting
-    slack_bot_token: Optional[str] = None
-    slack_webhook_url: Optional[str] = None
-
-    # API Keys - Social Media
-    twitter_api_key: Optional[str] = None
-    twitter_api_secret: Optional[str] = None
-    twitter_bearer_token: Optional[str] = None
-    twitter_access_token: Optional[str] = None
-    twitter_access_token_secret: Optional[str] = None
-
-    # Grok API via laozhang.ai
-    laozhang_api_key: Optional[str] = None
-    laozhang_model: str = "grok-4-fast-reasoning-latest"  # Fastest with reasoning: 1.94s. Options: grok-4-fast-non-reasoning-latest (1.80s), grok-4-fast (4.18s), grok-4-all (112s)
-
-    # Reddit API Configuration
-    reddit_client_id: Optional[str] = None
-    reddit_client_secret: Optional[str] = None
-    reddit_user_agent: str = "ConsultantOS:v1.0 (by /u/consultantos)"
+    gemini_model: Optional[str] = "gemini-1.5-flash-002"
 
     # API Keys - Billing
     stripe_secret_key: Optional[str] = None
@@ -79,23 +55,10 @@ class Settings(BaseSettings):
     cache_ttl_seconds: int = 3600  # 1 hour
     cache_dir: str = ""  # Empty string means use default temp directory
 
-    # Task Queue (Celery + Redis)
-    redis_url: Optional[str] = None
-    celery_broker_url: Optional[str] = None
-    celery_result_backend: Optional[str] = None
-
-    # Observability - Prometheus
+    # Observability
     enable_metrics: bool = True
     enable_tracing: bool = False
     metrics_port: int = 9090
-
-    # Observability - Sentry
-    sentry_dsn: Optional[str] = None
-    sentry_environment: Optional[str] = None  # Will default to 'environment' if not set
-    sentry_traces_sample_rate: Optional[float] = None  # Auto-set based on environment if not provided
-    sentry_release: Optional[str] = None  # Git SHA recommended
-    enable_sentry_profiling: bool = False
-    sentry_profiles_sample_rate: float = 0.1
 
     # Operational
     health_check_timeout: int = 5
@@ -187,15 +150,6 @@ if not settings.tavily_api_key:
     except ValueError as e:
         _config_logger.warning(f"TAVILY_API_KEY not found in Secret Manager or environment variables: {e}. Some features may be unavailable.")
 
-# Optional key: finnhub_api_key
-if not settings.finnhub_api_key:
-    try:
-        settings.finnhub_api_key = get_secret("finnhub-api-key", "FINNHUB_API_KEY")
-        if not settings.finnhub_api_key:
-            _config_logger.warning("FINNHUB_API_KEY is not configured. Financial data will use yfinance only.")
-    except ValueError as e:
-        _config_logger.warning(f"FINNHUB_API_KEY not found in Secret Manager or environment variables: {e}. Financial data will use yfinance only.")
-
 # Session secret (required for security)
 if not settings.session_secret:
     try:
@@ -208,20 +162,3 @@ if not settings.session_secret:
             _config_logger.warning("SESSION_SECRET not configured. Generated temporary session secret for development. Set SESSION_SECRET for production.")
         else:
             raise RuntimeError("SESSION_SECRET is required for production. Set it via environment variable or Secret Manager.")
-# Optional key: slack_bot_token
-if not settings.slack_bot_token:
-    try:
-        settings.slack_bot_token = get_secret("slack-bot-token", "SLACK_BOT_TOKEN")
-        if settings.slack_bot_token:
-            _config_logger.info("Slack bot token loaded successfully")
-    except ValueError:
-        _config_logger.debug("SLACK_BOT_TOKEN not configured. Slack bot features will be unavailable.")
-
-# Optional key: slack_webhook_url  
-if not settings.slack_webhook_url:
-    try:
-        settings.slack_webhook_url = get_secret("slack-webhook-url", "SLACK_WEBHOOK_URL")
-        if settings.slack_webhook_url:
-            _config_logger.info("Slack webhook URL loaded successfully")
-    except ValueError:
-        _config_logger.debug("SLACK_WEBHOOK_URL not configured. Slack webhook features will be unavailable.")
