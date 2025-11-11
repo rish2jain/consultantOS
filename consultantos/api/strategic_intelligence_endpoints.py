@@ -76,7 +76,7 @@ async def get_strategic_overview(
 ):
     """
     Get 30-second executive strategic overview.
-    
+
     Returns:
     - Strategic health score and trend
     - Top 3 threats and opportunities
@@ -85,15 +85,35 @@ async def get_strategic_overview(
     - Immediate actions needed
     """
     try:
-        # TODO: Implement actual retrieval from database
-        # For now, return mock response structure
+        from consultantos.database import get_db_service
+        from consultantos.orchestrator.strategic_orchestrator import StrategicOrchestrator
+
         logger.info(f"Fetching strategic overview for monitor {monitor_id}, user {user_id}")
-        
-        raise HTTPException(
-            status_code=501,
-            detail="Strategic overview endpoint not yet implemented. Complete orchestrator integration first."
+
+        # Get monitor configuration from database
+        db_service = get_db_service()
+        monitor_doc = await db_service.get_document("monitors", monitor_id)
+
+        if not monitor_doc:
+            raise HTTPException(status_code=404, detail=f"Monitor {monitor_id} not found")
+
+        company = monitor_doc.get("company", "")
+        industry = monitor_doc.get("industry", "")
+
+        if not company or not industry:
+            raise HTTPException(status_code=400, detail="Monitor missing company or industry data")
+
+        # Generate strategic overview using orchestrator
+        orchestrator = StrategicOrchestrator()
+        overview = await orchestrator.generate_strategic_overview(
+            company=company,
+            industry=industry,
+            monitor_id=monitor_id
         )
-        
+
+        logger.info(f"Successfully generated strategic overview for {company}")
+        return overview
+
     except HTTPException:
         raise
     except Exception as e:
@@ -101,14 +121,14 @@ async def get_strategic_overview(
         raise HTTPException(status_code=500, detail=f"Failed to fetch strategic overview: {str(e)}")
 
 
-@router.get("/positioning/{monitor_id}", response_model=PositioningAnalysis, tags=["Strategic Intelligence"])
+@router.get("/positioning/{monitor_id}", response_model=DynamicPositioning, tags=["Strategic Intelligence"])
 async def get_competitive_positioning(
     monitor_id: str,
     include_dynamics: bool = Query(False, description="Include dynamic positioning analysis")
 ):
     """
     Get competitive positioning analysis.
-    
+
     Returns:
     - Current competitive position
     - Competitor positions
@@ -117,13 +137,50 @@ async def get_competitive_positioning(
     - Position threats
     """
     try:
+        from consultantos.database import get_db_service
+        from consultantos.agents.positioning_agent import PositioningAgent
+        from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
+
         logger.info(f"Fetching competitive positioning for monitor {monitor_id}")
-        
-        raise HTTPException(
-            status_code=501,
-            detail="Competitive positioning endpoint not yet implemented. Requires positioning agent."
+
+        # Get monitor configuration from database
+        db_service = get_db_service()
+        monitor_doc = await db_service.get_document("monitors", monitor_id)
+
+        if not monitor_doc:
+            raise HTTPException(status_code=404, detail=f"Monitor {monitor_id} not found")
+
+        company = monitor_doc.get("company", "")
+        industry = monitor_doc.get("industry", "")
+
+        if not company or not industry:
+            raise HTTPException(status_code=400, detail="Monitor missing company or industry data")
+
+        # Run orchestrator to get integrated agent data
+        orchestrator = AnalysisOrchestrator()
+        analysis_result = await orchestrator.execute_phase_1(
+            company=company,
+            industry=industry,
+            frameworks=["porter", "swot"],
+            depth="quick"
         )
-        
+
+        # Initialize positioning agent
+        positioning_agent = PositioningAgent()
+
+        # Execute positioning analysis with integrated data
+        positioning_result = await positioning_agent.execute({
+            "company": company,
+            "industry": industry,
+            "market_data": analysis_result.get("market_analysis", {}),
+            "financial_data": analysis_result.get("financial_analysis", {}),
+            "research_data": analysis_result.get("research_summary", {}),
+            "competitors": monitor_doc.get("competitors", [])
+        })
+
+        logger.info(f"Successfully generated positioning analysis for {company}")
+        return positioning_result
+
     except HTTPException:
         raise
     except Exception as e:
@@ -135,7 +192,7 @@ async def get_competitive_positioning(
 async def get_disruption_assessment(monitor_id: str):
     """
     Get disruption vulnerability assessment.
-    
+
     Returns:
     - Overall disruption risk score
     - Active and emerging threats
@@ -146,13 +203,49 @@ async def get_disruption_assessment(monitor_id: str):
     - Strategic recommendations
     """
     try:
+        from consultantos.database import get_db_service
+        from consultantos.agents.disruption_agent import DisruptionAgent
+        from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
+
         logger.info(f"Fetching disruption assessment for monitor {monitor_id}")
-        
-        raise HTTPException(
-            status_code=501,
-            detail="Disruption assessment endpoint not yet implemented. Requires disruption agent."
+
+        # Get monitor configuration from database
+        db_service = get_db_service()
+        monitor_doc = await db_service.get_document("monitors", monitor_id)
+
+        if not monitor_doc:
+            raise HTTPException(status_code=404, detail=f"Monitor {monitor_id} not found")
+
+        company = monitor_doc.get("company", "")
+        industry = monitor_doc.get("industry", "")
+
+        if not company or not industry:
+            raise HTTPException(status_code=400, detail="Monitor missing company or industry data")
+
+        # Run orchestrator to get integrated agent data
+        orchestrator = AnalysisOrchestrator()
+        analysis_result = await orchestrator.execute_phase_1(
+            company=company,
+            industry=industry,
+            frameworks=["porter"],
+            depth="quick"
         )
-        
+
+        # Initialize disruption agent
+        disruption_agent = DisruptionAgent()
+
+        # Execute disruption analysis
+        disruption_result = await disruption_agent.execute({
+            "company": company,
+            "industry": industry,
+            "market_data": analysis_result.get("market_analysis", {}),
+            "financial_data": analysis_result.get("financial_analysis", {}),
+            "research_data": analysis_result.get("research_summary", {})
+        })
+
+        logger.info(f"Successfully generated disruption assessment for {company}")
+        return disruption_result
+
     except HTTPException:
         raise
     except Exception as e:
@@ -164,7 +257,7 @@ async def get_disruption_assessment(monitor_id: str):
 async def get_system_dynamics(monitor_id: str):
     """
     Get system dynamics analysis (Meadows' framework).
-    
+
     Returns:
     - Key system variables and causal links
     - Reinforcing and balancing feedback loops
@@ -173,13 +266,49 @@ async def get_system_dynamics(monitor_id: str):
     - Structural issues and fundamental solutions
     """
     try:
+        from consultantos.database import get_db_service
+        from consultantos.agents.systems_agent import SystemsAgent
+        from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
+
         logger.info(f"Fetching system dynamics for monitor {monitor_id}")
-        
-        raise HTTPException(
-            status_code=501,
-            detail="System dynamics endpoint not yet implemented. Requires systems agent."
+
+        # Get monitor configuration from database
+        db_service = get_db_service()
+        monitor_doc = await db_service.get_document("monitors", monitor_id)
+
+        if not monitor_doc:
+            raise HTTPException(status_code=404, detail=f"Monitor {monitor_id} not found")
+
+        company = monitor_doc.get("company", "")
+        industry = monitor_doc.get("industry", "")
+
+        if not company or not industry:
+            raise HTTPException(status_code=400, detail="Monitor missing company or industry data")
+
+        # Run orchestrator to get integrated agent data
+        orchestrator = AnalysisOrchestrator()
+        analysis_result = await orchestrator.execute_phase_1(
+            company=company,
+            industry=industry,
+            frameworks=["porter", "swot"],
+            depth="standard"
         )
-        
+
+        # Initialize systems agent
+        systems_agent = SystemsAgent()
+
+        # Execute system dynamics analysis
+        dynamics_result = await systems_agent.execute({
+            "company": company,
+            "industry": industry,
+            "market_data": analysis_result.get("market_analysis", {}),
+            "financial_data": analysis_result.get("financial_analysis", {}),
+            "framework_analysis": analysis_result.get("framework_analysis", {})
+        })
+
+        logger.info(f"Successfully generated system dynamics analysis for {company}")
+        return dynamics_result
+
     except HTTPException:
         raise
     except Exception as e:
@@ -191,7 +320,7 @@ async def get_system_dynamics(monitor_id: str):
 async def get_flywheel_momentum(monitor_id: str):
     """
     Get flywheel momentum analysis (Collins' framework).
-    
+
     Returns:
     - Current momentum score and trend
     - Key contributing metrics
@@ -201,13 +330,49 @@ async def get_flywheel_momentum(monitor_id: str):
     - Acceleration opportunities
     """
     try:
+        from consultantos.database import get_db_service
+        from consultantos.agents.momentum_agent import MomentumAgent
+        from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
+
         logger.info(f"Fetching flywheel momentum for monitor {monitor_id}")
-        
-        raise HTTPException(
-            status_code=501,
-            detail="Momentum analysis endpoint not yet implemented. Requires momentum calculations."
+
+        # Get monitor configuration from database
+        db_service = get_db_service()
+        monitor_doc = await db_service.get_document("monitors", monitor_id)
+
+        if not monitor_doc:
+            raise HTTPException(status_code=404, detail=f"Monitor {monitor_id} not found")
+
+        company = monitor_doc.get("company", "")
+        industry = monitor_doc.get("industry", "")
+
+        if not company or not industry:
+            raise HTTPException(status_code=400, detail="Monitor missing company or industry data")
+
+        # Run orchestrator to get integrated agent data
+        orchestrator = AnalysisOrchestrator()
+        analysis_result = await orchestrator.execute_phase_1(
+            company=company,
+            industry=industry,
+            frameworks=["swot"],
+            depth="quick"
         )
-        
+
+        # Initialize momentum agent
+        momentum_agent = MomentumAgent()
+
+        # Execute momentum analysis
+        momentum_result = await momentum_agent.execute({
+            "company": company,
+            "industry": industry,
+            "market_data": analysis_result.get("market_analysis", {}),
+            "financial_data": analysis_result.get("financial_analysis", {}),
+            "research_data": analysis_result.get("research_summary", {})
+        })
+
+        logger.info(f"Successfully generated momentum analysis for {company}")
+        return momentum_result
+
     except HTTPException:
         raise
     except Exception as e:
