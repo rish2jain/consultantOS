@@ -233,6 +233,12 @@ class Alert(BaseModel):
         description="Action user took based on alert"
     )
 
+    # Root cause analysis
+    root_cause_analysis: Optional[dict] = Field(
+        default=None,
+        description="Enhanced root cause analysis with actionable insights"
+    )
+
 
 class Monitor(BaseModel):
     """Continuous monitoring instance for a company"""

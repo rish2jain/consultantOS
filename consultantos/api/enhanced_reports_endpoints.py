@@ -203,28 +203,40 @@ async def get_risk_opportunity_matrix(
 @router.get("/{report_id}/export")
 async def export_enhanced_report(
     report_id: str,
-    format: str = Query("json", description="Export format: json, excel, word, pdf"),
+    format: str = Query("json", description="Export format: json, excel, word, pdf, powerpoint"),
     api_key: Optional[str] = Security(get_api_key, use_cache=False)
 ):
     """
     Export enhanced report in various formats.
-    
+
     **Parameters:**
     - `report_id`: Report identifier
-    - `format`: Export format (json, excel, word, pdf)
-    
+    - `format`: Export format (json, excel, word, pdf, powerpoint)
+
     **Returns:**
     File download in requested format.
+
+    **Formats:**
+    - `json`: Structured JSON data
+    - `excel`: Excel workbook with multiple sheets
+    - `word`: Editable Word document
+    - `pdf`: PDF report with visualizations
+    - `powerpoint`: Executive PowerPoint presentation
     """
     try:
         from fastapi.responses import Response, StreamingResponse
-        from consultantos.reports.export_formats import export_to_json, export_to_excel, export_to_word
+        from consultantos.reports.export_formats import (
+            export_to_json,
+            export_to_excel,
+            export_to_word,
+            export_to_powerpoint
+        )
         from consultantos.reports.enhanced_pdf_generator import generate_enhanced_pdf_report
-        
+
         # Get enhanced report (would fetch from database in full implementation)
         # For now, return placeholder
         format_lower = format.lower()
-        
+
         if format_lower == "json":
             # Would generate JSON from enhanced report
             return Response(
@@ -248,6 +260,12 @@ async def export_enhanced_report(
             return Response(
                 content='{"message": "PDF export - generate enhanced report first"}',
                 media_type="application/pdf"
+            )
+        elif format_lower == "powerpoint" or format_lower == "pptx":
+            # Would generate PowerPoint
+            return Response(
+                content='{"message": "PowerPoint export - generate enhanced report first"}',
+                media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation"
             )
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")

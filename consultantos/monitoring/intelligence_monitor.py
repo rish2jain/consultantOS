@@ -42,6 +42,7 @@ from consultantos.monitoring.anomaly_detector import AnomalyDetector, AnomalySco
 from consultantos.monitoring.alert_scorer import AlertScorer
 from consultantos.monitoring.timeseries_optimizer import TimeSeriesOptimizer
 from consultantos.monitoring.snapshot_aggregator import SnapshotAggregator, AggregationPeriod
+from consultantos.monitoring.root_cause_analyzer import RootCauseAnalyzer
 from consultantos.utils.validators import AnalysisRequestValidator
 from consultantos.utils.schemas import MonitorSnapshotSchema, log_validation_metrics
 
@@ -110,6 +111,9 @@ class IntelligenceMonitor:
         else:
             self.anomaly_detector = None
             self.alert_scorer = None
+
+        # Initialize root cause analyzer (always enabled)
+        self.root_cause_analyzer = RootCauseAnalyzer()
 
     async def create_monitor(
         self,
@@ -917,6 +921,7 @@ class IntelligenceMonitor:
                     upper_bound=score.upper_bound,
                 ))
 
+        # Create initial alert
         alert = Alert(
             id=alert_id,
             monitor_id=monitor.id,
@@ -928,6 +933,26 @@ class IntelligenceMonitor:
             created_at=datetime.utcnow(),
             read=False,
         )
+
+        # Perform root cause analysis
+        try:
+            enhanced_explanation = self.root_cause_analyzer.analyze_alert(
+                alert=alert,
+                historical_data=None  # TODO: Pass historical data when available
+            )
+
+            # Convert to dict for storage
+            alert.root_cause_analysis = enhanced_explanation.dict()
+
+            # Optionally enhance alert title and summary with root cause insights
+            alert.title = f"🔔 {enhanced_explanation.root_cause_analysis.severity.upper()}: {monitor.company}"
+            alert.summary = enhanced_explanation.summary
+
+        except Exception as e:
+            self.logger.warning(
+                f"root_cause_analysis_failed: alert_id={alert_id}, error={str(e)}"
+            )
+            # Continue without root cause analysis if it fails
 
         # Persist alert
         await self.db.create_alert(alert)

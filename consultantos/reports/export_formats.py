@@ -153,13 +153,218 @@ def export_to_excel(enhanced_report: EnhancedStrategicReport) -> bytes:
         return export_to_json(enhanced_report).encode('utf-8')
 
 
+def export_to_powerpoint(enhanced_report: EnhancedStrategicReport) -> bytes:
+    """
+    Export enhanced report to PowerPoint format.
+
+    Creates executive presentation with:
+    - Executive Summary slide
+    - Key Findings slides
+    - Strategic Recommendations
+    - Risk/Opportunity Matrix
+    - Action Plan
+
+    Args:
+        enhanced_report: Enhanced strategic report
+
+    Returns:
+        PowerPoint file bytes
+    """
+    try:
+        try:
+            from pptx import Presentation
+            from pptx.util import Inches, Pt
+            from pptx.enum.text import PP_ALIGN
+            from pptx.dml.color import RGBColor
+        except ImportError:
+            raise ImportError(
+                "python-pptx is required for PowerPoint export. "
+                "Install it with: pip install python-pptx. "
+                "Alternatively, use export_to_json() for JSON format."
+            )
+
+        # Create presentation
+        prs = Presentation()
+        prs.slide_width = Inches(10)
+        prs.slide_height = Inches(7.5)
+
+        exec_summary = enhanced_report.executive_summary_layer
+
+        # Slide 1: Title Slide
+        title_slide_layout = prs.slide_layouts[0]
+        slide = prs.slides.add_slide(title_slide_layout)
+        title = slide.shapes.title
+        subtitle = slide.placeholders[1]
+
+        title.text = "Strategic Analysis Report"
+        subtitle.text = (
+            f"{exec_summary.company_overview.get('name', 'Company')}\n"
+            f"{exec_summary.analysis_date.strftime('%B %d, %Y')}\n"
+            f"Confidence Score: {exec_summary.confidence_score:.0%}"
+        )
+
+        # Slide 2: Executive Summary
+        bullet_slide_layout = prs.slide_layouts[1]
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Executive Summary"
+
+        tf = body_shape.text_frame
+        tf.text = f"Company: {exec_summary.company_overview.get('name', 'N/A')}"
+
+        p = tf.add_paragraph()
+        p.text = f"Industry: {exec_summary.company_overview.get('industry', 'N/A')}"
+        p.level = 0
+
+        p = tf.add_paragraph()
+        p.text = f"Analysis Confidence: {exec_summary.confidence_score:.0%}"
+        p.level = 0
+
+        # Slide 3: Key Findings
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Key Findings"
+
+        tf = body_shape.text_frame
+        tf.clear()
+
+        for i, finding in enumerate(exec_summary.key_findings[:5]):  # Top 5
+            if i == 0:
+                tf.text = finding
+            else:
+                p = tf.add_paragraph()
+                p.text = finding
+                p.level = 0
+
+        # Slide 4: Strategic Recommendations
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Strategic Recommendations"
+
+        tf = body_shape.text_frame
+        tf.clear()
+
+        for i, rec in enumerate(exec_summary.strategic_recommendations[:5]):  # Top 5
+            if i == 0:
+                tf.text = rec
+            else:
+                p = tf.add_paragraph()
+                p.text = rec
+                p.level = 0
+
+        # Slide 5: Top Risks
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Top Risks"
+
+        tf = body_shape.text_frame
+        tf.clear()
+
+        risk_opp = enhanced_report.risk_opportunity_matrix
+        for i, risk in enumerate(risk_opp.risks[:4]):  # Top 4
+            risk_text = f"{risk.title} (Risk Score: {risk.risk_score}/10)"
+            if i == 0:
+                tf.text = risk_text
+            else:
+                p = tf.add_paragraph()
+                p.text = risk_text
+                p.level = 0
+
+            # Add mitigation strategy
+            if risk.mitigation_strategies:
+                p = tf.add_paragraph()
+                p.text = f"Mitigation: {risk.mitigation_strategies[0]}"
+                p.level = 1
+
+        # Slide 6: Top Opportunities
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Top Opportunities"
+
+        tf = body_shape.text_frame
+        tf.clear()
+
+        for i, opp in enumerate(risk_opp.opportunities[:4]):  # Top 4
+            opp_text = f"{opp.title} (Impact: {opp.impact_potential}/10, Priority: {opp.priority_score}/10)"
+            if i == 0:
+                tf.text = opp_text
+            else:
+                p = tf.add_paragraph()
+                p.text = opp_text
+                p.level = 0
+
+        # Slide 7: Action Plan
+        slide = prs.slides.add_slide(bullet_slide_layout)
+        shapes = slide.shapes
+
+        title_shape = shapes.title
+        body_shape = shapes.placeholders[1]
+
+        title_shape.text = "Immediate Action Plan"
+
+        tf = body_shape.text_frame
+        tf.clear()
+
+        recommendations = enhanced_report.actionable_recommendations
+        immediate_actions = (
+            recommendations.critical_actions[:2] +
+            recommendations.immediate_actions[:3]
+        )
+
+        for i, action in enumerate(immediate_actions[:5]):  # Top 5 actions
+            action_text = f"{action.title} ({action.timeline.value})"
+            if i == 0:
+                tf.text = action_text
+            else:
+                p = tf.add_paragraph()
+                p.text = action_text
+                p.level = 0
+
+            # Add owner
+            p = tf.add_paragraph()
+            p.text = f"Owner: {action.owner or 'Unassigned'}"
+            p.level = 1
+
+        # Save to bytes
+        from io import BytesIO
+        pptx_buffer = BytesIO()
+        prs.save(pptx_buffer)
+        pptx_buffer.seek(0)
+        return pptx_buffer.read()
+
+    except Exception as e:
+        logger.error(f"Failed to export to PowerPoint: {e}", exc_info=True)
+        # Fallback to JSON
+        return export_to_json(enhanced_report).encode('utf-8')
+
+
 def export_to_word(enhanced_report: EnhancedStrategicReport) -> bytes:
     """
     Export enhanced report to Word format.
-    
+
     Args:
         enhanced_report: Enhanced strategic report
-        
+
     Returns:
         Word document bytes
     """
