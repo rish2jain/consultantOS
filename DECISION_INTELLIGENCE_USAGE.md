@@ -351,11 +351,13 @@ def compare_decision_options(decision: StrategicDecision):
     # Highlight recommended
     if decision.recommended_option:
         recommended = next(
-            opt for opt in decision.options
-            if opt.option_id == decision.recommended_option
+            (opt for opt in decision.options
+             if opt.option_id == decision.recommended_option),
+            None
         )
-        print(f"\n✅ RECOMMENDED: {recommended.option_name}")
-        print(f"   Rationale: {recommended.competitive_advantage}")
+        if recommended:
+            print(f"\n✅ RECOMMENDED: {recommended.option_name}")
+            print(f"   Rationale: {recommended.competitive_advantage}")
 
 
 # Usage
@@ -396,7 +398,10 @@ def analyze_decision_portfolio(decision_brief: DecisionBrief):
     print(f"Total Investment Required: ${total_investment/1e6:.1f}M")
     print(f"Expected Annual Return: ${total_return/1e6:.1f}M")
     print(f"Portfolio ROI: {portfolio_roi:.2f}x")
-    print(f"Payback Period: ~{12/portfolio_roi:.0f} months")
+    if portfolio_roi > 0:
+        print(f"Payback Period: ~{12/portfolio_roi:.0f} months")
+    else:
+        print(f"Payback Period: N/A")
 
     # Decision category breakdown
     print("\nDecision Breakdown by Category:")

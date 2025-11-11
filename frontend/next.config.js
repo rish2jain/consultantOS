@@ -2,14 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
-    // Ignore ESLint errors during builds for development
-    // TODO: Fix linting errors before production deployment
-    ignoreDuringBuilds: true,
+    // Only ignore in development, require fixes for production
+    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
   },
   typescript: {
-    // Ignore TypeScript errors during builds for development
-    // TODO: Fix TypeScript errors before production deployment
-    ignoreBuildErrors: true,
+    // Only ignore in development, require fixes for production
+    ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
   // Enable standalone output for Cloud Run deployment
   output: "standalone",
@@ -51,8 +49,15 @@ const nextConfig = {
   },
   // Ensure proper handling of static files
   generateBuildId: async () => {
-    // Use a consistent build ID to avoid chunk mismatches
-    return 'build-' + Date.now();
+    // Use git commit hash for reproducible builds, fallback to version or timestamp
+    try {
+      const { execSync } = require('child_process');
+      const gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
+      return gitHash;
+    } catch {
+      // Fallback to BUILD_ID env var or package version
+      return process.env.BUILD_ID || require('./package.json').version || `build-${Date.now()}`;
+    }
   },
 };
 

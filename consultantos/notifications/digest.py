@@ -12,10 +12,10 @@ from consultantos.models import (
     Alert,
 )
 from consultantos.database import get_db_service
-from consultantos.services.email import send_digest_email
-from consultantos.monitoring import get_logger
+from consultantos.services.email_service import get_email_service
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class DigestGenerator:
@@ -137,10 +137,17 @@ class DigestGenerator:
             email_html = self._format_digest_email(digest, user)
 
             # Send email
-            await send_digest_email(
-                to_email=user.email,
+            email_service = get_email_service()
+            # Create simple text version from HTML
+            text_body = f"Weekly Intelligence Digest\n\n"
+            text_body += f"Companies analyzed: {len(digest.companies)}\n"
+            text_body += f"Alerts: {len(digest.alerts)}\n"
+            text_body += f"Insights: {len(digest.kb_insights)}\n"
+            email_service.send_email(
+                to=user.email,
                 subject=self._get_subject_line(digest),
-                html_content=email_html
+                body=text_body,
+                html_body=email_html
             )
 
             logger.info("digest_sent", user_id=user_id, email=user.email)

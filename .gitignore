@@ -20,6 +20,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.backup
+.mypy_cache/
 
 # Virtual Environment
 env/
@@ -39,6 +41,8 @@ venv.bak/
 # Environment
 .env
 .env.local
+.env*.bak
+!.env.example
 
 # Testing
 .pytest_cache/
@@ -61,12 +65,21 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+Temp/
 *.tmp
+*.fixed
+*_SUMMARY.txt
+*_FILES*.txt
+test_results.json
 
-# Generated PDF reports only (in build/dist directories)
+# Generated reports and documents
 build/*.pdf
 dist/*.pdf
 Temp/*.pdf
+*.docx
+*.xlsx
+# Keep specific PDFs if needed (uncomment and list them)
+# !ConsultantOS_Hackathon_Complete.pdf
 
 # Node.js
 node_modules/
@@ -74,4 +87,17 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# Next.js build artifacts
+.next/
+*.tsbuildinfo
+build.log
+out/
+
+# Archive folder (temporary docs and scripts)
+archive/
+
+# AI agent cache directories
+.claude/
+.serena/
 

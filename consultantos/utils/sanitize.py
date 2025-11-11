@@ -20,6 +20,10 @@ def sanitize_input(text: str, max_length: int = 1000) -> str:
     if not isinstance(text, str):
         text = str(text)
     
+    # Remove null bytes and control characters
+    text = text.replace('\x00', '')  # Remove null bytes
+    text = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F]', '', text)  # Remove control chars except \t, \n, \r
+    
     # Remove HTML tags and escape HTML entities
     text = html.escape(text)
     

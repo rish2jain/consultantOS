@@ -93,7 +93,7 @@ All agents inherit from `BaseAgent` which provides:
 ## Build, Test & Development Commands
 ```bash
 pip install -r requirements.txt            # Sync backend deps
-uvicorn consultantos.api.main:app --reload # Local API on :8000
+uvicorn consultantos.api.main:app --reload # Local API on :8080 (or set PORT env var for alternative ports)
 pytest                                     # Backend suite & coverage
 cd frontend && npm install && npm run dev  # Dashboard on :3000
 npm run lint                               # Next.js lint/format gate

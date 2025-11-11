@@ -52,21 +52,32 @@ async function apiRequest<T>(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        signal: controller.signal,
-      });
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers,
+          signal: controller.signal,
+        });
 
-      clearTimeout(timeoutId);
+        // Handle non-JSON responses (like health check)
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType?.includes('application/json');
 
-      // Handle non-JSON responses (like health check)
-      const contentType = response.headers.get('content-type');
-      const isJson = contentType?.includes('application/json');
-
-      if (!response.ok) {
-        // Don't retry on client errors (4xx) except 429 (rate limit)
-        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+        if (!response.ok) {
+          // Don't retry on client errors (4xx) except 429 (rate limit)
+          if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+            const error = isJson ? await response.json() : { detail: response.statusText };
+            throw new APIError(
+              error.detail || error.message || 'API request failed',
+              response.status,
+              error
+            );
+          }
+          // Retry on server errors (5xx) and rate limits (429)
+          if (attempt < retries) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            continue;
+          }
           const error = isJson ? await response.json() : { detail: response.statusText };
           throw new APIError(
             error.detail || error.message || 'API request failed',
@@ -74,20 +85,11 @@ async function apiRequest<T>(
             error
           );
         }
-        // Retry on server errors (5xx) and rate limits (429)
-        if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-          continue;
-        }
-        const error = isJson ? await response.json() : { detail: response.statusText };
-        throw new APIError(
-          error.detail || error.message || 'API request failed',
-          response.status,
-          error
-        );
-      }
 
-      return isJson ? response.json() : response.text();
+        return isJson ? response.json() : response.text();
+      } finally {
+        clearTimeout(timeoutId);
+      }
     } catch (error) {
       // Handle network errors and timeouts
       if (error instanceof APIError) {

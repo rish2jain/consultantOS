@@ -99,7 +99,6 @@ export default function DashboardPage() {
       }
 
       setRecentReports(reports);
-      console.log('Loaded reports:', reports); // Debug: Check if data is loading
 
       // Fetch active jobs (handle errors gracefully)
       let activeJobs = [];

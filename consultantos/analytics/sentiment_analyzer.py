@@ -2,6 +2,7 @@
 Sentiment analysis using BERT-based models
 """
 import logging
+import threading
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import asyncio
@@ -19,6 +20,7 @@ AutoModelForSequenceClassification = None
 torch = None
 TRANSFORMERS_AVAILABLE = False
 _transformers_checked = False
+_transformers_lock = threading.Lock()
 
 
 def _ensure_transformers_loaded() -> bool:
@@ -28,26 +30,31 @@ def _ensure_transformers_loaded() -> bool:
 
     if TRANSFORMERS_AVAILABLE:
         return True
-    if _transformers_checked:
-        return False
+    
+    with _transformers_lock:
+        # Re-check inside lock
+        if TRANSFORMERS_AVAILABLE:
+            return True
+        if _transformers_checked:
+            return False
 
-    _transformers_checked = True
-    try:
-        transformers_module = importlib.import_module("transformers")
-        torch_module = importlib.import_module("torch")
-        pipeline = transformers_module.pipeline
-        AutoTokenizer = transformers_module.AutoTokenizer
-        AutoModelForSequenceClassification = transformers_module.AutoModelForSequenceClassification
-        torch = torch_module
-        TRANSFORMERS_AVAILABLE = True
-        logger.info("transformers library loaded lazily for sentiment analysis")
-        return True
-    except ImportError:
-        logger.warning(
-            "transformers not installed - sentiment analysis will use rule-based fallback"
-        )
-        TRANSFORMERS_AVAILABLE = False
-        return False
+        _transformers_checked = True
+        try:
+            transformers_module = importlib.import_module("transformers")
+            torch_module = importlib.import_module("torch")
+            pipeline = transformers_module.pipeline
+            AutoTokenizer = transformers_module.AutoTokenizer
+            AutoModelForSequenceClassification = transformers_module.AutoModelForSequenceClassification
+            torch = torch_module
+            TRANSFORMERS_AVAILABLE = True
+            logger.info("transformers library loaded lazily for sentiment analysis")
+            return True
+        except ImportError:
+            logger.warning(
+                "transformers not installed - sentiment analysis will use rule-based fallback"
+            )
+            TRANSFORMERS_AVAILABLE = False
+            return False
 
 
 try:

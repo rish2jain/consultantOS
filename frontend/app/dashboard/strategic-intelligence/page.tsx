@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import SystemDynamicsMap from '@/app/components/SystemDynamicsMap';
 import FlywheelDashboard from '@/app/components/FlywheelDashboard';
 import IntelligenceFeed from '@/app/components/IntelligenceFeed';
+import { getApiKey } from '@/lib/auth';
 import {
   StrategicIntelligenceOverview,
   ExecutiveBrief,
@@ -14,10 +16,14 @@ import {
   StrategicContext,
 } from '@/types/strategic-intelligence';
 
+// Force dynamic rendering to avoid static generation issues with useSearchParams
+export const dynamic = 'force-dynamic';
+
 type ViewLayer = 'executive' | 'context' | 'evidence';
 type ContextTab = 'positioning' | 'disruption' | 'dynamics' | 'momentum' | 'decisions';
 
-const StrategicIntelligenceDashboard: React.FC = () => {
+function StrategicIntelligenceDashboardContent() {
+  const searchParams = useSearchParams();
   const [activeLayer, setActiveLayer] = useState<ViewLayer>('executive');
   const [activeTab, setActiveTab] = useState<ContextTab>('positioning');
   const [data, setData] = useState<StrategicIntelligenceOverview | null>(null);
@@ -27,28 +33,42 @@ const StrategicIntelligenceDashboard: React.FC = () => {
   useEffect(() => {
     // Fetch data from API
     fetchStrategicIntelligence();
-  }, []);
+  }, [searchParams]);
 
   const fetchStrategicIntelligence = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Get monitor ID from URL params, user context, or fallback to demo
+      // Priority: URL param > user context > demo-monitor (last resort)
+      const monitorIdFromUrl = searchParams.get('monitorId');
+      // TODO: Get from user context when available
+      // const monitorIdFromContext = userContext?.activeMonitorId;
+      const monitorId = monitorIdFromUrl || 'demo-monitor'; // Fallback only as last resort
+
       // Try to fetch real data from API
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-        // TODO: Get monitor_id from user context or URL params
-        // For now, try to fetch from a test monitor or use demo data
-        const monitorId = 'demo-monitor'; // Replace with actual monitor selection
+        
+        // Use secure auth: get API key from memory (not localStorage)
+        // The API client handles credentials via httpOnly cookies on the server side
+        const apiKey = getApiKey();
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
 
+        // Add API key header if available (from in-memory storage)
+        // Server should also check httpOnly cookies for session-based auth
+        if (apiKey) {
+          headers['X-API-Key'] = apiKey;
+        }
+
+        // Include credentials for cookie-based auth
         const response = await fetch(`${apiUrl}/strategic-intelligence/overview/${monitorId}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            // Add API key if available
-            ...(localStorage.getItem('api_key') && {
-              'X-API-Key': localStorage.getItem('api_key') || ''
-            })
-          }
+          method: 'GET',
+          headers,
+          credentials: 'include', // Include cookies for server-side session auth
         });
 
         if (!response.ok) {
@@ -927,5 +947,21 @@ function generateDemoData(): StrategicIntelligenceOverview {
     analysis_date: new Date().toISOString(),
   };
 }
+
+// Main component with Suspense boundary for useSearchParams
+const StrategicIntelligenceDashboard: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading Strategic Intelligence...</p>
+        </div>
+      </div>
+    }>
+      <StrategicIntelligenceDashboardContent />
+    </Suspense>
+  );
+};
 
 export default StrategicIntelligenceDashboard;

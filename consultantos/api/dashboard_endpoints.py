@@ -20,9 +20,9 @@ from consultantos.dashboards.templates import (
     get_templates_for_use_case,
     list_templates,
 )
-from consultantos.monitoring import get_logger
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
 
 

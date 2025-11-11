@@ -138,8 +138,8 @@ Or use other hosting services (Netlify, Cloudflare Pages, etc.)
 - `REDDIT_CLIENT_ID` - Reddit API client ID for social media analysis
 - `REDDIT_CLIENT_SECRET` - Reddit API client secret
 - `TWITTER_BEARER_TOKEN` - Twitter API bearer token for social media analysis
-- `GEMINI_MODEL` - Gemini model to use (default: gemini-1.5-flash-002)
-- `LAOZHANG_MODEL` - Grok model to use (default: grok-4-fast-reasoning-latest)
+- `GEMINI_MODEL` - Gemini model to use (default: gemini-2.5-flash)
+- `LAOZHANG_MODEL` - Grok model to use (default: grok-4-fast-reasoning)
 
 ## Troubleshooting
 

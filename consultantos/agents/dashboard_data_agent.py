@@ -21,7 +21,7 @@ class DashboardOverview(BaseModel):
     recent_alerts: List[Dict[str, Any]] = Field(default_factory=list, description="Recent alerts")
     active_jobs: List[Dict[str, Any]] = Field(default_factory=list, description="Active jobs")
     recent_reports: List[Dict[str, Any]] = Field(default_factory=list, description="Recent reports")
-    generated_at: datetime = Field(default_factory=datetime.now)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now())
 
 
 class DashboardDataAgent(BaseAgent):

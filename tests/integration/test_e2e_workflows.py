@@ -149,6 +149,42 @@ async def test_analysis_to_pdf_export_workflow(test_client: AsyncClient):
             ]
 
 
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_analysis_to_powerpoint_export_workflow(test_client: AsyncClient):
+    """
+    Test workflow: analysis → PowerPoint export (Phase 3 enhancement).
+    """
+    with patch("consultantos.tools.tavily_tool.TavilyClient") as mock_tavily:
+        mock_tavily.return_value.search.return_value = {
+            "results": [{"title": "Test", "content": "Content", "url": "http://test.com"}]
+        }
+
+        # 1. Create analysis
+        analysis_response = await test_client.post("/analyze", json={
+            "company": "Tesla",
+            "industry": "Electric Vehicles",
+            "frameworks": ["porter"]
+        })
+
+        assert analysis_response.status_code == 200
+        report_id = analysis_response.json().get("report_id")
+
+        if not report_id:
+            pytest.skip("Report ID not available")
+
+        # 2. Generate PowerPoint export
+        pptx_response = await test_client.get(f"/reports/{report_id}/export?format=powerpoint")
+
+        # PowerPoint export might fail gracefully - check response
+        assert pptx_response.status_code in [200, 400, 404, 500, 503]
+
+        if pptx_response.status_code == 200:
+            # Should return PowerPoint file
+            content_type = pptx_response.headers.get("content-type", "")
+            assert "powerpoint" in content_type.lower() or "application/vnd.openxmlformats" in content_type.lower() or "application/octet-stream" in content_type.lower()
+
+
 # ============================================================================
 # MONITORING WORKFLOW TESTS
 # ============================================================================

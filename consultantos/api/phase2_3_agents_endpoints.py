@@ -73,7 +73,7 @@ async def update_notification_settings_agent(
 ) -> NotificationResponse:
     """Update notification settings using the NotificationAgent."""
     try:
-        request_data = request.dict()
+        request_data = request.model_dump()
         request_data["action_type"] = "settings"
         request_data["user_id"] = user_id
         result = await agent.execute(request_data)
@@ -137,7 +137,7 @@ async def create_version_agent(
 ) -> VersionResponse:
     """Create a new version using the VersionControlAgent."""
     try:
-        request_data = request.dict()
+        request_data = request.model_dump()
         request_data["action_type"] = "create"
         request_data["user_id"] = user_id
         result = await agent.execute(request_data)
@@ -207,7 +207,7 @@ async def create_template_agent(
 ) -> TemplateResponse:
     """Create a template using the TemplateAgent."""
     try:
-        request_data = request.dict()
+        request_data = request.model_dump()
         request_data["action_type"] = "create"
         request_data["user_id"] = user_id
         result = await agent.execute(request_data)
@@ -228,7 +228,7 @@ async def create_visualization_agent(
 ) -> VisualizationResponse:
     """Create a visualization using the VisualizationAgent."""
     try:
-        request_data = request.dict()
+        request_data = request.model_dump()
         request_data["action_type"] = "create"
         result = await agent.execute(request_data)
         if isinstance(result, dict) and "data" in result:
@@ -251,7 +251,7 @@ async def submit_alert_feedback_agent(
 ) -> AlertFeedbackResponse:
     """Submit alert feedback using the AlertFeedbackAgent."""
     try:
-        request_data = request.dict()
+        request_data = request.model_dump()
         request_data["action_type"] = "submit"
         request_data["user_id"] = user_id
         result = await agent.execute(request_data)

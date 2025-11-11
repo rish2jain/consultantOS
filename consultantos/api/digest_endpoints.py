@@ -15,10 +15,10 @@ from consultantos.models import (
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
 from consultantos.notifications.digest import DigestGenerator
-from consultantos.monitoring import get_logger
+import logging
 
 router = APIRouter(prefix="/digest", tags=["digest"])
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 # ===== Digest Preferences =====

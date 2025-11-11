@@ -114,13 +114,12 @@ export default function DashboardPage() {
         setStats(statsData);
       }
 
-      // Load recent alerts for all monitors
+      // Load recent alerts - use batch endpoint if available, otherwise concurrent fetches
       if (monitorsData.monitors && monitorsData.monitors.length > 0) {
-        const allAlerts: Alert[] = [];
-
-        for (const monitor of monitorsData.monitors.slice(0, 5)) {
-          const alertsRes = await fetch(
-            `${API_URL}/monitors/${monitor.id}/alerts?limit=5`,
+        try {
+          // Preferred: Use batch endpoint for better performance
+          const batchRes = await fetch(
+            `${API_URL}/monitors/alerts/recent?limit=10`,
             {
               headers: {
                 'X-API-Key': localStorage.getItem('api_key') || '',
@@ -128,19 +127,41 @@ export default function DashboardPage() {
             }
           );
 
-          if (alertsRes.ok) {
-            const alertsData = await alertsRes.json();
-            allAlerts.push(...(alertsData.alerts || []));
+          if (batchRes.ok) {
+            const batchData = await batchRes.json();
+            setRecentAlerts(batchData.alerts || []);
+          } else {
+            // Fallback: Concurrent fetches for all monitors (not just first 5)
+            const apiKey = localStorage.getItem('api_key') || '';
+            const alertPromises = monitorsData.monitors.map((monitor: Monitor) =>
+              fetch(`${API_URL}/monitors/${monitor.id}/alerts?limit=5`, {
+                headers: { 'X-API-Key': apiKey },
+              })
+                .then(async (res) => {
+                  if (!res.ok) return [];
+                  const data = await res.json();
+                  return data.alerts || [];
+                })
+                .catch(() => []) // Return empty array on error
+            );
+
+            // Fetch all alerts concurrently
+            const alertResults = await Promise.all(alertPromises);
+            const allAlerts: Alert[] = alertResults.flat();
+
+            // Sort by created_at descending and limit to 10 most recent
+            allAlerts.sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+
+            setRecentAlerts(allAlerts.slice(0, 10));
           }
+        } catch (err) {
+          // Silently fail - alerts are not critical for dashboard load
+          console.error('Failed to load alerts:', err);
+          setRecentAlerts([]);
         }
-
-        // Sort by created_at descending
-        allAlerts.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-
-        setRecentAlerts(allAlerts.slice(0, 10));
       }
 
       setError(null);

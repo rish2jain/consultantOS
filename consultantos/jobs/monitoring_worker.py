@@ -14,7 +14,9 @@ from consultantos.monitoring.intelligence_monitor import IntelligenceMonitor
 from consultantos.database import DatabaseService
 from consultantos.cache import CacheService
 from consultantos.orchestrator.analysis_orchestrator import AnalysisOrchestrator
-from consultantos.monitoring import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MonitoringWorker:

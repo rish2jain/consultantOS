@@ -454,7 +454,17 @@ const FlywheelDashboard: React.FC<FlywheelDashboardProps> = ({
             </div>
 
             <div className="text-xs text-gray-500 mb-4">
-              Last updated: {new Date(selectedComponent.last_updated).toLocaleString()}
+              Last updated: {(() => {
+                try {
+                  const date = new Date(selectedComponent.last_updated);
+                  if (isNaN(date.getTime())) {
+                    return 'Unknown';
+                  }
+                  return date.toLocaleString();
+                } catch {
+                  return 'Unknown';
+                }
+              })()}
             </div>
 
             <button

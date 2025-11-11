@@ -4,6 +4,7 @@ Configuration management for ConsultantOS
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -68,9 +69,11 @@ class Settings(BaseSettings):
     # Security
     session_secret: Optional[str] = None  # Secret key for session management
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore"  # Ignore extra fields from .env that aren't in the model
+    )
 
 
 def get_secret(secret_id: str, default_env_var: Optional[str] = None) -> str:

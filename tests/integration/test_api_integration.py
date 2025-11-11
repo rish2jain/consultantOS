@@ -469,6 +469,16 @@ async def test_monitoring_endpoints(test_client: AsyncClient):
         if monitor_id:
             alerts_response = await test_client.get(f"/monitoring/monitors/{monitor_id}/alerts")
             assert alerts_response.status_code in [200, 404]
+            
+            # Test new alert details endpoint (Phase 3 enhancement)
+            if alerts_response.status_code == 200:
+                alerts_data = alerts_response.json()
+                if isinstance(alerts_data, list) and len(alerts_data) > 0:
+                    alert_id = alerts_data[0].get("alert_id") or alerts_data[0].get("id")
+                    if alert_id:
+                        details_response = await test_client.get(f"/monitoring/alerts/{alert_id}/details")
+                        # Should return enhanced alert with root cause analysis
+                        assert details_response.status_code in [200, 404]
 
 
 # ============================================================================

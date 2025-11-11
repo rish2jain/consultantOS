@@ -246,6 +246,9 @@ def analyze_geographic_opportunities(
     # Filter opportunities within budget if specified
     if investment_budget:
         opportunities = _filter_by_budget(opportunities, investment_budget)
+    
+    # Recalculate total_tam after filtering
+    total_tam = sum(opp.market_size_estimate for opp in opportunities)
 
     return GeographicOpportunityResult(
         company=company,

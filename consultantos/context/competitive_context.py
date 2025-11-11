@@ -189,7 +189,7 @@ class CompetitiveContextService:
             doc_ref = collection.document(doc_id)
             await doc_ref.set(benchmark.dict())
 
-            # Update cache
+            # Update cache only after successful DB write
             cache_key = f"{benchmark.industry}:{benchmark.metric_name}"
             self._benchmark_cache[cache_key] = benchmark
             self._cache_timestamps[cache_key] = datetime.utcnow()
@@ -550,10 +550,44 @@ class CompetitiveContextService:
         self,
         industry: str
     ) -> List[Dict]:
-        """Fetch company data for industry (placeholder)"""
-        # TODO: Implement actual company data retrieval
-        # For now, return empty list
-        return []
+        """Fetch company data for industry"""
+        try:
+            # Query companies collection filtered by industry
+            if hasattr(self.db, 'db') and hasattr(self.db.db, 'collection'):
+                companies_collection = self.db.db.collection("companies")
+                query = companies_collection.where("industry", "==", industry).limit(100)
+                docs = query.stream()
+                
+                companies = []
+                for doc in docs:
+                    data = doc.to_dict()
+                    companies.append({
+                        "company": data.get("company", data.get("name", "")),
+                        "revenue": data.get("revenue", 0.0),
+                        "market_cap": data.get("market_cap", 0.0),
+                        "growth_rate": data.get("growth_rate", 0.0)
+                    })
+                return companies
+            else:
+                # Fallback: query reports collection for companies in this industry
+                if hasattr(self.db, 'list_reports'):
+                    reports = self.db.list_reports(company=None, limit=100)
+                    # Group by company and extract metrics
+                    company_map = {}
+                    for report in reports:
+                        if hasattr(report, 'industry') and report.industry == industry:
+                            company_name = getattr(report, 'company', '')
+                            if company_name and company_name not in company_map:
+                                company_map[company_name] = {
+                                    "company": company_name,
+                                    "revenue": 0.0,  # Reports don't have revenue directly
+                                    "market_cap": 0.0,
+                                    "growth_rate": 0.0
+                                }
+                    return list(company_map.values())
+        except Exception as e:
+            self.logger.error(f"Failed to fetch industry companies for {industry}: {e}", exc_info=True)
+            return []
 
     async def _store_strategic_group(self, group: StrategicGroup) -> bool:
         """Store strategic group in database"""

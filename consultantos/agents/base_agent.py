@@ -35,7 +35,7 @@ class BaseAgent(ABC):
         genai.configure(api_key=settings.gemini_api_key)
 
         # Create instructor client with Gemini
-        self.client = instructor.from_google_genai(
+        self.client = instructor.from_gemini(
             client=genai.GenerativeModel(
                 model_name=settings.gemini_model or "gemini-1.5-flash-002"
             ),

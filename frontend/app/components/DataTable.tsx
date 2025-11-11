@@ -254,9 +254,6 @@ export function DataTable<T>({
                     ${onRowClick ? 'cursor-pointer' : ''}
                     ${customClassName}
                   `}
-                  style={{ 
-                    backgroundColor: striped && index % 2 === 0 ? '#f9fafb' : '#ffffff'
-                  }}
                 >
                   {selectionMode !== 'none' && (
                     <td className={compact ? 'px-3 py-2' : 'px-6 py-4'}>

@@ -114,10 +114,30 @@ class HackathonPDFGenerator:
         img = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(img)
 
-        # Try to use a monospace font
-        try:
-            font = ImageFont.truetype("/System/Library/Fonts/Courier.dfont", 12)
-        except:
+        # Try to use a monospace font (cross-platform)
+        import os
+        font = None
+        font_paths = [
+            # macOS
+            "/System/Library/Fonts/Courier.dfont",
+            "/Library/Fonts/Courier New.ttf",
+            # Linux
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+            # Windows
+            "C:/Windows/Fonts/cour.ttf",
+            "C:/Windows/Fonts/courbd.ttf",
+        ]
+        
+        for font_path in font_paths:
+            try:
+                if os.path.exists(font_path):
+                    font = ImageFont.truetype(font_path, 12)
+                    break
+            except (OSError, IOError):
+                continue
+        
+        if font is None:
             font = ImageFont.load_default()
 
         # Draw the diagram text

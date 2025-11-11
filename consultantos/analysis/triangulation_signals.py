@@ -12,7 +12,7 @@ Features:
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
@@ -111,7 +111,7 @@ class TriangulationSignal(BaseModel):
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Signal generation timestamp"
     )
 
@@ -141,7 +141,7 @@ class TriangulationSignalsResult(BaseModel):
     )
 
     analysis_timestamp: datetime = Field(
-        default_factory=datetime.utcnow
+        default_factory=lambda: datetime.now(timezone.utc)
     )
 
 
@@ -251,7 +251,7 @@ def analyze_triangulation_signals(
         overall_signal=overall_signal,
         data_quality_score=data_quality,
         sources_validated=financial_snapshot.data_sources or [],
-        analysis_timestamp=datetime.utcnow()
+        analysis_timestamp=datetime.now(timezone.utc)
     )
 
 
@@ -631,13 +631,11 @@ def _enrich_with_historical_patterns(
                 signal.probability = (avg_historical_prob * 0.7) + (signal.probability * 0.3)
 
                 # Update timeline if available
-                avg_timeline = sum(
-                    p.get("timeline_days", 0) for p in matching_patterns
-                    if p.get("timeline_days")
-                ) / len([p for p in matching_patterns if p.get("timeline_days")])
-
-                if avg_timeline > 0:
-                    signal.timeline_days = int(avg_timeline)
+                timeline_values = [p.get("timeline_days") for p in matching_patterns if p.get("timeline_days")]
+                if timeline_values and len(timeline_values) > 0:
+                    avg_timeline = sum(timeline_values) / len(timeline_values)
+                    if avg_timeline > 0:
+                        signal.timeline_days = int(avg_timeline)
 
     return signals
 

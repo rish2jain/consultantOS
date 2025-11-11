@@ -17,11 +17,17 @@ from consultantos.models import (
 )
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
-from consultantos.monitoring import get_logger
-from consultantos.services.email import send_team_invite
+import logging
+# Email service is optional
+try:
+    from consultantos.services.email import send_team_invite
+except ImportError:
+    def send_team_invite(*args, **kwargs):
+        logger.warning("Email service not available - team invite email not sent")
+        return None
 
 router = APIRouter(prefix="/teams", tags=["teams"])
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 # ===== Team Management =====

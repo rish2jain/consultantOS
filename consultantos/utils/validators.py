@@ -79,7 +79,10 @@ class AnalysisRequestValidator:
         if not frameworks:
             raise ValueError("At least one framework must be selected")
         
-        valid_frameworks = {"porter", "swot", "pestel", "blue_ocean"}
+        valid_frameworks = {
+            "porter", "swot", "pestel", "blue_ocean",
+            "ansoff", "bcg_matrix", "value_chain"
+        }
         normalized = [f.lower().strip() for f in frameworks]
         
         # Remove duplicates while preserving order

@@ -8,7 +8,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
@@ -326,17 +326,152 @@ async def get_report_evolution(
             raise HTTPException(status_code=404, detail=f"Report {report_id} not found")
 
         company = base_report.get('company', '')
+        if not company:
+            raise HTTPException(status_code=400, detail="Base report missing company field")
 
-        # Find other reports for same company
-        # TODO: Implement time-based filtering
-        # For now, return placeholder
+        # Extract base report date
+        base_report_date_str = base_report.get('created_at') or base_report.get('date')
+        if not base_report_date_str:
+            raise HTTPException(status_code=400, detail="Base report missing date field (created_at or date)")
+
+        # Parse base report date
+        try:
+            if isinstance(base_report_date_str, str):
+                # Try ISO format first
+                try:
+                    base_report_date = datetime.fromisoformat(base_report_date_str.replace('Z', '+00:00'))
+                except ValueError:
+                    # Try other common formats
+                    try:
+                        base_report_date = datetime.strptime(base_report_date_str, '%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        base_report_date = datetime.strptime(base_report_date_str, '%Y-%m-%d')
+            else:
+                # Assume it's already a datetime object
+                base_report_date = base_report_date_str
+        except (ValueError, AttributeError) as e:
+            raise HTTPException(status_code=400, detail=f"Invalid date format in base report: {str(e)}")
+
+        # Calculate cutoff date
+        cutoff_date = base_report_date - timedelta(days=lookback_days)
+
+        # Query all reports for the same company
+        # Note: list_reports is synchronous, returns List[ReportMetadata]
+        all_reports = db_service.list_reports(company=company, limit=1000)
+        
+        # Filter reports within lookback period and before base report date
+        evolution_reports = []
+        for report in all_reports:
+            # Skip the base report itself
+            report_id_attr = report.report_id if hasattr(report, 'report_id') else (report.get('report_id') if isinstance(report, dict) else None)
+            if report_id_attr == report_id:
+                continue
+
+            # Get report date
+            # ReportMetadata has created_at as a string attribute
+            if hasattr(report, 'created_at'):
+                report_date_str = report.created_at
+            elif isinstance(report, dict):
+                report_date_str = report.get('created_at') or report.get('date')
+            else:
+                continue
+
+            # Parse report date
+            try:
+                if isinstance(report_date_str, str):
+                    try:
+                        report_date = datetime.fromisoformat(report_date_str.replace('Z', '+00:00'))
+                    except ValueError:
+                        try:
+                            report_date = datetime.strptime(report_date_str, '%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            report_date = datetime.strptime(report_date_str, '%Y-%m-%d')
+                else:
+                    report_date = report_date_str
+            except (ValueError, AttributeError):
+                # Skip reports with invalid dates
+                report_id_for_log = report.report_id if hasattr(report, 'report_id') else (report.get('report_id', 'unknown') if isinstance(report, dict) else 'unknown')
+                logger.warning(f"Skipping report {report_id_for_log} due to invalid date format")
+                continue
+
+            # Check if report is within lookback period and before base report
+            if cutoff_date <= report_date <= base_report_date:
+                evolution_reports.append({
+                    'report': report,
+                    'date': report_date
+                })
+
+        # Sort chronologically (oldest first)
+        evolution_reports.sort(key=lambda x: x['date'])
+
+        # Add base report at the end
+        evolution_reports.append({
+            'report': base_report,
+            'date': base_report_date
+        })
+
+        # Extract metrics and strategic position from each report
+        evolution_data = []
+        for item in evolution_reports:
+            report = item['report']
+            report_date = item['date']
+
+            # Convert report to dict if it's a ReportMetadata object
+            if hasattr(report, 'to_dict'):
+                report_dict = report.to_dict()
+            elif hasattr(report, '__dict__'):
+                report_dict = report.__dict__
+            elif isinstance(report, dict):
+                report_dict = report
+            else:
+                report_dict = {}
+
+            # Extract relevant metrics
+            metrics = {
+                'confidence_score': report_dict.get('confidence_score', 0),
+                'report_id': report_dict.get('report_id', ''),
+            }
+
+            # Extract strategic position from framework_analysis if available
+            framework_analysis = report_dict.get('framework_analysis', {})
+            strategic_position = {}
+
+            # Porter's Five Forces
+            if 'porters_five_forces' in framework_analysis:
+                porter = framework_analysis['porters_five_forces']
+                strategic_position['porter'] = {
+                    'supplier_power': porter.get('supplier_power', 0),
+                    'buyer_power': porter.get('buyer_power', 0),
+                    'competitive_rivalry': porter.get('competitive_rivalry', 0),
+                    'threat_of_substitutes': porter.get('threat_of_substitutes', 0),
+                    'threat_of_new_entry': porter.get('threat_of_new_entry', 0),
+                }
+
+            # SWOT summary counts
+            if 'swot_analysis' in framework_analysis:
+                swot = framework_analysis['swot_analysis']
+                strategic_position['swot'] = {
+                    'strengths_count': len(swot.get('strengths', [])),
+                    'weaknesses_count': len(swot.get('weaknesses', [])),
+                    'opportunities_count': len(swot.get('opportunities', [])),
+                    'threats_count': len(swot.get('threats', [])),
+                }
+
+            evolution_data.append({
+                'date': report_date.isoformat(),
+                'report_id': metrics['report_id'],
+                'metrics': metrics,
+                'strategic_position': strategic_position
+            })
+
         return {
             "report_id": report_id,
             "company": company,
             "lookback_days": lookback_days,
-            "evolution_data": {
-                "message": "Evolution tracking coming soon. This will show how strategic position changed over time."
-            }
+            "base_report_date": base_report_date.isoformat(),
+            "cutoff_date": cutoff_date.isoformat(),
+            "evolution_data": evolution_data,
+            "total_reports": len(evolution_data)
         }
 
     except HTTPException:

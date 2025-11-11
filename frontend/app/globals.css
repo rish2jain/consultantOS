@@ -26,13 +26,13 @@ body {
     rgb(var(--background-start-rgb));
 }
 
-/* Ensure table text is always visible */
+/* Ensure table text is visible with theme support */
 table td,
 table th {
-  color: #000000 !important;
+  color: var(--foreground, rgb(0, 0, 0));
 }
 
 table thead th {
-  color: #000000 !important;
+  color: var(--foreground, rgb(0, 0, 0));
 }
 

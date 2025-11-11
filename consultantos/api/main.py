@@ -106,27 +106,7 @@ from consultantos.api.visualization_endpoints import router as visualization_rou
 from consultantos.api.auth_endpoints import router as auth_router
 from consultantos.api.health_endpoints import router as health_router, mark_startup_complete
 from consultantos.api.notifications_endpoints import router as notifications_router
-<<<<<<< HEAD
-# Advanced features (now enabled with authentication implementation)
-from consultantos.api.knowledge_endpoints import router as knowledge_router
-from consultantos.api.custom_frameworks_endpoints import router as custom_frameworks_router
-from consultantos.api.saved_searches_endpoints import router as saved_searches_router
-
-# Disabled for hackathon demo - require additional dependencies
-# from consultantos.api.dashboard_endpoints import router as dashboard_router
-from consultantos.api.monitoring_endpoints import router as monitoring_router
-# from consultantos.api.feedback_endpoints import router as feedback_router
-# from consultantos.api.teams_endpoints import router as teams_router
-# from consultantos.api.history_endpoints import router as history_router
-# from consultantos.api.digest_endpoints import router as digest_router
-from consultantos.api.jobs_endpoints import router as jobs_router
-from consultantos.api.enhanced_reports_endpoints import router as enhanced_reports_router
-from consultantos.api.mvp_endpoints import router as mvp_router  # MVP features for hackathon
-from consultantos.api.conversational_endpoints import router as conversational_router  # Conversational AI with RAG
-from consultantos.api.forecasting_endpoints import router as forecasting_router  # Enhanced multi-scenario forecasting
-from consultantos.api.wargaming_endpoints import router as wargaming_router  # Wargaming simulator with Monte Carlo (Phase 2 Week 11-12)
-from consultantos.api.integration_endpoints import router as integration_router  # Comprehensive system integration (Phase 1 & 2 complete)
-=======
+# Strategic features from hackathon/critical-fixes
 from consultantos.api.dashboard_endpoints import router as dashboard_router
 from consultantos.api.monitoring_endpoints import router as monitoring_router
 from consultantos.api.feedback_endpoints import router as feedback_router
@@ -137,7 +117,31 @@ from consultantos.api.custom_frameworks_endpoints import router as custom_framew
 from consultantos.api.history_endpoints import router as history_router
 from consultantos.api.digest_endpoints import router as digest_router
 from consultantos.api.jobs_endpoints import router as jobs_router
->>>>>>> origin/hackathon/critical-fixes
+# Additional features from HEAD
+try:
+    from consultantos.api.enhanced_reports_endpoints import router as enhanced_reports_router
+except ImportError:
+    enhanced_reports_router = None
+try:
+    from consultantos.api.mvp_endpoints import router as mvp_router
+except ImportError:
+    mvp_router = None
+try:
+    from consultantos.api.conversational_endpoints import router as conversational_router
+except ImportError:
+    conversational_router = None
+try:
+    from consultantos.api.forecasting_endpoints import router as forecasting_router
+except ImportError:
+    forecasting_router = None
+try:
+    from consultantos.api.wargaming_endpoints import router as wargaming_router
+except ImportError:
+    wargaming_router = None
+try:
+    from consultantos.api.integration_endpoints import router as integration_router
+except ImportError:
+    integration_router = None
 from consultantos.storage import LocalFileStorageService
 
 
@@ -360,44 +364,7 @@ app.include_router(versioning_router)
 app.include_router(comments_router)
 app.include_router(community_router)
 app.include_router(analytics_router)
-<<<<<<< HEAD
-# Disabled for hackathon demo - require additional dependencies
-# app.include_router(feedback_router)
-app.include_router(visualization_router)
-app.include_router(auth_router)
-app.include_router(notifications_router)
-# Advanced features (now enabled)
-app.include_router(knowledge_router)
-app.include_router(custom_frameworks_router)
-app.include_router(saved_searches_router)
-# Disabled for hackathon demo - require additional dependencies
-# app.include_router(dashboard_router)
-app.include_router(monitoring_router)  # Enable monitoring endpoints for dashboard
-# app.include_router(teams_router)
-# app.include_router(history_router)
-# app.include_router(digest_router)
-app.include_router(jobs_router)  # Job processing and status
-app.include_router(enhanced_reports_router)  # Enhanced reports with actionable insights
-app.include_router(mvp_router)  # MVP features for hackathon demo
-app.include_router(conversational_router)  # Conversational AI with RAG
-app.include_router(forecasting_router)  # Enhanced multi-scenario forecasting (Phase 1 Week 3-4)
-app.include_router(wargaming_router)  # Wargaming simulator with Monte Carlo (Phase 2 Week 11-12)
-app.include_router(integration_router)  # Comprehensive system integration (Phase 1 & 2 complete)
-
-# Dashboard agents endpoints
-from consultantos.api.dashboard_agents_endpoints import router as dashboard_agents_router
-app.include_router(dashboard_agents_router)  # Dashboard agents for feature gaps
-
-# Phase 2 & 3 dashboard agents endpoints
-from consultantos.api.phase2_3_agents_endpoints import router as phase2_3_agents_router
-app.include_router(phase2_3_agents_router)  # Phase 2 & 3 agents (notifications, versions, templates, visualizations, feedback)
-
-# Strategic Intelligence endpoints
-from consultantos.api.strategic_intelligence_endpoints import router as strategic_intelligence_router
-app.include_router(strategic_intelligence_router, prefix="/api/strategic-intelligence", tags=["Strategic Intelligence"])
-
-# app.include_router(storytelling_router)  # AI storytelling with persona adaptation (Phase 2 Week 15-16) - Not yet implemented
-=======
+# Strategic features from hackathon/critical-fixes
 app.include_router(feedback_router)  # User feedback and quality learning
 app.include_router(visualization_router)
 app.include_router(auth_router)
@@ -411,7 +378,40 @@ app.include_router(custom_frameworks_router)  # Custom framework builder
 app.include_router(history_router)  # Analysis history and bookmarks
 app.include_router(digest_router)  # Email digests and alerts
 app.include_router(jobs_router)  # Job processing and status
->>>>>>> origin/hackathon/critical-fixes
+# Additional features from HEAD (optional, may not exist)
+if enhanced_reports_router:
+    app.include_router(enhanced_reports_router)  # Enhanced reports with actionable insights
+if mvp_router:
+    app.include_router(mvp_router)  # MVP features for hackathon demo
+if conversational_router:
+    app.include_router(conversational_router)  # Conversational AI with RAG
+if forecasting_router:
+    app.include_router(forecasting_router)  # Enhanced multi-scenario forecasting
+if wargaming_router:
+    app.include_router(wargaming_router)  # Wargaming simulator with Monte Carlo
+if integration_router:
+    app.include_router(integration_router)  # Comprehensive system integration
+
+# Dashboard agents endpoints (optional)
+try:
+    from consultantos.api.dashboard_agents_endpoints import router as dashboard_agents_router
+    app.include_router(dashboard_agents_router)  # Dashboard agents for feature gaps
+except ImportError:
+    pass
+
+# Phase 2 & 3 dashboard agents endpoints (optional)
+try:
+    from consultantos.api.phase2_3_agents_endpoints import router as phase2_3_agents_router
+    app.include_router(phase2_3_agents_router)  # Phase 2 & 3 agents
+except ImportError:
+    pass
+
+# Strategic Intelligence endpoints (from claude/review-ui-api branch)
+try:
+    from consultantos.api.strategic_intelligence_endpoints import router as strategic_intelligence_router
+    app.include_router(strategic_intelligence_router, prefix="/api/strategic-intelligence", tags=["Strategic Intelligence"])
+except ImportError:
+    pass
 
 # Initialize orchestrator (lazy initialization to avoid import-time errors)
 _orchestrator: Optional[AnalysisOrchestrator] = None

@@ -7,6 +7,7 @@ from consultantos.agents.base_agent import BaseAgent
 from consultantos.database import get_db_service
 from pydantic import BaseModel, Field
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,8 @@ class ReportManagementAgent(BaseAgent):
     """Agent for managing reports: listing, filtering, searching, and actions"""
     
     # Maximum number of reports to fetch in a single query
-    MAX_REPORTS_FETCH = 10000
+    # Note: For better performance, use DB-level filtering and pagination
+    MAX_REPORTS_FETCH = 1000
 
     def __init__(self, timeout: int = 30):
         super().__init__(
@@ -153,13 +155,13 @@ class ReportManagementAgent(BaseAgent):
                 date_from = filters["date_from"]
                 filtered = [
                     r for r in filtered
-                    if r.created_at and datetime.fromisoformat(r.created_at.replace('Z', '+00:00')) >= date_from
+                    if r.created_at and self._parse_date_safe(r.created_at) and self._parse_date_safe(r.created_at) >= date_from
                 ]
             if filters.get("date_to"):
                 date_to = filters["date_to"]
                 filtered = [
                     r for r in filtered
-                    if r.created_at and datetime.fromisoformat(r.created_at.replace('Z', '+00:00')) <= date_to
+                    if r.created_at and self._parse_date_safe(r.created_at) and self._parse_date_safe(r.created_at) <= date_to
                 ]
             
             # Paginate
@@ -243,18 +245,53 @@ class ReportManagementAgent(BaseAgent):
     ) -> Dict[str, Any]:
         """Delete a report"""
         try:
-            # Verify ownership
-            report = db_service.get_report_metadata(report_id)
-            if not report or (user_id and getattr(report, 'user_id', None) != user_id):
+            # Verify ownership - require non-None user_id
+            if not user_id:
                 return {
                     "success": False,
                     "data": None,
-                    "error": "Report not found or access denied"
+                    "error": "Authentication required"
                 }
             
-            # Delete report (implementation depends on db_service)
-            # db_service.delete_report(report_id)
+            report = db_service.get_report_metadata(report_id)
+            if not report:
+                return {
+                    "success": False,
+                    "data": None,
+                    "error": "Report not found"
+                }
             
+            report_user_id = getattr(report, 'user_id', None)
+            if report_user_id != user_id:
+                logger.warning(f"Access denied: user {user_id} attempted to delete report {report_id} owned by {report_user_id}")
+                return {
+                    "success": False,
+                    "data": None,
+                    "error": "Access denied"
+                }
+            
+            # Delete report
+            if hasattr(db_service, 'delete_report_metadata'):
+                success = db_service.delete_report_metadata(report_id)
+            elif hasattr(db_service, 'delete_report'):
+                success = await db_service.delete_report(report_id) if asyncio.iscoroutinefunction(db_service.delete_report) else db_service.delete_report(report_id)
+            else:
+                logger.error(f"db_service does not support report deletion")
+                return {
+                    "success": False,
+                    "data": None,
+                    "error": "Report deletion not supported by database service"
+                }
+            
+            if not success:
+                logger.error(f"Failed to delete report {report_id}")
+                return {
+                    "success": False,
+                    "data": None,
+                    "error": "Failed to delete report"
+                }
+            
+            logger.info(f"Successfully deleted report {report_id} for user {user_id}")
             return {
                 "success": True,
                 "data": {"report_id": report_id, "deleted": True},
@@ -268,6 +305,18 @@ class ReportManagementAgent(BaseAgent):
                 "error": str(e)
             }
 
+    def _parse_date_safe(self, date_str: Optional[str]) -> Optional[datetime]:
+        """Safely parse ISO format date string, returning None on error"""
+        if not date_str:
+            return None
+        try:
+            # Handle both 'Z' and '+00:00' timezone formats
+            normalized = date_str.replace('Z', '+00:00')
+            return datetime.fromisoformat(normalized)
+        except (ValueError, TypeError, AttributeError) as e:
+            logger.debug(f"Failed to parse date '{date_str}': {e}")
+            return None
+
     async def _archive_report(
         self,
         db_service: Any,
@@ -276,13 +325,29 @@ class ReportManagementAgent(BaseAgent):
     ) -> Dict[str, Any]:
         """Archive a report"""
         try:
-            # Verify ownership
-            report = db_service.get_report_metadata(report_id)
-            if not report or (user_id and getattr(report, 'user_id', None) != user_id):
+            # Verify ownership - require non-None user_id
+            if not user_id:
                 return {
                     "success": False,
                     "data": None,
-                    "error": "Report not found or access denied"
+                    "error": "Authentication required"
+                }
+            
+            report = db_service.get_report_metadata(report_id)
+            if not report:
+                return {
+                    "success": False,
+                    "data": None,
+                    "error": "Report not found"
+                }
+            
+            report_user_id = getattr(report, 'user_id', None)
+            if report_user_id != user_id:
+                logger.warning(f"Access denied: user {user_id} attempted to archive report {report_id} owned by {report_user_id}")
+                return {
+                    "success": False,
+                    "data": None,
+                    "error": "Access denied"
                 }
             
             # Update status to archived

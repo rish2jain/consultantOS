@@ -17,6 +17,7 @@ from enum import Enum
 from typing import List, Optional, Dict, Any, Tuple
 from pydantic import BaseModel, Field
 import statistics
+import numpy as np
 
 from consultantos.models import (
     NewsSentiment,
@@ -458,9 +459,23 @@ def _analyze_sentiment_correlation(
             best_correlation = correlation
             best_lead_time = lead_days
 
-    # Calculate statistical significance (simplified)
+    # Calculate statistical significance using proper correlation test
     sample_size = min(len(sentiment_history), len(financial_outcomes))
-    p_value = max(0.01, 1.0 - abs(best_correlation))
+    if sample_size <= 2:
+        p_value = 1.0
+    else:
+        try:
+            from scipy import stats
+            # Compute t-statistic for Pearson correlation
+            t_stat = abs(best_correlation) * np.sqrt((sample_size - 2) / (1 - best_correlation ** 2))
+            # Two-sided p-value from t-distribution with n-2 degrees of freedom
+            p_value = 2 * (1 - stats.t.cdf(t_stat, sample_size - 2))
+            # Handle edge cases
+            if np.isnan(p_value) or p_value <= 0:
+                p_value = 1.0
+        except ImportError:
+            # Fallback if scipy not available
+            p_value = max(0.01, 1.0 - abs(best_correlation))
 
     # Historical accuracy (simplified - would use actual predictions)
     historical_accuracy = min(0.9, 0.5 + abs(best_correlation) / 2)
@@ -653,9 +668,25 @@ def _calculate_outcome_probabilities(
     # Normalize to sum to 1.0
     total = base_beat + base_meet + base_miss
     if total > 0:
-        beat = max(0.0, min(base_beat / total, 1.0))
-        miss = max(0.0, min(base_miss / total, 1.0))
-        meet = max(0.0, min(1.0 - beat - miss, 1.0))
+        # Compute raw probabilities
+        p_beat = base_beat / total
+        p_meet = base_meet / total
+        p_miss = base_miss / total
+        
+        # Clamp each to >= 0 (remove upper clamping)
+        p_beat = max(0.0, p_beat)
+        p_meet = max(0.0, p_meet)
+        p_miss = max(0.0, p_miss)
+        
+        # Renormalize so they sum exactly to 1
+        sum_p = p_beat + p_meet + p_miss
+        if sum_p > 0:
+            beat = p_beat / sum_p
+            meet = p_meet / sum_p
+            miss = p_miss / sum_p
+        else:
+            # Fallback to default distribution
+            beat, meet, miss = 0.33, 0.34, 0.33
     else:
         beat, meet, miss = 0.33, 0.34, 0.33
 

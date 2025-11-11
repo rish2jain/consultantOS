@@ -427,9 +427,13 @@ function JobsPageContent() {
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => {
+                onClick={async () => {
                   setError(null);
-                  Promise.all([fetchActiveJobs(), fetchJobHistory()]);
+                  try {
+                    await Promise.all([fetchActiveJobs(), fetchJobHistory()]);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : String(err));
+                  }
                 }}
                 className="bg-white text-red-700 hover:bg-red-50"
               >

@@ -3,17 +3,26 @@
 ## 1. PROJECT STRUCTURE & TECH STACK
 
 ### Technology Stack
-- **Framework**: Next.js 14.2 (App Router - React 18)
-- **Language**: TypeScript 5.3
-- **Styling**: Tailwind CSS 3.3
+- **Framework**: Next.js 16 (App Router - React 18)
+- **Language**: TypeScript 5.9.2
+- **Styling**: Tailwind CSS 4.0+ (⚠️ **Breaking Changes**: Tailwind CSS 4.0 introduced significant changes since January 2025. See migration notes below)
 - **UI Components**: Custom component library (shadcn-inspired)
 - **Visualization**: D3.js 7.9, Recharts 2.10, Plotly.js
-- **Animation**: Framer Motion 12.23
-- **Data Fetching**: Axios 1.6, TanStack React Query 5.0
-- **Icons**: Lucide React 0.294
-- **Testing**: Jest 29.7, Puppeteer 21.11 (E2E)
+- **Animation**: Framer Motion 12.23.24
+- **Data Fetching**: Axios 1.6, TanStack React Query 5.90.7
+- **Icons**: Lucide React 0.553.0
+- **Testing**: Jest 30.0.0, Puppeteer 24.29.1 (E2E)
 - **Date Handling**: date-fns 2.30
 - **Build**: Next.js built-in (Turbopack)
+
+**Tailwind CSS 4.0 Migration Notes**:
+- Tailwind CSS 4.0 introduced breaking changes in January 2025, including:
+  - New CSS-first configuration approach
+  - Updated plugin system
+  - Changes to custom property handling
+  - Updated color system and opacity syntax
+- Migration guidance: Review [Tailwind CSS 4.0 migration guide](https://tailwindcss.com/docs/upgrade-guide) before upgrading
+- **Current project status**: Intentionally pinned to Tailwind CSS 3.3.0 in package.json for stability. The documented version (4.0+) reflects the latest available version, but the project uses 3.x until migration is completed.
 
 ### Project Version
 - **Version**: 0.4.0

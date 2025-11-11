@@ -630,6 +630,6 @@ MIT License - Part of ConsultantOS Platform
 ## Support
 
 For issues or questions:
-- GitHub Issues: [consultantos/issues](https://github.com/consultantos/issues)
-- Documentation: [docs.consultantos.com](https://docs.consultantos.com)
-- Email: support@consultantos.com
+- GitHub Issues: [Create an issue](https://github.com/rish2jain/consultantOS/issues)
+- Documentation: See project README.md for setup and usage
+- Email: contact@consultantos.com (or use GitHub Issues for support)

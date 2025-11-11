@@ -395,10 +395,20 @@ class TimeSeriesStorage:
             ])
             values = np.array([m.value for m in metrics])
 
-            # Linear regression
-            slope, intercept = np.polyfit(timestamps, values, 1)
-            predicted = slope * timestamps + intercept
-            r_squared = 1 - (np.sum((values - predicted) ** 2) / np.sum((values - np.mean(values)) ** 2))
+            # Check for zero variance in values
+            if np.var(values) == 0 or np.allclose(values, values[0]):
+                # Constant values: slope = 0, intercept = constant value
+                slope = 0.0
+                intercept = float(np.mean(values))
+                predicted = np.full_like(timestamps, intercept)
+                r_squared = 1.0
+            else:
+                # Linear regression
+                slope, intercept = np.polyfit(timestamps, values, 1)
+                predicted = slope * timestamps + intercept
+                ss_res = np.sum((values - predicted) ** 2)
+                ss_tot = np.sum((values - np.mean(values)) ** 2)
+                r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 1.0
 
             # Classify trend
             direction = self._classify_trend_direction(slope, r_squared)

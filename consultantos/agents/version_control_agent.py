@@ -133,14 +133,17 @@ class VersionControlAgent(BaseAgent):
                 "current_version": current_version_id,
                 "total_versions": len(versions)
             }
-        except Exception as e:
-            logger.error(f"Failed to get version history: {e}")
+        except (ValueError, KeyError, AttributeError) as e:
+            logger.error(f"Failed to get version history for report {report_id}: {e}", exc_info=True)
             return {
                 "report_id": report_id,
                 "versions": [],
                 "current_version": None,
                 "total_versions": 0
             }
+        except Exception as e:
+            logger.error(f"Unexpected error getting version history for report {report_id}: {e}", exc_info=True)
+            raise
 
     async def _create_version(
         self,

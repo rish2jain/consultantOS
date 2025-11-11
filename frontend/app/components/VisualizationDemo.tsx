@@ -21,7 +21,8 @@ import type {
  * @component
  */
 export default function VisualizationDemo() {
-  const [activeDemo, setActiveDemo] = useState<'positioning' | 'disruption' | 'decision' | 'health'>('health');
+  type DemoId = 'positioning' | 'disruption' | 'decision' | 'health';
+  const [activeDemo, setActiveDemo] = useState<DemoId>('health');
 
   // Sample data for Competitive Positioning Map
   const positioningData: PositioningData = {
@@ -384,7 +385,11 @@ export default function VisualizationDemo() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveDemo(tab.id as any)}
+                onClick={() => {
+                  if (tab.id === 'health' || tab.id === 'positioning' || tab.id === 'disruption' || tab.id === 'decision') {
+                    setActiveDemo(tab.id);
+                  }
+                }}
                 className={`${
                   activeDemo === tab.id
                     ? 'border-blue-500 text-blue-600'

@@ -22,8 +22,9 @@ from consultantos.models.monitoring import (
 from consultantos.monitoring.intelligence_monitor import IntelligenceMonitor
 from consultantos.auth import get_current_user_id
 from consultantos.utils.sanitize import sanitize_string
-from consultantos.monitoring import logger
+import logging
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/monitors",

@@ -14,10 +14,10 @@ from consultantos.models import (
 )
 from consultantos.auth import get_current_user
 from consultantos.database import get_db_service
-from consultantos.monitoring import get_logger
+import logging
 
 router = APIRouter(prefix="/custom-frameworks", tags=["custom-frameworks"])
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @router.post("", response_model=CustomFramework, status_code=201)

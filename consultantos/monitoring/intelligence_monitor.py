@@ -8,7 +8,7 @@ context-aware alerts for users.
 import asyncio
 import hashlib
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Any
 from uuid import uuid4
 
 from consultantos.models.monitoring import (
@@ -21,10 +21,15 @@ from consultantos.models.monitoring import (
     MonitoringFrequency,
     MonitorStatus,
 )
-from consultantos.orchestrator.analysis_orchestrator import AnalysisOrchestrator
+import logging
+from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
 from consultantos.database import DatabaseService
-from consultantos.cache import CacheService
-from consultantos.monitoring import logger
+# Cache is optional - use get_disk_cache() function if needed
+try:
+    from consultantos.cache import get_disk_cache, get_cache_stats
+except ImportError:
+    get_disk_cache = None
+    get_cache_stats = None
 # Optional monitoring modules (may not exist in all versions)
 try:
     from consultantos.monitoring.anomaly_detector import AnomalyDetector, AnomalyScore
@@ -63,7 +68,7 @@ class IntelligenceMonitor:
         self,
         orchestrator: AnalysisOrchestrator,
         db_service: DatabaseService,
-        cache_service: Optional[CacheService] = None,
+        cache_service: Optional[Any] = None,
     ):
         """
         Initialize intelligence monitor.
@@ -76,7 +81,7 @@ class IntelligenceMonitor:
         self.orchestrator = orchestrator
         self.db = db_service
         self.cache = cache_service
-        self.logger = logger.bind(component="intelligence_monitor")
+        self.logger = logging.getLogger(__name__)
 
         # Initialize root cause analyzer (always enabled)
         self.root_cause_analyzer = RootCauseAnalyzer()

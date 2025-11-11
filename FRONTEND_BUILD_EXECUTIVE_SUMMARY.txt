@@ -95,40 +95,58 @@ DEPLOYMENT STATUS:
                       WHAT NEEDS TO HAPPEN (NEXT 3-4 HOURS)
 ================================================================================
 
-PHASE 1 - CRITICAL (15-30 minutes)
-  [ ] Fix FormulaBuilder.tsx:130 - Escape HTML operators
-  [ ] Fix Input.tsx:54 - Move useId() hook call
-  [ ] Run: npm run build (verify progress)
+PHASE 1 - CRITICAL/MERGE-BLOCKING FIXES (2-3 hours)
+  [ ] Fix FormulaBuilder.tsx:130 - Escape HTML operators (30 min)
+  [ ] Fix Input.tsx:54 - Move useId() hook call (30 min)
+  [ ] Run: npm run build (verify progress) (15 min)
+  [ ] Fix critical runtime errors blocking build (60-90 min)
+  [ ] Verify build succeeds with checks enabled (15 min)
 
-PHASE 2 - TYPE SAFETY (90 minutes)
-  [ ] Replace 102 'any' instances with proper types
-  [ ] Add TypeScript interfaces where needed
-  [ ] Enable stricter type checking
+PHASE 2 - TYPE SAFETY IMPROVEMENTS (3-4 hours)
+  [ ] Replace 102 'any' instances with proper types (2-3 hours)
+  [ ] Add TypeScript interfaces where needed (30 min)
+  [ ] Enable stricter type checking incrementally (30 min)
+  [ ] Run build and fix new type errors (30 min)
 
-PHASE 3 - CLEANUP (50 minutes)
-  [ ] Remove 86 unused imports and variables
-  [ ] Escape 25 HTML entities
-  [ ] Fix 20 hook dependency warnings
+PHASE 3 - CLEANUP AND LINTING (2-3 hours)
+  [ ] Remove 86 unused imports and variables (1 hour)
+  [ ] Escape 25 HTML entities (30 min)
+  [ ] Fix 20 hook dependency warnings (1 hour)
+  [ ] Final lint pass and verification (30 min)
 
-PHASE 4 - VALIDATION (5 minutes)
-  [ ] npm run build should complete with 0 errors
-  [ ] Verify .next/standalone directory created
-  [ ] Check file sizes are reasonable
+PHASE 4 - VALIDATION AND TESTING (1 hour)
+  [ ] npm run build should complete with 0 errors (15 min)
+  [ ] Verify .next/standalone directory created (5 min)
+  [ ] Check file sizes are reasonable (10 min)
+  [ ] Run incremental tests per PR (30 min)
 
-PHASE 5 - LOCAL TESTING (10 minutes)
-  [ ] npm run dev - Test development build
-  [ ] npm start - Test production build
+PHASE 5 - LOCAL TESTING (30 minutes)
+  [ ] npm run dev - Test development build (10 min)
+  [ ] npm start - Test production build (10 min)
+  [ ] Manual smoke testing (10 min)
 
-PHASE 6 - DOCKER TESTING (10 minutes)
-  [ ] docker build - Create container image
-  [ ] docker run - Test container locally
+PHASE 6 - DOCKER TESTING (30 minutes)
+  [ ] docker build - Create container image (15 min)
+  [ ] docker run - Test container locally (15 min)
 
-PHASE 7 - CLOUD RUN DEPLOY (10 minutes)
-  [ ] Update .env.local with production API URL
-  [ ] gcloud run deploy - Deploy to Cloud Run
-  [ ] Verify service health and API connectivity
+PHASE 7 - CLOUD RUN DEPLOY (30 minutes)
+  [ ] Update .env.local with production API URL (5 min)
+  [ ] gcloud run deploy - Deploy to Cloud Run (15 min)
+  [ ] Verify service health and API connectivity (10 min)
 
-TOTAL: 3-4 hours to production-ready deployment
+TOTAL: 6-8 hours to production-ready deployment (split across multiple PRs)
+
+PR BREAKDOWN:
+- PR 1: Critical/merge-blocking fixes only (Phase 1) - 2-3 hours
+- PR 2: Type-safety improvements (Phase 2) - 3-4 hours  
+- PR 3: Cleanup and linting (Phase 3) - 2-3 hours
+- PR 4: Validation, testing, and deployment (Phases 4-7) - 2 hours
+
+ACCEPTANCE CRITERIA PER PR:
+- PR 1: Build succeeds with checks enabled, CI green, no runtime errors
+- PR 2: Type errors reduced significantly, incremental tests pass
+- PR 3: Lint errors resolved, code quality improved
+- PR 4: Full build success, deployment verified, smoke tests pass
 
 ================================================================================
                         TEAM ASSIGNMENTS & TIMELINES

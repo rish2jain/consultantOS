@@ -154,15 +154,29 @@ class InfrastructureMigration:
 
             for metric_name in metric_names:
                 # Fetch all snapshots for this industry
-                # (This is simplified - in production, query by industry)
+                # Query actual snapshots filtered by industry
                 values = []
-
-                # For MVP: Use placeholder data
-                # TODO: Query actual snapshots filtered by industry
+                try:
+                    # Query reports collection for this industry
+                    if hasattr(self.db_service, 'list_reports'):
+                        reports = self.db_service.list_reports(company=None, limit=1000)
+                        for report in reports:
+                            if hasattr(report, 'industry') and report.industry == industry:
+                                # Extract metric value from report metadata
+                                metric_value = None
+                                if hasattr(report, 'framework_analysis') and report.framework_analysis:
+                                    # Try to extract metric from framework analysis
+                                    fw_data = report.framework_analysis
+                                    if isinstance(fw_data, dict):
+                                        metric_value = fw_data.get(metric_name) or fw_data.get(f"{metric_name}_value")
+                                if metric_value is not None and isinstance(metric_value, (int, float)):
+                                    values.append(float(metric_value))
+                except Exception as e:
+                    self.logger.warning(f"Failed to query snapshots for {industry}:{metric_name}: {e}")
 
                 if len(values) < 10:
                     self.logger.warning(
-                        f"Insufficient data for {industry}:{metric_name} benchmark"
+                        f"Insufficient data for {industry}:{metric_name} benchmark (found {len(values)} values, need 10+)"
                     )
                     continue
 

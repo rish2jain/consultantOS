@@ -568,17 +568,21 @@ class PatternLibraryService:
         # For simplicity, use recent data
         recent_values = [v for _, v in metric_data[-10:]]
 
+        std = np.std(recent_values)
+        if std == 0 or np.allclose(recent_values, recent_values[0]):
+            return False, 0.0
+
         if signal.change_type == "increase":
             # Check for upward trend
             trend = np.polyfit(range(len(recent_values)), recent_values, 1)[0]
             if trend > 0:
-                return True, min(1.0, abs(trend) / np.std(recent_values))
+                return True, min(1.0, abs(trend) / std)
 
         elif signal.change_type == "decrease":
             # Check for downward trend
             trend = np.polyfit(range(len(recent_values)), recent_values, 1)[0]
             if trend < 0:
-                return True, min(1.0, abs(trend) / np.std(recent_values))
+                return True, min(1.0, abs(trend) / std)
 
         elif signal.change_type == "stable":
             # Check for stability (low variance)

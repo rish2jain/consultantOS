@@ -89,11 +89,7 @@ from consultantos.models.switching_costs import (
     CreateCommentRequest,
     # Personal KB
     KnowledgeItem,
-<<<<<<< HEAD
-    Timeline,  # Make Timeline available directly
-=======
     Timeline,
->>>>>>> origin/hackathon/critical-fixes
     KnowledgeGraph,
     ConnectionNode,
     ConnectionEdge,
@@ -116,87 +112,117 @@ from consultantos.models.switching_costs import (
     Alert,
     CreateAlertRequest,
 )
-<<<<<<< HEAD
 
-# Enhanced Report Models
-from consultantos.models.enhanced_reports import (
-    EnhancedPortersFiveForces,
-    EnhancedSWOTAnalysis,
-    EnhancedPESTELAnalysis,
-    EnhancedBlueOceanStrategy,
-    ActionableRecommendations,
-    ActionItem,
-    RiskOpportunityMatrix,
-    RiskItem,
-    OpportunityItem,
-    EnhancedStrategicReport,
-    ExecutiveSummaryLayer,
-    DetailedAnalysisLayer,
-    SupportingAppendices,
-    CompetitiveIntelligence,
-    ScenarioPlanning,
-    PriorityLevel,
-    Timeline as EnhancedTimeline,
-    ImpactLevel,
-    ConfidenceLevel,
-)
+# Optional imports for additional models (may not exist after refactor)
+try:
+    from consultantos.models.enhanced_reports import (
+        EnhancedPortersFiveForces,
+        EnhancedSWOTAnalysis,
+        EnhancedPESTELAnalysis,
+        EnhancedBlueOceanStrategy,
+        ActionableRecommendations,
+        ActionItem,
+        RiskOpportunityMatrix,
+        RiskItem,
+        OpportunityItem,
+        EnhancedStrategicReport,
+        ExecutiveSummaryLayer,
+        DetailedAnalysisLayer,
+        SupportingAppendices,
+        CompetitiveIntelligence,
+        ScenarioPlanning,
+        PriorityLevel,
+        Timeline as EnhancedTimeline,
+        ImpactLevel,
+        ConfidenceLevel,
+    )
+    _has_enhanced_reports = True
+except ImportError:
+    _has_enhanced_reports = False
 
-# Financial Indicators Models
-from consultantos.models.financial_indicators import (
-    TechnicalIndicators,
-    SectorPerformance,
-    EconomicIndicators,
-    ComprehensiveFinancialData,
-)
+try:
+    from consultantos.models.financial_indicators import (
+        TechnicalIndicators,
+        SectorPerformance,
+        EconomicIndicators,
+        ComprehensiveFinancialData,
+    )
+    _has_financial_indicators = True
+except ImportError:
+    _has_financial_indicators = False
 
-# Strategic Intelligence Models
-from consultantos.models.positioning import (
-    CompetitivePosition,
-    PositionTrajectory,
-    StrategicGroup,
-    WhiteSpaceOpportunity,
-    PositionThreat,
-    DynamicPositioning,
-    PositioningAnalysis
-)
+try:
+    from consultantos.models.positioning import (
+        CompetitivePosition,
+        PositionTrajectory,
+        StrategicGroup,
+        WhiteSpaceOpportunity,
+        PositionThreat,
+        DynamicPositioning,
+        PositioningAnalysis
+    )
+    _has_positioning = True
+except ImportError:
+    _has_positioning = False
 
-# Disruption Analysis Models
-from consultantos.models.disruption import (
-    DisruptionThreat,
-    DisruptionAssessment,
-    VulnerabilityBreakdown,
-    TechnologyTrend,
-    CustomerJobMisalignment,
-    BusinessModelShift,
-    DisruptionScoreComponents
-)
-from consultantos.models.decisions import (
-    DecisionUrgency,
-    DecisionCategory,
-    DecisionOption,
-    StrategicDecision,
-    DecisionBrief
-)
-from consultantos.models.systems import (
-    LoopType,
-    CausalLink,
-    FeedbackLoop,
-    LeveragePoint,
-    SystemDynamicsAnalysis
-)
-from consultantos.models.momentum import (
-    MomentumMetric,
-    FlywheelVelocity,
-    MomentumAnalysis
-)
-from consultantos.models.strategic_intelligence import (
-    StrategicHealthScore,
-    EnhancedStrategicReport as SI_EnhancedReport,
-    StrategicInsight,
-    GeographicExpansionOpportunity
-)
-=======
->>>>>>> origin/hackathon/critical-fixes
+try:
+    from consultantos.models.disruption import (
+        DisruptionThreat,
+        DisruptionAssessment,
+        VulnerabilityBreakdown,
+        TechnologyTrend,
+        CustomerJobMisalignment,
+        BusinessModelShift,
+        DisruptionScoreComponents
+    )
+    _has_disruption = True
+except ImportError:
+    _has_disruption = False
+
+try:
+    from consultantos.models.decisions import (
+        DecisionUrgency,
+        DecisionCategory,
+        DecisionOption,
+        StrategicDecision,
+        DecisionBrief
+    )
+    _has_decisions = True
+except ImportError:
+    _has_decisions = False
+
+try:
+    from consultantos.models.systems import (
+        LoopType,
+        CausalLink,
+        FeedbackLoop,
+        LeveragePoint,
+        SystemDynamicsAnalysis
+    )
+    _has_systems = True
+except ImportError:
+    _has_systems = False
+
+try:
+    from consultantos.models.momentum import (
+        MomentumMetric,
+        FlywheelVelocity,
+        MomentumAnalysis
+    )
+    _has_momentum = True
+except ImportError:
+    _has_momentum = False
+
+try:
+    from consultantos.models.strategic_intelligence import (
+        StrategicHealthScore,
+        EnhancedStrategicReport as SI_EnhancedReport,
+        StrategicInsight,
+        GeographicExpansionOpportunity
+    )
+    _has_strategic_intelligence = True
+except ImportError:
+    _has_strategic_intelligence = False
 
 __all__ = [
     # Core models from models.py
@@ -279,70 +305,92 @@ __all__ = [
     "DigestFrequency",
     "Alert",
     "CreateAlertRequest",
-<<<<<<< HEAD
-    # Enhanced Reports
-    "EnhancedPortersFiveForces",
-    "EnhancedSWOTAnalysis",
-    "EnhancedPESTELAnalysis",
-    "EnhancedBlueOceanStrategy",
-    "ActionableRecommendations",
-    "ActionItem",
-    "RiskOpportunityMatrix",
-    "RiskItem",
-    "OpportunityItem",
-    "EnhancedStrategicReport",
-    "ExecutiveSummaryLayer",
-    "DetailedAnalysisLayer",
-    "SupportingAppendices",
-    "CompetitiveIntelligence",
-    "ScenarioPlanning",
-    "PriorityLevel",
-    "EnhancedTimeline",
-    "ImpactLevel",
-    "ConfidenceLevel",
-    # Financial Indicators
-    "TechnicalIndicators",
-    "SectorPerformance",
-    "EconomicIndicators",
-    "ComprehensiveFinancialData",
-    # Strategic Intelligence - Positioning
-    "CompetitivePosition",
-    "PositionTrajectory",
-    "StrategicGroup",
-    "WhiteSpaceOpportunity",
-    "PositionThreat",
-    "DynamicPositioning",
-    "PositioningAnalysis",
-    # Strategic Intelligence - Disruption
-    "DisruptionThreat",
-    "VulnerabilityBreakdown",
-    "TechnologyTrend",
-    "CustomerJobMisalignment",
-    "BusinessModelShift",
-    "DisruptionAssessment",
-    "DisruptionScoreComponents",
-    # Strategic Intelligence - Decisions
-    "DecisionUrgency",
-    "DecisionCategory",
-    "DecisionOption",
-    "StrategicDecision",
-    "DecisionBrief",
-    # Strategic Intelligence - Systems
-    "LoopType",
-    "CausalLink",
-    "FeedbackLoop",
-    "LeveragePoint",
-    "SystemDynamicsAnalysis",
-    # Strategic Intelligence - Momentum
-    "MomentumMetric",
-    "FlywheelVelocity",
-    "MomentumAnalysis",
-    # Strategic Intelligence - Reports
-    "StrategicHealthScore",
-    "SI_EnhancedReport",
-    "StrategicInsight",
-    "GeographicExpansionOpportunity",
-=======
->>>>>>> origin/hackathon/critical-fixes
 ]
+
+# Conditionally add optional models to __all__
+if _has_enhanced_reports:
+    __all__.extend([
+        "EnhancedPortersFiveForces",
+        "EnhancedSWOTAnalysis",
+        "EnhancedPESTELAnalysis",
+        "EnhancedBlueOceanStrategy",
+        "ActionableRecommendations",
+        "ActionItem",
+        "RiskOpportunityMatrix",
+        "RiskItem",
+        "OpportunityItem",
+        "EnhancedStrategicReport",
+        "ExecutiveSummaryLayer",
+        "DetailedAnalysisLayer",
+        "SupportingAppendices",
+        "CompetitiveIntelligence",
+        "ScenarioPlanning",
+        "PriorityLevel",
+        "EnhancedTimeline",
+        "ImpactLevel",
+        "ConfidenceLevel",
+    ])
+
+if _has_financial_indicators:
+    __all__.extend([
+        "TechnicalIndicators",
+        "SectorPerformance",
+        "EconomicIndicators",
+        "ComprehensiveFinancialData",
+    ])
+
+if _has_positioning:
+    __all__.extend([
+        "CompetitivePosition",
+        "PositionTrajectory",
+        "StrategicGroup",
+        "WhiteSpaceOpportunity",
+        "PositionThreat",
+        "DynamicPositioning",
+        "PositioningAnalysis",
+    ])
+
+if _has_disruption:
+    __all__.extend([
+        "DisruptionThreat",
+        "DisruptionAssessment",
+        "VulnerabilityBreakdown",
+        "TechnologyTrend",
+        "CustomerJobMisalignment",
+        "BusinessModelShift",
+        "DisruptionScoreComponents",
+    ])
+
+if _has_decisions:
+    __all__.extend([
+        "DecisionUrgency",
+        "DecisionCategory",
+        "DecisionOption",
+        "StrategicDecision",
+        "DecisionBrief",
+    ])
+
+if _has_systems:
+    __all__.extend([
+        "LoopType",
+        "CausalLink",
+        "FeedbackLoop",
+        "LeveragePoint",
+        "SystemDynamicsAnalysis",
+    ])
+
+if _has_momentum:
+    __all__.extend([
+        "MomentumMetric",
+        "FlywheelVelocity",
+        "MomentumAnalysis",
+    ])
+
+if _has_strategic_intelligence:
+    __all__.extend([
+        "StrategicHealthScore",
+        "SI_EnhancedReport",
+        "StrategicInsight",
+        "GeographicExpansionOpportunity",
+    ])
 
