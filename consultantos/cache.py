@@ -1,11 +1,12 @@
 """
 Multi-level caching system for ConsultantOS
 """
+import asyncio
 import hashlib
 import json
 import logging
 from typing import Any, Optional, List, Dict
-from functools import wraps
+from functools import wraps, partial
 try:
     import diskcache
     DISKCACHE_AVAILABLE = True
@@ -99,7 +100,7 @@ def cached_analysis(cache_key_str: str, ttl: Optional[int] = None):
             disk = get_disk_cache()
             if disk is not None:
                 try:
-                    cached_result = disk.get(cache_key_str)
+                    cached_result = await asyncio.to_thread(disk.get, cache_key_str)
                     if cached_result is not None:
                         logger.info(f"Cache hit (disk): {cache_key_str}")
                         return cached_result
@@ -114,12 +115,14 @@ def cached_analysis(cache_key_str: str, ttl: Optional[int] = None):
             if disk is not None:
                 try:
                     ttl_seconds = ttl or settings.cache_ttl_seconds
-                    disk.set(cache_key_str, result, expire=ttl_seconds)
+                    await asyncio.to_thread(
+                        partial(disk.set, cache_key_str, result, expire=ttl_seconds)
+                    )
                     logger.info(f"Cached result (disk): {cache_key_str} (TTL: {ttl_seconds}s)")
                 except Exception as e:
                     logger.warning(f"Cache set failed for key {cache_key_str} (TTL: {ttl_seconds}s): {e}", exc_info=True)
                     # Silently ignore caching errors - function result still returned
-            
+
             return result
         return wrapper
     return decorator
@@ -150,7 +153,8 @@ async def semantic_cache_lookup(
         query_text = f"{company} {' '.join(frameworks)}"
         
         # Search for similar queries
-        results = collection.query(
+        results = await asyncio.to_thread(
+            collection.query,
             query_texts=[query_text],
             n_results=1
         )
@@ -163,13 +167,16 @@ async def semantic_cache_lookup(
             if similarity >= threshold:
                 # Retrieve cached result
                 cached_id = results['ids'][0][0]
-                cached_data = collection.get(ids=[cached_id])
+                cached_data = await asyncio.to_thread(
+                    collection.get,
+                    ids=[cached_id]
+                )
                 
                 if cached_data and 'metadatas' in cached_data and cached_data['metadatas']:
                     cache_key_str = cached_data['metadatas'][0].get('cache_key')
                     if cache_key_str:
                         disk = get_disk_cache()
-                        result = disk.get(cache_key_str)
+                        result = await asyncio.to_thread(disk.get, cache_key_str)
                         if result:
                             logger.info(
                                 f"Cache hit (semantic): {company} "
@@ -207,7 +214,8 @@ async def semantic_cache_store(
         doc_text = f"{company} {' '.join(frameworks)}"
         
         # Store in ChromaDB
-        collection.add(
+        await asyncio.to_thread(
+            collection.add,
             documents=[doc_text],
             ids=[cache_key_str],
             metadatas=[{
@@ -331,4 +339,3 @@ def get_cache_stats() -> Dict[str, Any]:
             pass
     
     return stats
-

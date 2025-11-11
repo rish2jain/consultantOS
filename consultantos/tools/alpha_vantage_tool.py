@@ -7,7 +7,12 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
 from alpha_vantage.timeseries import TimeSeries
 from alpha_vantage.techindicators import TechIndicators
-from alpha_vantage.sectorperformance import SectorPerformances
+try:
+    from alpha_vantage.sectorperformance import SectorPerformances
+    HAS_SECTOR_PERFORMANCE = True
+except ImportError:
+    HAS_SECTOR_PERFORMANCE = False
+    SectorPerformances = None
 import os
 
 from consultantos.utils.circuit_breaker import CircuitBreaker
@@ -92,7 +97,11 @@ class AlphaVantageClient:
             self.enabled = True
             self.ts = TimeSeries(key=self.api_key, output_format='pandas')
             self.ti = TechIndicators(key=self.api_key, output_format='pandas')
-            self.sp = SectorPerformances(key=self.api_key, output_format='json')
+            if HAS_SECTOR_PERFORMANCE:
+                self.sp = SectorPerformances(key=self.api_key, output_format='json')
+            else:
+                self.sp = None
+                logger.warning("Sector performance module not available in alpha_vantage package")
 
     def _call_with_retry(self, func, *args, **kwargs):
         """Call API function with retry and rate limiting"""
@@ -314,7 +323,7 @@ class AlphaVantageClient:
         Returns:
             SectorPerformance object or None if data unavailable
         """
-        if not self.enabled:
+        if not self.enabled or not self.sp:
             return None
 
         start_time = time.time()

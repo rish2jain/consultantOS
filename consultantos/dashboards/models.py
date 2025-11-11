@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class AlertSeverity(str, Enum):
@@ -46,8 +46,8 @@ class Alert(BaseModel):
     action_required: bool = False
     action_url: Optional[str] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "alert_001",
                 "title": "Competitor Price Drop",
@@ -61,6 +61,7 @@ class Alert(BaseModel):
                 "action_url": "/scenarios/pricing"
             }
         }
+    )
 
 
 class Metric(BaseModel):
@@ -78,8 +79,8 @@ class Metric(BaseModel):
     benchmark: Optional[float] = None  # Industry benchmark
     target: Optional[float] = None  # Target value
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "metric_revenue",
                 "name": "Quarterly Revenue",
@@ -95,6 +96,7 @@ class Metric(BaseModel):
                 "target": 30000000.0
             }
         }
+    )
 
 
 class DashboardSection(BaseModel):
@@ -102,15 +104,15 @@ class DashboardSection(BaseModel):
     id: str
     title: str
     type: SectionType
-    data: Dict[str, Any]  # Flexible data structure based on type
+    data: Dict[str, Any] = Field(default_factory=dict)  # Flexible data structure based on type
     last_updated: datetime
     refresh_interval: int = 300  # seconds - default 5 minutes
     order: int = 0  # Display order
     size: str = "medium"  # small, medium, large, full-width
-    config: Dict[str, Any] = {}  # Section-specific configuration
+    config: Dict[str, Any] = Field(default_factory=dict)  # Section-specific configuration
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "section_revenue_trend",
                 "title": "Revenue Trend",
@@ -128,6 +130,7 @@ class DashboardSection(BaseModel):
                 "config": {"show_grid": True, "animate": True}
             }
         }
+    )
 
 
 class LiveDashboard(BaseModel):
@@ -140,14 +143,14 @@ class LiveDashboard(BaseModel):
     last_updated: datetime
     user_id: str
     sections: List[DashboardSection]
-    alerts: List[Alert] = []
-    metrics: List[Metric] = []
+    alerts: List[Alert] = Field(default_factory=list)
+    metrics: List[Metric] = Field(default_factory=list)
     refresh_enabled: bool = True
     auto_refresh_interval: int = 300  # seconds
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "dash_tesla_001",
                 "company": "Tesla",
@@ -164,6 +167,7 @@ class LiveDashboard(BaseModel):
                 "metadata": {"frameworks": ["porter", "swot"], "depth": "standard"}
             }
         }
+    )
 
 
 class DashboardTemplate(BaseModel):
@@ -176,8 +180,8 @@ class DashboardTemplate(BaseModel):
     use_cases: List[str]
     default_refresh_interval: int = 300
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "template_exec",
                 "name": "Executive Summary",
@@ -192,6 +196,7 @@ class DashboardTemplate(BaseModel):
                 "default_refresh_interval": 300
             }
         }
+    )
 
 
 class ScenarioAssumptions(BaseModel):
@@ -202,10 +207,10 @@ class ScenarioAssumptions(BaseModel):
     price_change: float = 0.0  # % price adjustment
     cost_change: float = 0.0  # % cost adjustment
     market_share_target: Optional[float] = None
-    custom_assumptions: Dict[str, Any] = {}
+    custom_assumptions: Dict[str, Any] = Field(default_factory=dict)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "market_growth_rate": 5.0,
                 "competitor_entry": False,
@@ -216,6 +221,7 @@ class ScenarioAssumptions(BaseModel):
                 "custom_assumptions": {"ev_adoption_rate": 15.0}
             }
         }
+    )
 
 
 class ScenarioForecast(BaseModel):
@@ -229,11 +235,11 @@ class ScenarioForecast(BaseModel):
     market_share_forecast: List[float]
     risk_score: float = Field(ge=0.0, le=1.0)
     confidence: float = Field(ge=0.0, le=1.0)
-    key_insights: List[str] = []
+    key_insights: List[str] = Field(default_factory=list)
     created_at: datetime
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "scenario_id": "scenario_001",
                 "company": "Tesla",
@@ -251,6 +257,7 @@ class ScenarioForecast(BaseModel):
                 "created_at": "2025-11-08T10:30:00Z"
             }
         }
+    )
 
 
 class DashboardUpdate(BaseModel):

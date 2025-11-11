@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { monitoringAPI } from '@/lib/api';
 
 // Types matching backend models
 interface MonitoringConfig {
@@ -70,122 +71,94 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<MonitoringStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMonitor, setSelectedMonitor] = useState<Monitor | null>(null);
   const router = useRouter();
+  const loadInFlightRef = useRef(false);
+  const isMountedRef = useRef(true);
+  const hasLoadedRef = useRef(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const loadDashboardData = useCallback(
+    async ({ force = false }: { force?: boolean } = {}) => {
+      if (loadInFlightRef.current) return;
+      loadInFlightRef.current = true;
 
-  // Load dashboard data
-  useEffect(() => {
-    loadDashboardData();
-
-    // Refresh every 30 seconds
-    const interval = setInterval(loadDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  async function loadDashboardData() {
-    try {
-      setLoading(true);
-
-      // Load monitors
-      const monitorsRes = await fetch(`${API_URL}/monitors`, {
-        headers: {
-          'X-API-Key': localStorage.getItem('api_key') || '',
-        },
-      });
-
-      if (!monitorsRes.ok) {
-        throw new Error('Failed to load monitors');
+      if ((force || !hasLoadedRef.current) && isMountedRef.current) {
+        setLoading(true);
       }
 
-      const monitorsData = await monitorsRes.json();
-      setMonitors(monitorsData.monitors || []);
+      try {
+        const [monitorResponse, statsResponse] = await Promise.all([
+          monitoringAPI.list(),
+          monitoringAPI.getDashboardStats().catch(() => null),
+        ]);
 
-      // Load stats
-      const statsRes = await fetch(`${API_URL}/monitors/stats/dashboard`, {
-        headers: {
-          'X-API-Key': localStorage.getItem('api_key') || '',
-        },
-      });
+        if (!isMountedRef.current) return;
 
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData);
-      }
+        const monitorList: Monitor[] = monitorResponse?.monitors ?? [];
+        setMonitors(monitorList);
 
-      // Load recent alerts - use batch endpoint if available, otherwise concurrent fetches
-      if (monitorsData.monitors && monitorsData.monitors.length > 0) {
-        try {
-          // Preferred: Use batch endpoint for better performance
-          const batchRes = await fetch(
-            `${API_URL}/monitors/alerts/recent?limit=10`,
-            {
-              headers: {
-                'X-API-Key': localStorage.getItem('api_key') || '',
-              },
-            }
+        if (statsResponse) {
+          setStats(statsResponse);
+        }
+
+        if (monitorList.length > 0) {
+          const alertsMatrix = await Promise.all(
+            monitorList.map((monitor) =>
+              monitoringAPI
+                .listAlerts(monitor.id, 5)
+                .then((res) => res.alerts || [])
+                .catch(() => [])
+            )
           );
 
-          if (batchRes.ok) {
-            const batchData = await batchRes.json();
-            setRecentAlerts(batchData.alerts || []);
-          } else {
-            // Fallback: Concurrent fetches for all monitors (not just first 5)
-            const apiKey = localStorage.getItem('api_key') || '';
-            const alertPromises = monitorsData.monitors.map((monitor: Monitor) =>
-              fetch(`${API_URL}/monitors/${monitor.id}/alerts?limit=5`, {
-                headers: { 'X-API-Key': apiKey },
-              })
-                .then(async (res) => {
-                  if (!res.ok) return [];
-                  const data = await res.json();
-                  return data.alerts || [];
-                })
-                .catch(() => []) // Return empty array on error
-            );
-
-            // Fetch all alerts concurrently
-            const alertResults = await Promise.all(alertPromises);
-            const allAlerts: Alert[] = alertResults.flat();
-
-            // Sort by created_at descending and limit to 10 most recent
-            allAlerts.sort(
+          if (isMountedRef.current) {
+            const flattened = alertsMatrix.flat();
+            flattened.sort(
               (a, b) =>
                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             );
-
-            setRecentAlerts(allAlerts.slice(0, 10));
+            setRecentAlerts(flattened.slice(0, 10));
           }
-        } catch (err) {
-          // Silently fail - alerts are not critical for dashboard load
-          console.error('Failed to load alerts:', err);
+        } else if (isMountedRef.current) {
           setRecentAlerts([]);
         }
-      }
 
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
-  }
+        if (isMountedRef.current) {
+          setError(null);
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          setError(
+            err instanceof Error ? err.message : 'Failed to load dashboard'
+          );
+          setRecentAlerts([]);
+        }
+      } finally {
+        hasLoadedRef.current = true;
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+        loadInFlightRef.current = false;
+      }
+    },
+    []
+  );
+
+  // Load dashboard data
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadDashboardData({ force: true });
+
+    // Refresh every 30 seconds
+    const interval = setInterval(() => loadDashboardData(), 30000);
+    return () => {
+      isMountedRef.current = false;
+      clearInterval(interval);
+    };
+  }, [loadDashboardData]);
 
   async function handleManualCheck(monitorId: string) {
     try {
-      const res = await fetch(`${API_URL}/monitors/${monitorId}/check`, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': localStorage.getItem('api_key') || '',
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to trigger check');
-      }
-
-      // Refresh dashboard
+      await monitoringAPI.runManualCheck(monitorId);
       await loadDashboardData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to check monitor');
@@ -194,16 +167,7 @@ export default function DashboardPage() {
 
   async function handleMarkAlertRead(alertId: string) {
     try {
-      const res = await fetch(`${API_URL}/monitors/alerts/${alertId}/read`, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': localStorage.getItem('api_key') || '',
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to mark as read');
-      }
+      await monitoringAPI.markAlertRead(alertId);
 
       // Update local state
       setRecentAlerts((prev) =>
@@ -216,20 +180,8 @@ export default function DashboardPage() {
 
   async function handlePauseMonitor(monitorId: string) {
     try {
-      const res = await fetch(`${API_URL}/monitors/${monitorId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': localStorage.getItem('api_key') || '',
-        },
-        body: JSON.stringify({ status: 'paused' }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to pause monitor');
-      }
-
-      await loadDashboardData();
+      await monitoringAPI.updateMonitorStatus(monitorId, 'paused');
+      await loadDashboardData({ force: true });
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to pause monitor');
     }
@@ -237,20 +189,8 @@ export default function DashboardPage() {
 
   async function handleResumeMonitor(monitorId: string) {
     try {
-      const res = await fetch(`${API_URL}/monitors/${monitorId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': localStorage.getItem('api_key') || '',
-        },
-        body: JSON.stringify({ status: 'active' }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to resume monitor');
-      }
-
-      await loadDashboardData();
+      await monitoringAPI.updateMonitorStatus(monitorId, 'active');
+      await loadDashboardData({ force: true });
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to resume monitor');
     }
@@ -298,6 +238,12 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Stats Overview */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

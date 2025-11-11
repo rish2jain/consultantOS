@@ -7,8 +7,8 @@ and managing alerts in the continuous intelligence platform.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
-from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional, Tuple
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class MonitoringFrequency(str, Enum):
@@ -48,6 +48,16 @@ class ChangeType(str, Enum):
 
 class MonitoringConfig(BaseModel):
     """Configuration for a monitoring instance"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "frequency": "daily",
+            "frameworks": ["porter", "swot"],
+            "alert_threshold": 0.75,
+            "notification_channels": ["email", "in_app"],
+            "keywords": ["pricing", "expansion"],
+            "competitors": ["Tesla", "Ford"]
+        }
+    })
 
     frequency: MonitoringFrequency = Field(
         default=MonitoringFrequency.DAILY,
@@ -55,7 +65,7 @@ class MonitoringConfig(BaseModel):
     )
 
     frameworks: List[str] = Field(
-        default=["porter", "swot"],
+        default_factory=lambda: ["porter", "swot"],
         description="Business frameworks to apply in analysis"
     )
 
@@ -67,7 +77,7 @@ class MonitoringConfig(BaseModel):
     )
 
     notification_channels: List[NotificationChannel] = Field(
-        default=[NotificationChannel.EMAIL, NotificationChannel.IN_APP],
+        default_factory=lambda: [NotificationChannel.EMAIL, NotificationChannel.IN_APP],
         description="Channels for alert delivery"
     )
 
@@ -397,4 +407,4 @@ class MonitoringStats(BaseModel):
     total_alerts_24h: int
     unread_alerts: int
     avg_alert_confidence: float
-    top_change_types: List[tuple[str, int]]  # (change_type, count)
+    top_change_types: List[Tuple[str, int]]  # (change_type, count)

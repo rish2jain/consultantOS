@@ -13,11 +13,13 @@ from consultantos.dashboards.models import (
     ScenarioAssumptions,
     ScenarioForecast,
 )
+from consultantos.dashboards.repository import DashboardRepository
 from consultantos.dashboards.service import DashboardService
 from consultantos.dashboards.templates import DASHBOARD_TEMPLATES
 
 __all__ = [
     "Alert",
+    "DashboardRepository",
     "DashboardSection",
     "DashboardService",
     "DashboardTemplate",

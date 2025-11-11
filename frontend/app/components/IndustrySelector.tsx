@@ -29,6 +29,7 @@ const industries = [
   "Transportation",
   "Real Estate",
   "Automotive",
+  "Electric Vehicles",
   "Aerospace",
   "Agriculture",
   "Biotechnology",
@@ -86,9 +87,20 @@ export const IndustrySelector: React.FC<IndustrySelectorProps> = ({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    // Only add listener when dropdown is open
+    if (isOpen) {
+      // Use 'click' instead of 'mousedown' to allow option clicks to process first
+      // Add a small delay to ensure option button clicks are handled before outside click
+      const timeoutId = setTimeout(() => {
+        document.addEventListener("click", handleClickOutside, true);
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener("click", handleClickOutside, true);
+      };
+    }
+  }, [isOpen]);
 
   const handleSelect = (industry: string) => {
     onChange(industry);
@@ -235,7 +247,11 @@ export const IndustrySelector: React.FC<IndustrySelectorProps> = ({
                     <li key={industry}>
                       <button
                         type="button"
-                        onClick={() => handleSelect(industry)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSelect(industry);
+                        }}
                         className={`
                           w-full text-left px-4 py-2 text-sm transition-colors duration-150
                           flex items-center justify-between

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -15,7 +15,6 @@ import {
   DataTable,
   DataTableSkeleton,
   Alert,
-  Spinner,
 } from '@/app/components';
 import { api, APIError } from '@/lib/api';
 import {
@@ -66,22 +65,29 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSampleData, setIsSampleData] = useState(false);
+  const isMountedRef = useRef(true);
 
-  // Load dashboard data
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      if (isMountedRef.current) {
+        setLoading(true);
+        setError(null);
+      }
+
+      const jobsPromise = api.jobs
+        .listJobs({ status: 'pending,running' })
+        .catch((err) => {
+          console.warn('Failed to fetch active jobs:', err);
+          return { jobs: [] };
+        });
 
       let reports: RecentReport[] = [];
       try {
         const reportsResponse = await api.analysis.listReports({ limit: 5, sort_by: 'created_at', order: 'desc' });
         reports = reportsResponse?.reports || [];
-        setIsSampleData(false);
+        if (isMountedRef.current) {
+          setIsSampleData(false);
+        }
       } catch (reportsErr) {
         console.warn('Falling back to sample dashboard reports', reportsErr);
         reports = [
@@ -95,21 +101,13 @@ export default function DashboardPage() {
             created_at: new Date().toISOString(),
           },
         ];
-        setIsSampleData(true);
+        if (isMountedRef.current) {
+          setIsSampleData(true);
+        }
       }
 
-      setRecentReports(reports);
-
-      // Fetch active jobs (handle errors gracefully)
-      let activeJobs = [];
-      try {
-        const jobsResponse = await api.jobs.listJobs({ status: 'pending,running' });
-        activeJobs = jobsResponse?.jobs || [];
-      } catch (err) {
-        // If jobs endpoint fails, just use empty array (non-critical)
-        console.warn('Failed to fetch active jobs:', err);
-        activeJobs = [];
-      }
+      const jobsResponse = await jobsPromise;
+      const activeJobs = jobsResponse?.jobs || [];
 
       // Calculate metrics
       const now = new Date();
@@ -126,6 +124,11 @@ export default function DashboardPage() {
         ? confidenceScores.reduce((sum, score) => sum + score, 0) / confidenceScores.length
         : 0;
 
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      setRecentReports(reports);
       setMetrics({
         total: reports.length,
         active: activeJobs.length,
@@ -134,15 +137,28 @@ export default function DashboardPage() {
       });
     } catch (err) {
       console.error('Dashboard load error:', err);
-      if (err instanceof APIError) {
-        setError(`Reports API unavailable: ${err.message}`);
-      } else {
-        setError('Failed to load dashboard data. Please check your connection and try again.');
+      if (isMountedRef.current) {
+        if (err instanceof APIError) {
+          setError(`Reports API unavailable: ${err.message}`);
+        } else {
+          setError('Failed to load dashboard data. Please check your connection and try again.');
+        }
       }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
+
+  // Load dashboard data
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadDashboard();
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadDashboard]);
 
   // Table columns for recent reports
   const columns = [
@@ -151,9 +167,9 @@ export default function DashboardPage() {
       label: 'Company',
       render: (value: any, report: RecentReport) => (
         <div>
-          <div className="font-semibold text-black" style={{ color: '#000000' }}>{report.company || value || '-'}</div>
+          <div className="font-semibold text-gray-900">{report.company || value || '-'}</div>
           {report.industry && (
-            <div className="text-sm text-gray-800" style={{ color: '#1f2937' }}>{report.industry}</div>
+            <div className="text-sm text-gray-700">{report.industry}</div>
           )}
         </div>
       ),
@@ -176,13 +192,13 @@ export default function DashboardPage() {
       label: 'Date',
       render: (value: any, report: RecentReport) => {
         const dateStr = report.created_at || value;
-        if (!dateStr) return <span style={{ color: '#000000' }}>-</span>;
+        if (!dateStr) return <span className="text-gray-900">-</span>;
         try {
           const date = new Date(dateStr);
-          if (isNaN(date.getTime())) return <span style={{ color: '#000000' }}>-</span>;
-          return <span style={{ color: '#000000' }}>{format(date, 'MMM d, yyyy')}</span>;
+          if (isNaN(date.getTime())) return <span className="text-gray-900">-</span>;
+          return <span className="text-gray-900">{format(date, 'MMM d, yyyy')}</span>;
         } catch {
-          return <span style={{ color: '#000000' }}>-</span>;
+          return <span className="text-gray-900">-</span>;
         }
       },
     },

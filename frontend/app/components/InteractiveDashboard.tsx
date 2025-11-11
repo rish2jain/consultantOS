@@ -7,13 +7,14 @@
  * and responsive grid layout.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
 import { RefreshCw, Download, Settings } from 'lucide-react';
+import { getApiKey } from '@/lib/auth';
 
 // Dynamically import Plotly to avoid SSR issues
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
@@ -66,10 +67,32 @@ export function InteractiveDashboard({ dashboardId, apiUrl = '/api' }: Dashboard
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string | null>(() => getApiKey());
+  const apiKeyRef = useRef(apiKey);
+
+  useEffect(() => {
+    apiKeyRef.current = apiKey;
+  }, [apiKey]);
+
+  const resolveHeaders = useCallback(() => {
+    const key = getApiKey();
+    if (key !== apiKeyRef.current) {
+      apiKeyRef.current = key;
+      setApiKey(key);
+    }
+    return {
+      'Content-Type': 'application/json',
+      ...(key ? { 'X-API-Key': key } : {}),
+    };
+  }, []);
 
   // WebSocket connection for real-time updates
+  const wsPath = apiKey
+    ? `/dashboards/${dashboardId}/ws?api_key=${encodeURIComponent(apiKey)}`
+    : null;
+
   const { lastMessage, isConnected, reconnect } = useWebSocket(
-    `/dashboards/${dashboardId}/ws`,
+    wsPath,
     {
       onMessage: (message) => {
         if (message.type === 'initial' || message.type === 'update') {
@@ -92,15 +115,12 @@ export function InteractiveDashboard({ dashboardId, apiUrl = '/api' }: Dashboard
     }
   );
 
-  // Fetch initial dashboard data
-  useEffect(() => {
-    fetchDashboard();
-  }, [dashboardId]);
-
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${apiUrl}/dashboards/${dashboardId}`);
+      const response = await fetch(`${apiUrl}/dashboards/${dashboardId}`, {
+        headers: resolveHeaders(),
+      });
       if (!response.ok) throw new Error('Failed to fetch dashboard');
       const dashboardData = await response.json();
       setData(dashboardData);
@@ -110,12 +130,18 @@ export function InteractiveDashboard({ dashboardId, apiUrl = '/api' }: Dashboard
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiUrl, dashboardId, resolveHeaders]);
+
+  // Fetch initial dashboard data
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
 
   const refreshDashboard = async () => {
     try {
       const response = await fetch(`${apiUrl}/dashboards/${dashboardId}/refresh`, {
         method: 'POST',
+        headers: resolveHeaders(),
       });
       if (!response.ok) throw new Error('Failed to refresh dashboard');
       const dashboardData = await response.json();

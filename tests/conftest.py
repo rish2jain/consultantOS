@@ -2,9 +2,38 @@
 Test configuration and fixtures for ConsultantOS
 """
 import os
+import warnings
+from pathlib import Path
+
 import pytest
 import vcr as vcrpy
-from pathlib import Path
+
+# Silence noisy third-party deprecation warnings (Pydantic v1 + Instructor)
+warnings.filterwarnings(
+    "ignore",
+    message=".*class-based `config` is deprecated.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    message="Pydantic V1 style `@validator` validators are deprecated.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    message="`min_items` is deprecated and will be removed.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    message="from_gemini is deprecated.*",
+)
+warnings.filterwarnings(
+    "ignore",
+    message="path is deprecated.*",
+    category=DeprecationWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    module="pandera.*",
+)
 
 
 # VCR Configuration

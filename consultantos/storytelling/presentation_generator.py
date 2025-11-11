@@ -3,10 +3,20 @@ Presentation generator for creating PowerPoint slides from narratives.
 """
 import logging
 from typing import List, Dict, Any, Optional
-from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
-from pptx.dml.color import RGBColor
+
+try:
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+    from pptx.enum.text import PP_ALIGN
+    from pptx.dml.color import RGBColor
+    HAS_PPTX = True
+except ImportError:
+    HAS_PPTX = False
+    Presentation = None
+    Inches = None
+    Pt = None
+    PP_ALIGN = None
+    RGBColor = None
 
 from consultantos.models.storytelling import (
     Narrative,
@@ -27,6 +37,11 @@ class PresentationGenerator:
 
     def __init__(self):
         """Initialize presentation generator."""
+        if not HAS_PPTX:
+            raise ImportError(
+                "python-pptx package is required. "
+                "Install with: pip install python-pptx"
+            )
         self.default_width = Inches(10)
         self.default_height = Inches(7.5)
 

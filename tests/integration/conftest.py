@@ -25,7 +25,9 @@ async def test_client() -> AsyncGenerator[AsyncClient, None]:
     Yields:
         Configured AsyncClient for testing API endpoints
     """
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    from httpx import ASGITransport
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
 
 

@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 
 from consultantos.dashboards.models import (
     Alert,
@@ -22,6 +22,7 @@ from consultantos.dashboards.models import (
 from consultantos.dashboards.templates import get_template
 import logging
 from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
+from consultantos.dashboards.repository import DashboardRepository
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,47 @@ logger = logging.getLogger(__name__)
 class DashboardService:
     """Service for managing live dashboards with real-time updates"""
 
-    def __init__(self):
+    def __init__(self, repository: Optional[DashboardRepository] = None):
         self.active_connections: Dict[str, List[WebSocket]] = {}
-        self.dashboards: Dict[str, LiveDashboard] = {}
+        self._refresh_tasks: Dict[str, asyncio.Task] = {}
+        self._refresh_locks: Dict[str, asyncio.Lock] = {}
+        self.repository = repository or DashboardRepository()
+        self.orchestrator = AnalysisOrchestrator()
+
+    def _get_refresh_lock(self, dashboard_id: str) -> asyncio.Lock:
+        lock = self._refresh_locks.get(dashboard_id)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._refresh_locks[dashboard_id] = lock
+        return lock
+
+    def _ensure_refresh_task(self, dashboard_id: str) -> None:
+        task = self._refresh_tasks.get(dashboard_id)
+        if task and not task.done():
+            return
+        self._refresh_tasks[dashboard_id] = asyncio.create_task(
+            self._auto_refresh_loop(dashboard_id)
+        )
+
+    async def _auto_refresh_loop(self, dashboard_id: str) -> None:
+        while True:
+            try:
+                dashboard = await self.get_dashboard(dashboard_id)
+                if not dashboard or not dashboard.refresh_enabled:
+                    await asyncio.sleep(30)
+                    continue
+
+                interval = max(30, dashboard.auto_refresh_interval)
+                await asyncio.sleep(interval)
+                await self._refresh_dashboard_internal(dashboard)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                logger.error(
+                    "dashboard_auto_refresh_failed",
+                    extra={"dashboard_id": dashboard_id, "error": str(exc)}
+                )
+                await asyncio.sleep(30)
 
     async def create_dashboard(
         self,
@@ -81,11 +120,10 @@ class DashboardService:
             }
         )
 
-        # Store dashboard
-        self.dashboards[dashboard_id] = dashboard
-
-        # Perform initial data load
+        # Perform initial data load & persist
         await self._populate_dashboard_data(dashboard)
+        await self.repository.save_dashboard(dashboard)
+        self._ensure_refresh_task(dashboard_id)
 
         logger.info(
             "Dashboard created",
@@ -101,43 +139,38 @@ class DashboardService:
 
     async def get_dashboard(self, dashboard_id: str) -> Optional[LiveDashboard]:
         """Get dashboard by ID"""
-        return self.dashboards.get(dashboard_id)
+        return await self.repository.get_dashboard(dashboard_id)
 
     async def refresh_dashboard(self, dashboard_id: str) -> LiveDashboard:
         """Force refresh of dashboard data"""
-        dashboard = self.dashboards.get(dashboard_id)
+        dashboard = await self.get_dashboard(dashboard_id)
         if not dashboard:
             raise ValueError(f"Dashboard {dashboard_id} not found")
-
-        await self._populate_dashboard_data(dashboard)
-        dashboard.last_updated = datetime.utcnow()
-
-        # Notify connected clients
-        await self._broadcast_update(
-            dashboard_id,
-            DashboardUpdate(
-                dashboard_id=dashboard_id,
-                update_type="full",
-                timestamp=datetime.utcnow(),
-                data=dashboard.model_dump()
-            )
-        )
-
+        self._ensure_refresh_task(dashboard_id)
+        updated = await self._refresh_dashboard_internal(dashboard)
         logger.info("Dashboard refreshed", extra={"dashboard_id": dashboard_id})
-        return dashboard
+        return updated
 
     async def subscribe_to_updates(
         self,
         dashboard_id: str,
-        websocket: WebSocket
+        websocket: WebSocket,
+        user_id: str,
     ):
         """Subscribe to real-time dashboard updates via WebSocket"""
+
+        dashboard = await self.get_dashboard(dashboard_id)
+        if not dashboard or dashboard.user_id != user_id:
+            await websocket.close(code=1008, reason="Unauthorized")
+            return
+
         await websocket.accept()
 
         # Add connection to active connections
         if dashboard_id not in self.active_connections:
             self.active_connections[dashboard_id] = []
         self.active_connections[dashboard_id].append(websocket)
+        self._ensure_refresh_task(dashboard_id)
 
         logger.info(
             "WebSocket connected",
@@ -145,26 +178,23 @@ class DashboardService:
         )
 
         try:
-            # Send initial dashboard state
-            dashboard = await self.get_dashboard(dashboard_id)
-            if dashboard:
-                await websocket.send_json({
-                    "type": "initial",
-                    "data": dashboard.model_dump()
-                })
+            await websocket.send_json({
+                "type": "initial",
+                "data": dashboard.model_dump()
+            })
 
-            # Keep connection alive and send periodic updates
+            # Send lightweight heartbeats to keep the socket alive
             while True:
-                # Check for updates every 5 seconds
-                await asyncio.sleep(5)
-
-                # Refresh dashboard if auto-refresh is enabled
-                dashboard = await self.get_dashboard(dashboard_id)
-                if dashboard and dashboard.refresh_enabled:
-                    time_since_update = (datetime.utcnow() - dashboard.last_updated).seconds
-                    if time_since_update >= dashboard.auto_refresh_interval:
-                        await self.refresh_dashboard(dashboard_id)
-
+                await asyncio.sleep(30)
+                await websocket.send_json({
+                    "type": "heartbeat",
+                    "timestamp": datetime.utcnow().isoformat()
+                })
+        except WebSocketDisconnect:
+            logger.info(
+                "WebSocket disconnected normally",
+                extra={"dashboard_id": dashboard_id}
+            )
         except Exception as e:
             logger.error(
                 "WebSocket error",
@@ -173,11 +203,10 @@ class DashboardService:
         finally:
             # Remove connection on disconnect
             if dashboard_id in self.active_connections:
-                self.active_connections[dashboard_id].remove(websocket)
+                if websocket in self.active_connections[dashboard_id]:
+                    self.active_connections[dashboard_id].remove(websocket)
                 if not self.active_connections[dashboard_id]:
                     del self.active_connections[dashboard_id]
-
-            logger.info("WebSocket disconnected", extra={"dashboard_id": dashboard_id})
 
     async def run_scenario(
         self,
@@ -271,8 +300,7 @@ class DashboardService:
         """Populate dashboard with fresh data from agents"""
         try:
             # Run analysis to get fresh data
-            orchestrator = AnalysisOrchestrator()
-            result = await orchestrator.orchestrate_analysis(
+            result = await self.orchestrator.orchestrate_analysis(
                 company=dashboard.company,
                 industry=dashboard.industry,
                 frameworks=dashboard.metadata.get("frameworks", []),
@@ -297,6 +325,26 @@ class DashboardService:
             )
             # Don't fail - partial data is better than no data
             pass
+
+    async def _refresh_dashboard_internal(self, dashboard: LiveDashboard) -> LiveDashboard:
+        """Refresh dashboard, persist, and notify subscribers."""
+        lock = self._get_refresh_lock(dashboard.id)
+        async with lock:
+            await self._populate_dashboard_data(dashboard)
+            dashboard.last_updated = datetime.utcnow()
+            await self.repository.save_dashboard(dashboard)
+
+            await self._broadcast_update(
+                dashboard.id,
+                DashboardUpdate(
+                    dashboard_id=dashboard.id,
+                    update_type="full",
+                    timestamp=datetime.utcnow(),
+                    data=dashboard.model_dump()
+                )
+            )
+
+            return dashboard
 
     async def _extract_metrics(self, analysis_result: Dict[str, Any]) -> List[Metric]:
         """Extract key metrics from analysis result"""
@@ -424,6 +472,8 @@ class DashboardService:
         # Clean up dead connections
         for websocket in dead_connections:
             self.active_connections[dashboard_id].remove(websocket)
+        if dashboard_id in self.active_connections and not self.active_connections[dashboard_id]:
+            del self.active_connections[dashboard_id]
 
 
 # Singleton instance

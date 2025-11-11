@@ -20,9 +20,9 @@ from consultantos.models.integration import (
     Dashboard,
     Narrative
 )
-from consultantos_core.models import (
+from consultantos.models import (
     FinancialSnapshot,
-    MarketTrendResult,
+    MarketTrends as MarketTrendResult,
     ExecutiveSummary
 )
 
@@ -39,13 +39,14 @@ class TestAgentAvailability:
         assert "all" in agents
 
         # Core agents should always be available
-        assert len(agents["core"]) == 6
+        assert len(agents["core"]) == 7
         assert "ResearchAgent" in agents["core"]
         assert "MarketAgent" in agents["core"]
         assert "FinancialAgent" in agents["core"]
         assert "FrameworkAgent" in agents["core"]
         assert "SynthesisAgent" in agents["core"]
         assert "QualityAgent" in agents["core"]
+        assert "DecisionIntelligenceEngine" in agents["core"]
 
     def test_is_agent_available_core(self):
         """Test checking availability of core agents."""
@@ -76,7 +77,7 @@ class TestDataFlowManager:
             market_cap=800000000000,
             pe_ratio=60.0,
             revenue=80000000000,
-            net_income=15000000000
+            risk_assessment="Moderate"
         )
 
         # Test forecast generation
@@ -87,8 +88,12 @@ class TestDataFlowManager:
         )
 
         # If agent is available, forecast should have data
-        if is_agent_available("EnhancedForecastingAgent"):
-            assert forecast is None or isinstance(forecast, ForecastResult)
+        # The agent may return a dict with success/data structure or a ForecastResult
+        if is_agent_available("EnhancedForecastingAgent") and forecast is not None:
+            assert isinstance(forecast, ForecastResult) or (
+                isinstance(forecast, dict) and 
+                ("success" in forecast or "data" in forecast)
+            )
 
     @pytest.mark.asyncio
     async def test_wargame_from_market_analysis(self):
@@ -188,10 +193,13 @@ class TestAnalysisOrchestrator:
             mock_report.financial_snapshot = None
             mock_report.framework_analysis = None
             mock_report.executive_summary = ExecutiveSummary(
-                summary="Mock analysis",
-                key_findings=["Finding 1"],
-                next_steps=["Step 1"],
-                confidence_score=0.8
+                company_name="Tesla",
+                industry="Electric Vehicles",
+                key_findings=["Finding 1", "Finding 2", "Finding 3"],
+                strategic_recommendation="Continue current strategy",
+                confidence_score=0.8,
+                supporting_evidence=["Evidence 1", "Evidence 2"],
+                next_steps=["Step 1"]
             )
             mock_report.metadata = {}
             mock_execute.return_value = mock_report
@@ -284,7 +292,7 @@ class TestIntegrationEndpoints:
         assert isinstance(result.all_errors, dict)
 
         # Can be serialized
-        result_dict = result.dict()
+        result_dict = result.model_dump()
         assert "analysis_id" in result_dict
         assert "company" in result_dict
         assert "phase1" in result_dict
@@ -300,7 +308,8 @@ class TestPhaseIntegration:
             financial=FinancialSnapshot(
                 ticker="AAPL",
                 current_price=180.0,
-                market_cap=2800000000000
+                market_cap=2800000000000,
+                risk_assessment="Low"
             ),
             market=Mock(spec=MarketTrendResult)
         )
@@ -356,10 +365,13 @@ class TestGracefulDegradation:
             mock_report.financial_snapshot = None
             mock_report.framework_analysis = None
             mock_report.executive_summary = ExecutiveSummary(
-                summary="Test",
-                key_findings=[],
-                next_steps=[],
-                confidence_score=0.7
+                company_name="Test Corp",
+                industry="Testing",
+                key_findings=["Finding 1", "Finding 2", "Finding 3"],
+                strategic_recommendation="Test recommendation",
+                confidence_score=0.7,
+                supporting_evidence=["Evidence 1"],
+                next_steps=["Step 1"]
             )
             mock_report.metadata = {}
             mock_execute.return_value = mock_report
@@ -451,14 +463,18 @@ async def test_end_to_end_integration():
         mock_report.financial_snapshot = FinancialSnapshot(
             ticker="TSLA",
             current_price=250.0,
-            market_cap=800000000000
+            market_cap=800000000000,
+            risk_assessment="Moderate"
         )
         mock_report.framework_analysis = None
         mock_report.executive_summary = ExecutiveSummary(
-            summary="Tesla is positioned as a leader in electric vehicles",
-            key_findings=["Strong brand", "Growing market"],
-            next_steps=["Expand production", "New markets"],
-            confidence_score=0.85
+            company_name="Tesla",
+            industry="Electric Vehicles",
+            key_findings=["Strong brand", "Growing market", "Innovation leader"],
+            strategic_recommendation="Continue expansion strategy",
+            confidence_score=0.85,
+            supporting_evidence=["Market leadership", "Strong financials"],
+            next_steps=["Expand production", "New markets"]
         )
         mock_report.metadata = {}
         mock_execute.return_value = mock_report

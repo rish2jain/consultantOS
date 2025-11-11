@@ -9,10 +9,20 @@ from dataclasses import dataclass
 from enum import Enum
 
 from pydantic import BaseModel, Field
-from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
-from presidio_analyzer.nlp_engine import NlpEngineProvider
-from presidio_anonymizer import AnonymizerEngine
-from presidio_anonymizer.entities import OperatorConfig
+
+try:
+    from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
+    from presidio_analyzer.nlp_engine import NlpEngineProvider
+    from presidio_anonymizer import AnonymizerEngine
+    from presidio_anonymizer.entities import OperatorConfig
+    HAS_PRESIDIO = True
+except ImportError:
+    HAS_PRESIDIO = False
+    AnalyzerEngine = None
+    RecognizerRegistry = None
+    NlpEngineProvider = None
+    AnonymizerEngine = None
+    OperatorConfig = None
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +138,12 @@ class PIIDetector:
             supported_languages: Languages to support (default: ['en'])
             custom_recognizers: Additional custom recognizers to use
         """
+        if not HAS_PRESIDIO:
+            raise ImportError(
+                "presidio-analyzer and presidio-anonymizer packages are required. "
+                "Install with: pip install presidio-analyzer presidio-anonymizer"
+            )
+        
         self.confidence_threshold = confidence_threshold
         self.supported_languages = supported_languages or ['en']
 

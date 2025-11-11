@@ -235,6 +235,40 @@ export const jobsAPI = {
   }),
 };
 
+// Monitoring API
+export const monitoringAPI = {
+  list: (params?: { status?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    const qs = query.toString();
+    return apiRequest(`/monitors${qs ? `?${qs}` : ''}`);
+  },
+
+  getDashboardStats: () => apiRequest('/monitors/stats/dashboard'),
+
+  listAlerts: (monitorId: string, limit = 5) =>
+    apiRequest(`/monitors/${monitorId}/alerts?limit=${limit}`),
+
+  runManualCheck: (monitorId: string) =>
+    apiRequest(`/monitors/${monitorId}/check`, {
+      method: 'POST',
+    }),
+
+  markAlertRead: (alertId: string) =>
+    apiRequest(`/monitors/alerts/${alertId}/read`, {
+      method: 'POST',
+    }),
+
+  updateMonitorStatus: (
+    monitorId: string,
+    status: 'active' | 'paused'
+  ) =>
+    apiRequest(`/monitors/${monitorId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }),
+};
+
 // Shares API
 export const sharesAPI = {
   /**

@@ -17,6 +17,9 @@ from consultantos.agents import (
     is_agent_available
 )
 
+# Initialize logger before any optional imports so we can log failures
+logger = logging.getLogger(__name__)
+
 # Strategic Intelligence agents (Phase 4 - with graceful degradation)
 try:
     from consultantos.agents.positioning_agent import PositioningAgent
@@ -42,9 +45,6 @@ except (ImportError, Exception) as e:
     SystemsAgent = None
     _SYSTEMS_AVAILABLE = False
 from consultantos.cache import cache_key, semantic_cache_lookup, semantic_cache_store
-
-# Initialize logger first
-logger = logging.getLogger(__name__)
 
 # Import monitoring functions from monitoring module (not package)
 # Note: consultantos.monitoring is a package, so we import from the parent and access the .py file
@@ -110,6 +110,28 @@ class AnalysisOrchestrator:
 
         # Phase 5: Decision Intelligence
         self.decision_intelligence = DecisionIntelligenceEngine()
+
+    async def orchestrate_analysis(
+        self,
+        company: str,
+        industry: Optional[str] = None,
+        frameworks: Optional[list[str]] = None,
+        depth: str = "standard",
+        enable_strategic_intelligence: bool = True,
+    ) -> StrategicReport:
+        """Convenience wrapper that builds an AnalysisRequest for callers."""
+
+        request = AnalysisRequest(
+            company=company,
+            industry=industry,
+            frameworks=frameworks or ["porter", "swot", "pestel", "blue_ocean"],
+            depth=depth,
+        )
+
+        return await self.execute(
+            request,
+            enable_strategic_intelligence=enable_strategic_intelligence,
+        )
     
     async def execute(self, request: AnalysisRequest, enable_strategic_intelligence: bool = True) -> StrategicReport:
         """

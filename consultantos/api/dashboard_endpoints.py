@@ -2,10 +2,10 @@
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel
 
-from consultantos.auth import get_current_user
+from consultantos.auth import get_current_user, validate_api_key
 from consultantos.dashboards import (
     DashboardService,
     DashboardTemplate,
@@ -117,10 +117,8 @@ async def get_dashboard(
     Returns current state including all sections, metrics, and alerts.
     """
     dashboard = await service.get_dashboard(dashboard_id)
-    if not dashboard:
+    if not dashboard or dashboard.user_id != user_id:
         raise HTTPException(status_code=404, detail="Dashboard not found")
-
-    # TODO: Add authorization check - verify user owns dashboard
 
     return dashboard
 
@@ -138,8 +136,12 @@ async def refresh_dashboard(
     Connected WebSocket clients will receive the update automatically.
     """
     try:
-        dashboard = await service.refresh_dashboard(dashboard_id)
-        return dashboard
+        dashboard = await service.get_dashboard(dashboard_id)
+        if not dashboard or dashboard.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Dashboard not found")
+
+        refreshed = await service.refresh_dashboard(dashboard_id)
+        return refreshed
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -172,7 +174,17 @@ async def dashboard_websocket(
     }
     """
     try:
-        await service.subscribe_to_updates(dashboard_id, websocket)
+        api_key = websocket.headers.get("x-api-key") or websocket.query_params.get("api_key")
+        user_info = validate_api_key(api_key) if api_key else None
+        if not user_info:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Authentication required")
+            return
+
+        await service.subscribe_to_updates(
+            dashboard_id,
+            websocket,
+            user_id=user_info["user_id"],
+        )
     except WebSocketDisconnect:
         logger.info(
             "WebSocket disconnected normally",
