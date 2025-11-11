@@ -103,20 +103,81 @@ def generate_pdf_report(report: models.StrategicReport, report_id: Optional[str]
         ))
         story.append(PageBreak())
         
-        # Executive Summary
-        story.append(Paragraph("Executive Summary", heading_style))
-        story.append(Paragraph("<b>Key Findings:</b>", styles['Normal']))
-        story.append(Spacer(1, 6))
-        for finding in report.executive_summary.key_findings:
-            story.append(Paragraph(f"• {finding}", styles['Normal']))
+        # ENHANCED EXECUTIVE BRIEF (30-Second Overview)
+        story.append(Paragraph("Executive Brief - 30 Second Overview", heading_style))
+
+        # Strategic Health Score (if available)
+        # Calculate a simple health score from confidence
+        health_score = int(report.executive_summary.confidence_score * 100)
+        health_color = colors.HexColor('#00cc00') if health_score >= 70 else \
+                      colors.HexColor('#ffcc00') if health_score >= 50 else \
+                      colors.HexColor('#cc0000')
+
+        health_data = [[
+            Paragraph(f"<b>STRATEGIC HEALTH</b>", styles['Normal']),
+            Paragraph(f"<font size=24 color='{health_color}'><b>{health_score}/100</b></font>", styles['Normal'])
+        ]]
+        health_table = Table(health_data, colWidths=[4*inch, 2*inch])
+        health_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f0f0f0')),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ]))
+        story.append(health_table)
+        story.append(Spacer(1, 16))
+
+        # Top Insights Section
+        story.append(Paragraph("<b>KEY INSIGHTS (Executive Focus):</b>", styles['Normal']))
+        story.append(Spacer(1, 8))
+
+        # Extract top 3 findings as "insights"
+        for i, finding in enumerate(report.executive_summary.key_findings[:3], 1):
+            insight_style = ParagraphStyle(
+                'Insight',
+                parent=styles['Normal'],
+                leftIndent=20,
+                bulletIndent=10
+            )
+            story.append(Paragraph(f"<b>{i}.</b> {finding}", insight_style))
+            story.append(Spacer(1, 4))
         story.append(Spacer(1, 12))
-        
-        story.append(Paragraph("<b>Strategic Recommendation:</b>", styles['Normal']))
-        story.append(Paragraph(report.executive_summary.strategic_recommendation, styles['Normal']))
-        story.append(Spacer(1, 12))
-        
+
+        # Strategic Recommendation Box
+        rec_style = ParagraphStyle(
+            'Recommendation',
+            parent=styles['Normal'],
+            textColor=colors.HexColor('#0066cc'),
+            fontSize=11,
+            leading=14
+        )
+        story.append(Paragraph("<b>🎯 STRATEGIC RECOMMENDATION:</b>", styles['Normal']))
+        story.append(Spacer(1, 4))
+
+        # Create colored box for recommendation
+        rec_data = [[Paragraph(report.executive_summary.strategic_recommendation, rec_style)]]
+        rec_table = Table(rec_data, colWidths=[6*inch])
+        rec_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#e6f2ff')),
+            ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#0066cc')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        story.append(rec_table)
+        story.append(Spacer(1, 16))
+
+        # Metadata footer
         confidence_pct = f"{report.executive_summary.confidence_score * 100:.0f}%"
-        story.append(Paragraph(f"<b>Analysis Confidence:</b> {confidence_pct}", styles['Normal']))
+        meta_text = f"<font size=9 color=grey>Analysis Confidence: {confidence_pct} | " \
+                   f"Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</font>"
+        story.append(Paragraph(meta_text, styles['Normal']))
+
         story.append(PageBreak())
         
         # Porter's 5 Forces
