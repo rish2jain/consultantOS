@@ -1,6 +1,7 @@
 """
 FastAPI application for ConsultantOS
 """
+
 import asyncio
 import logging
 import time
@@ -63,7 +64,7 @@ except (ImportError, AttributeError, Exception) as e:
         def track_job_status(self, status: str, increment: int = 1) -> None:
             pass
 
-        def track_user_activity(self, user_id: str, action: str) -> None:
+        def track_user_activity(self, action: str) -> None:
             pass
 
         def increment_active_requests(self) -> None:
@@ -204,15 +205,22 @@ async def security_headers_middleware(request: Request, call_next):
     if settings.environment == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-    # Content Security Policy (adjust based on your needs)
-    # Note: Relaxed for development to allow localhost connections
+    # Content Security Policy
+    script_src = ["'self'"]
+    style_src = ["'self'"]
+    connect_src = ["'self'", "https:"]
+    if settings.environment == "development":
+        script_src.extend(["'unsafe-inline'", "'unsafe-eval'"])
+        style_src.append("'unsafe-inline'")
+        connect_src.extend(["http://localhost:*", "http://127.0.0.1:*"])
+
     csp_directives = [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  # Adjust for your frontend
-        "style-src 'self' 'unsafe-inline'",
+        f"script-src {' '.join(script_src)}",
+        f"style-src {' '.join(style_src)}",
         "img-src 'self' data: https:",
         "font-src 'self' data:",
-        "connect-src 'self' http://localhost:* http://127.0.0.1:*",  # Allow localhost connections
+        f"connect-src {' '.join(connect_src)}",
         "frame-ancestors 'none'"
     ]
     response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
@@ -546,6 +554,14 @@ async def analyze_company(
     start_time = datetime.now()
     report_id = None
     
+    # Get user_id from API key if provided
+    user_id = None
+    if api_key:
+        from consultantos.auth import validate_api_key
+        user_info = validate_api_key(api_key)
+        if user_info:
+            user_id = user_info.get("user_id")
+    
     try:
         # Validate and sanitize request
         try:
@@ -554,6 +570,10 @@ async def analyze_company(
             analysis_request.company = sanitize_input(analysis_request.company)
             if analysis_request.industry:
                 analysis_request.industry = sanitize_input(analysis_request.industry)
+            if analysis_request.additional_context:
+                analysis_request.additional_context = sanitize_input(analysis_request.additional_context)
+            if analysis_request.region:
+                analysis_request.region = sanitize_input(analysis_request.region)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=f"Invalid request: {str(e)}")
         
@@ -564,7 +584,8 @@ async def analyze_company(
             request_id=report_id,
             company=analysis_request.company,
             frameworks=analysis_request.frameworks,
-            user_ip=request.client.host or "unknown"
+            user_ip=request.client.host or "unknown",
+            user_id=user_id,
         )
         
         # Execute multi-agent workflow with timeout
@@ -589,6 +610,8 @@ async def analyze_company(
                 log_request_failure(report_id, e)
             except Exception as log_err:
                 logger.error(f"Failed to log request failure: {log_err}")
+            # Log full error details for debugging
+            logger.error(f"Analysis failed for {analysis_request.company}: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
         
         # Generate PDF with error handling
@@ -601,7 +624,11 @@ async def analyze_company(
             frameworks_data = None
             if report.framework_analysis:
                 try:
-                    frameworks_data = report.framework_analysis.model_dump()
+                    # Exclude None values to avoid returning empty framework data
+                    frameworks_data = report.framework_analysis.model_dump(exclude_none=True)
+                    # Only include if at least one framework has data
+                    if not any(frameworks_data.values()):
+                        frameworks_data = None
                 except Exception as e:
                     logger.warning(f"Failed to serialize framework_analysis for response: {e}")
             
@@ -621,12 +648,6 @@ async def analyze_company(
         
         # Store in Cloud Storage (background task)
         storage_service = get_storage_service()
-        user_id = None
-        if api_key:
-            from consultantos.auth import validate_api_key
-            user_info = validate_api_key(api_key)
-            if user_info:
-                user_id = user_info.get("user_id")
         
         background_tasks.add_task(
             upload_and_store_metadata,
@@ -659,7 +680,11 @@ async def analyze_company(
             if report.framework_analysis:
                 try:
                     # Use Pydantic v2 model_dump() for serialization
-                    framework_analysis_dict = report.framework_analysis.model_dump()
+                    # Exclude None values to avoid storing empty framework data
+                    framework_analysis_dict = report.framework_analysis.model_dump(exclude_none=True)
+                    # Only store if at least one framework has data
+                    if not any(framework_analysis_dict.values()):
+                        framework_analysis_dict = None
                 except Exception as e:
                     logger.warning(f"Failed to serialize framework_analysis: {e}", exc_info=True)
                     framework_analysis_dict = None
@@ -688,7 +713,11 @@ async def analyze_company(
         frameworks_data = None
         if report.framework_analysis:
             try:
-                frameworks_data = report.framework_analysis.model_dump()
+                # Exclude None values to avoid returning empty framework data
+                frameworks_data = report.framework_analysis.model_dump(exclude_none=True)
+                # Only include if at least one framework has data
+                if not any(frameworks_data.values()):
+                    frameworks_data = None
             except Exception as e:
                 logger.warning(f"Failed to serialize framework_analysis for response: {e}")
         
@@ -761,12 +790,12 @@ async def upload_and_store_metadata(
             error=str(e),
             exc_info=True
         )
-        # Update metadata with error status
+        # Update metadata with partial_success status since analysis completed but PDF upload failed
         try:
             db_service = get_db_service()
             db_service.update_report_metadata(report_id, {
-                "status": "failed",
-                "error_message": str(e)
+                "status": "partial_success",
+                "error_message": f"PDF upload failed: {str(e)}"
             })
         except Exception as db_error:
             logger.warning(f"Failed to update error status: {db_error}")
@@ -1005,6 +1034,17 @@ async def get_report(
             elif isinstance(metadata, dict):
                 framework_analysis = metadata.get('framework_analysis')
             
+            # Filter out None values from framework_analysis if it exists
+            if framework_analysis and isinstance(framework_analysis, dict):
+                # Remove None values
+                framework_analysis = {
+                    k: v for k, v in framework_analysis.items()
+                    if v is not None
+                }
+                # If all frameworks are None/empty, set to None
+                if not framework_analysis:
+                    framework_analysis = None
+            
             # Handle PDF URL - convert file:// URLs to download endpoint
             report_url = None
             if metadata.pdf_url:
@@ -1063,6 +1103,87 @@ async def get_report(
     except Exception as e:
         logger.error("report_retrieval_failed", report_id=report_id, error=str(e))
         raise HTTPException(status_code=500, detail="Failed to retrieve report")
+
+
+@app.delete("/reports/{report_id}", status_code=200)
+async def delete_report(
+    report_id: str,
+    api_key: Optional[str] = Security(get_api_key, use_cache=False)
+):
+    """
+    Delete a report
+    
+    **Parameters:**
+    - `report_id`: Report identifier
+    
+    **Authentication:**
+    - Optional but recommended. If authenticated, verifies ownership.
+    
+    **Example:**
+    ```
+    DELETE /reports/Tesla_20240101120000
+    ```
+    """
+    try:
+        db_service = get_db_service()
+        if db_service is None:
+            raise HTTPException(status_code=500, detail="Database service not available")
+        
+        # Get report metadata to verify it exists
+        metadata = db_service.get_report_metadata(report_id)
+        if not metadata:
+            raise HTTPException(status_code=404, detail="Report not found")
+        
+        # If API key provided, verify ownership
+        if api_key:
+            try:
+                from consultantos.auth import validate_api_key
+                user_info = validate_api_key(api_key)
+                if user_info:
+                    authenticated_user_id = user_info.get("user_id")
+                    # Check if report belongs to this user
+                    report_user_id = getattr(metadata, 'user_id', None)
+                    if report_user_id and authenticated_user_id != report_user_id:
+                        raise HTTPException(
+                            status_code=403,
+                            detail="You can only delete your own reports"
+                        )
+            except HTTPException:
+                raise
+            except Exception as auth_error:
+                logger.warning(f"Failed to validate API key: {auth_error}")
+                # Continue without auth check if validation fails
+        
+        # Delete report metadata from database
+        success = db_service.delete_report_metadata(report_id)
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to delete report metadata"
+            )
+        
+        # Optionally delete the PDF file from storage
+        try:
+            storage_service = get_storage_service()
+            if storage_service and hasattr(storage_service, 'delete_report'):
+                storage_service.delete_report(report_id)
+                logger.info(f"Deleted report file from storage: {report_id}")
+        except Exception as storage_error:
+            # Log but don't fail if storage deletion fails
+            logger.warning(f"Failed to delete report file from storage: {storage_error}")
+        
+        logger.info(f"report_deleted: report_id={report_id}")
+        return {
+            "success": True,
+            "message": f"Report {report_id} deleted successfully",
+            "report_id": report_id
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"delete_report_failed: report_id={report_id}, error={str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to delete report")
 
 
 @app.get("/reports")
@@ -1327,6 +1448,10 @@ async def analyze_company_async(
             analysis_request.company = sanitize_input(analysis_request.company)
             if analysis_request.industry:
                 analysis_request.industry = sanitize_input(analysis_request.industry)
+            if analysis_request.additional_context:
+                analysis_request.additional_context = sanitize_input(analysis_request.additional_context)
+            if analysis_request.region:
+                analysis_request.region = sanitize_input(analysis_request.region)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=f"Invalid request: {str(e)}")
         
@@ -1345,7 +1470,7 @@ async def analyze_company_async(
         # Track job creation
         metrics.track_job_status("pending", 1)
         if user_id:
-            metrics.track_user_activity(user_id, "job_created")
+            metrics.track_user_activity("job_created")
         
         # Log job enqueued - use format compatible with both structlog and standard logger
         try:
@@ -1366,8 +1491,12 @@ async def analyze_company_async(
             "estimated_completion": "2-5 minutes",
             "message": "Job enqueued. Poll status_url for updates."
         }
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
-        logger.error(f"Failed to enqueue job: {e}", exc_info=True)
+        # Log full error details for debugging
+        logger.error(f"Failed to enqueue job for {analysis_request.company if 'analysis_request' in locals() else 'unknown'}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to enqueue job: {str(e)}")
 
 
