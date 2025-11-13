@@ -8,6 +8,9 @@ from pathlib import Path
 import pytest
 import vcr as vcrpy
 
+TEST_API_KEY = os.environ.get("CONSULTANTOS_TEST_API_KEY", "test_valid_key_123")
+os.environ.setdefault("CONSULTANTOS_TEST_API_KEY", TEST_API_KEY)
+
 # Silence noisy third-party deprecation warnings (Pydantic v1 + Instructor)
 warnings.filterwarnings(
     "ignore",
@@ -38,6 +41,26 @@ warnings.filterwarnings(
 
 # VCR Configuration
 CASSETTES_DIR = Path(__file__).parent / "fixtures" / "vcr_cassettes"
+
+
+@pytest.fixture(scope="session")
+def test_api_key() -> str:
+    """Consistent API key for test traffic."""
+    return TEST_API_KEY
+
+
+@pytest.fixture(autouse=True)
+def mock_api_key_validation(monkeypatch, test_api_key):
+    """Stub API key validation to avoid hitting persistent storage during tests."""
+
+    from consultantos import auth
+
+    def _mock_validate(api_key):
+        if api_key == test_api_key:
+            return {"user_id": "test-user", "key_info": {"source": "tests"}}
+        return None
+
+    monkeypatch.setattr(auth, "validate_api_key", _mock_validate)
 
 
 def scrub_sensitive_data(response):

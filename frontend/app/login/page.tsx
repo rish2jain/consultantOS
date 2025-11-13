@@ -104,18 +104,8 @@ export default function LoginPage() {
         password: formData.password,
       });
 
-      // Store authentication data
-      // SECURITY: API key stored in memory only (not localStorage)
-      // See lib/auth.ts for security details
-      setApiKey(response.access_token);
-      
-      // Store user info in localStorage (non-sensitive data)
-      localStorage.setItem('user', JSON.stringify({
-        id: response.user.user_id,
-        email: response.user.email,
-        name: response.user.name || formData.email.split('@')[0],
-        subscription_tier: response.user.subscription_tier,
-      }));
+      // Store authentication data using helper function
+      storeAuthData(response.access_token, response.user, formData.email.split('@')[0]);
 
       // Store remember me preference
       if (rememberMe) {
@@ -140,6 +130,49 @@ export default function LoginPage() {
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Helper function to store authentication data
+   * Centralizes auth persistence logic for both login and demo mode
+   */
+  const storeAuthData = (accessToken: string, userData: any, nameFallback?: string) => {
+    // setApiKey stores API key in memory only (not localStorage) for security
+    // See lib/auth.ts for implementation details
+    setApiKey(accessToken);
+    
+    // Store user info in localStorage (non-sensitive data)
+    localStorage.setItem('user', JSON.stringify({
+      id: userData.user_id,
+      email: userData.email,
+      name: userData.name || nameFallback || 'User',
+      subscription_tier: userData.subscription_tier,
+      is_demo: userData.is_demo || false,
+    }));
+  };
+
+  /**
+   * Handle demo mode activation
+   */
+  const handleDemoMode = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // Use centralized API client for demo mode
+      const data = await api.users.demoMode();
+
+      // Store authentication data using helper function
+      storeAuthData(data.access_token, data.user, 'Demo User');
+
+      // Redirect to home page
+      router.push('/');
+    } catch (err) {
+      setError('Failed to enter demo mode. Please try again.');
+      console.error('Demo mode error:', err);
     } finally {
       setLoading(false);
     }
@@ -272,8 +305,46 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            {/* Demo Mode Button */}
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                fullWidth
+                disabled={loading}
+                onClick={handleDemoMode}
+                className="border-2 border-dashed border-gray-300 hover:border-primary-400 hover:bg-primary-50"
+              >
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Try Demo Mode
+                </span>
+              </Button>
+              <p className="mt-2 text-xs text-center text-gray-500">
+                Explore the platform without creating an account
+              </p>
+            </div>
+
             {/* Sign Up Link */}
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center border-t border-gray-200 pt-6">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link

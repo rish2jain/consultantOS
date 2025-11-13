@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -62,17 +63,27 @@ export const Badge: React.FC<BadgeProps> = ({
   ].filter(Boolean).join(' ');
 
   return (
-    <span className={classes} {...props}>
+    <motion.span
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ scale: 1.05 }}
+      className={classes}
+      {...props}
+    >
       {dot && (
-        <span
+        <motion.span
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
           className={`w-2 h-2 rounded-full ${dotColors[variant]}`}
           aria-hidden="true"
         />
       )}
       {children}
       {removable && onRemove && (
-        <button
+        <motion.button
           type="button"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
@@ -81,8 +92,8 @@ export const Badge: React.FC<BadgeProps> = ({
           aria-label="Remove"
         >
           <X className="w-3 h-3" />
-        </button>
+        </motion.button>
       )}
-    </span>
+    </motion.span>
   );
 };

@@ -71,6 +71,47 @@ export const CommentNotifications: React.FC<CommentNotificationsProps> = ({
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  // Type guard to check if notification is a CommentNotification
+  const isCommentNotification = (
+    n: notificationAPI.Notification
+  ): n is CommentNotification => {
+    // Check if it's a comment-related notification type
+    if (n.type !== "comment" && n.type !== "reply" && n.type !== "mention") {
+      return false;
+    }
+    // Check if it has the required structure (comment and report objects)
+    // The API might return these as nested objects or in a different format
+    // We'll check for the presence of required fields
+    const notification = n as any;
+    return (
+      typeof notification.comment === "object" &&
+      notification.comment !== null &&
+      typeof notification.comment.id === "string" &&
+      typeof notification.comment.text === "string" &&
+      typeof notification.comment.user === "object" &&
+      notification.comment.user !== null &&
+      typeof notification.comment.user.name === "string" &&
+      typeof notification.comment.created_at === "string" &&
+      typeof notification.report === "object" &&
+      notification.report !== null &&
+      typeof notification.report.id === "string" &&
+      typeof notification.report.title === "string" &&
+      typeof notification.report.company === "string" &&
+      typeof notification.read === "boolean"
+    );
+  };
+
+  // Map API notification to CommentNotification format
+  const mapToCommentNotification = (
+    n: notificationAPI.Notification
+  ): CommentNotification | null => {
+    if (!isCommentNotification(n)) {
+      return null;
+    }
+    // Type guard already confirmed the structure, return directly
+    return n as CommentNotification;
+  };
+
   // Fetch notifications
   const fetchNotificationsData = useCallback(async () => {
     if (!userId) return;
@@ -78,11 +119,14 @@ export const CommentNotifications: React.FC<CommentNotificationsProps> = ({
     try {
       setError(null);
       const data = await notificationAPI.fetchNotifications(userId, apiBaseUrl);
-      // Filter to comment notifications only
-      const commentNotifications = data.filter(
-        (n: notificationAPI.Notification) =>
-          n.type === "comment" || n.type === "reply" || n.type === "mention"
-      ) as CommentNotification[];
+      // Filter to comment notifications only and map to CommentNotification
+      const commentNotifications = data
+        .filter(
+          (n: notificationAPI.Notification) =>
+            n.type === "comment" || n.type === "reply" || n.type === "mention"
+        )
+        .map(mapToCommentNotification)
+        .filter((n): n is CommentNotification => n !== null);
       setNotifications(commentNotifications);
     } catch (err) {
       console.error("Error fetching notifications:", err);
@@ -340,3 +384,5 @@ export const CommentNotifications: React.FC<CommentNotificationsProps> = ({
     </div>
   );
 };
+
+export default CommentNotifications;

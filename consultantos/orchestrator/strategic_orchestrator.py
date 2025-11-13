@@ -60,6 +60,7 @@ class StrategicOrchestrator:
                 frameworks=["porter", "swot"],
                 depth="quick"
             )
+            social_signals = base_result.get("social_signals")
 
             # Run strategic agents in parallel with graceful degradation
             results = await asyncio.gather(
@@ -85,17 +86,25 @@ class StrategicOrchestrator:
                 systems=systems
             )
 
-            # Extract top threats
-            top_threats = self._extract_top_threats(
-                positioning=positioning,
-                disruption=disruption,
-                systems=systems
+        # Extract top threats
+        top_threats = self._extract_top_threats(
+            positioning=positioning,
+            disruption=disruption,
+            systems=systems
+        )
+        if social_signals and social_signals.risk_alerts:
+            top_threats.extend(
+                [f"Community narrative risk: {risk}" for risk in social_signals.risk_alerts[:3]]
             )
 
-            # Extract top opportunities
-            top_opportunities = self._extract_top_opportunities(
-                positioning=positioning,
-                systems=systems
+        # Extract top opportunities
+        top_opportunities = self._extract_top_opportunities(
+            positioning=positioning,
+            systems=systems
+        )
+        if social_signals and social_signals.opportunity_alerts:
+            top_opportunities.extend(
+                [f"Social tailwind: {opp}" for opp in social_signals.opportunity_alerts[:3]]
             )
 
             # Determine critical decision
@@ -115,10 +124,14 @@ class StrategicOrchestrator:
             health_trend = self._determine_health_trend(health_score)
 
             # Generate immediate actions
-            immediate_actions = self._generate_immediate_actions(
-                threats=top_threats,
-                opportunities=top_opportunities,
-                health_score=health_score
+        immediate_actions = self._generate_immediate_actions(
+            threats=top_threats,
+            opportunities=top_opportunities,
+            health_score=health_score
+        )
+        if social_signals and social_signals.narratives:
+            immediate_actions.append(
+                f"Engage community narrative around {social_signals.narratives[0].topic}"
             )
 
             return {
@@ -136,6 +149,7 @@ class StrategicOrchestrator:
                 "system_health_score": system_health_score,
                 "momentum_score": momentum_score,
                 "immediate_actions": immediate_actions,
+                "social_pulse": self._build_social_pulse(social_signals),
             }
 
         except Exception as e:
@@ -205,6 +219,20 @@ class StrategicOrchestrator:
         except Exception as e:
             logger.warning(f"Momentum analysis failed: {e}")
             return None
+
+    def _build_social_pulse(self, social_signals: Optional[Any]) -> Optional[Dict[str, Any]]:
+        """Convert SocialSignalSummary into lightweight dict for API consumers."""
+        if not social_signals:
+            return None
+
+        return {
+            "sentiment": social_signals.sentiment_score,
+            "label": getattr(social_signals, "sentiment_label", "neutral"),
+            "momentum": getattr(social_signals, "momentum", "Mixed"),
+            "top_narratives": [n.topic for n in (social_signals.narratives or [])[:3]],
+            "risk_alerts": (social_signals.risk_alerts or [])[:3],
+            "opportunity_alerts": (social_signals.opportunity_alerts or [])[:3],
+        }
 
     def _calculate_strategic_health(
         self, positioning: Any, disruption: Any, systems: Any

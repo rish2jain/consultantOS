@@ -281,7 +281,7 @@ Provide:
         try:
             insights = await asyncio.to_thread(
                 self.client.chat.completions.create,
-                model="gemini-1.5-flash-002",
+                model="gemini-2.5-flash",  # Updated: gemini-1.5-flash-002 is no longer available
                 response_model=WargamingInsights,
                 messages=[{"role": "user", "content": prompt}],
             )

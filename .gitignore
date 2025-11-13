@@ -86,10 +86,9 @@ dist/*.pdf
 Temp/*.pdf
 *.docx
 *.xlsx
-# Test screenshots and generated images
-tests/e2e/screenshots/
-# Keep specific PDFs if needed (uncomment and list them)
-# !ConsultantOS_Hackathon_Complete.pdf
+# Test videos (Playwright recordings)
+tests/e2e/videos/
+# Demo videos and materials are in hackathon/ folder (git-ignored)
 
 # Node.js
 node_modules/
@@ -109,9 +108,11 @@ archive/
 **/archive/
 docs/archive/
 
-# AI agent cache directories and documentation
+# Hackathon files (submission materials, screenshots, PDFs)
+hackathon/
+
+# AI agent cache directories
 .claude/
 .serena/
-CLAUDE.md
-**/CLAUDE.md
+# Note: CLAUDE.md is kept as it's documentation for AI assistants
 

@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Target, TrendingUp, Globe, Waves, CheckCircle } from "lucide-react";
-import { Card, CardContent } from "@/app/components";
+import { Target, TrendingUp, Globe, Waves, CheckCircle, HelpCircle } from "lucide-react";
+import { Card, CardContent, Tooltip } from "@/app/components";
 
 export interface FrameworkOption {
   id: "porter" | "swot" | "pestel" | "blue_ocean";
@@ -79,13 +79,35 @@ export const FrameworkSelector: React.FC<FrameworkSelectorProps> = ({
 
   return (
     <div>
-      <label
-        id={`${selectorId}-label`}
-        className="block text-sm font-medium text-gray-700 mb-2"
-      >
-        Business Frameworks
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+      <div className="flex items-center gap-2 mb-2">
+        <label
+          id={`${selectorId}-label`}
+          className="block text-sm font-medium text-gray-700"
+        >
+          Business Frameworks
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <Tooltip
+          content={
+            <div className="space-y-1">
+              <p className="font-semibold">Business Frameworks</p>
+              <p className="text-xs">
+                Select one or more strategic analysis frameworks. Each framework provides different insights:
+              </p>
+              <ul className="text-xs list-disc list-inside mt-1 space-y-0.5">
+                <li><strong>Porter's 5 Forces:</strong> Industry competitive analysis</li>
+                <li><strong>SWOT:</strong> Internal strengths & weaknesses, external opportunities & threats</li>
+                <li><strong>PESTEL:</strong> Political, Economic, Social, Technological, Environmental, Legal factors</li>
+                <li><strong>Blue Ocean:</strong> Uncontested market space creation</li>
+              </ul>
+            </div>
+          }
+          placement="right"
+          maxWidth="350px"
+        >
+          <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" aria-label="Help: Business Frameworks" />
+        </Tooltip>
+      </div>
 
       <div
         role="group"

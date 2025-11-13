@@ -1,0 +1,17 @@
+# Requirements for UX Image Analyzer
+# Install with: pip install -r tests/requirements-ux-analyzer.txt
+
+# Core image processing
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# Optional: Advanced computer vision (for better color analysis)
+opencv-python>=4.8.0
+
+# Optional: For Ollama integration (local LLM)
+httpx>=0.25.0  # For HTTP requests to Ollama API
+# ollama>=0.1.0  # Uncomment if you want to use the Python ollama library
+
+# Optional: AI-powered semantic analysis (API mode)
+google-generativeai>=0.3.0
+

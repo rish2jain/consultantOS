@@ -1,6 +1,6 @@
 """
 Conversational Agent MVP for Hackathon
-Minimal chat interface using Gemini 1.5 Flash
+Minimal chat interface using Gemini 2.5 Flash
 """
 import logging
 from typing import Dict, Any

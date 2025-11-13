@@ -161,6 +161,15 @@ export interface ExecutiveBrief {
   last_updated: string;
 }
 
+export interface SocialPulseSnapshot {
+  sentiment: number; // -1 to 1 normalized
+  label: 'positive' | 'negative' | 'neutral';
+  momentum: string;
+  top_narratives: string[];
+  risk_alerts: string[];
+  opportunity_alerts: string[];
+}
+
 export interface StrategicContext {
   positioning: PositioningAnalysis;
   disruption: DisruptionAnalysis;
@@ -242,6 +251,7 @@ export interface StrategicIntelligenceOverview {
   company: string;
   industry: string;
   analysis_date: string;
+  social_pulse?: SocialPulseSnapshot;
 }
 
 // ============================================================================

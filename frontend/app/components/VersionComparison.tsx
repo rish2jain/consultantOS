@@ -363,3 +363,4 @@ const VersionComparison: React.FC<VersionComparisonProps> = ({
 };
 
 export { VersionComparison };
+export default VersionComparison;

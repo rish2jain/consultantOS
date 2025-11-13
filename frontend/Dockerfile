@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -17,11 +17,14 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set build-time environment variable (can be overridden at build time)
-ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+# Default to production API URL for Cloud Run deployments
+ARG NEXT_PUBLIC_API_URL=https://consultantos-api-187550875653.us-central1.run.app
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1
+# Force webpack instead of Turbopack for Next.js 16
+ENV NEXT_PRIVATE_SKIP_TURBO=1
 
 # Build Next.js app
 RUN npm run build
@@ -44,14 +47,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
-# Expose port (Cloud Run will set PORT env var)
+# Expose port (Cloud Run will set PORT env var automatically)
 EXPOSE 8080
 
-ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
+# PORT is set by Cloud Run automatically, don't set it here
 
 # Start Next.js server
-# In standalone mode, the server.js is in the .next/standalone directory
-# But we copied standalone to root, so server.js should be at root
+# In standalone mode, server.js is at the root after copying .next/standalone
 CMD ["node", "server.js"]
 

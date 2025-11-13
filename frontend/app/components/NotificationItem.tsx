@@ -159,3 +159,4 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     </div>
   );
 };
+export default NotificationItem;

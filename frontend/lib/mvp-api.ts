@@ -3,7 +3,10 @@
  * Handles chat and forecast API calls
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://consultantos-api-187550875653.us-central1.run.app'
+    : 'http://localhost:8080');
 
 export interface ChatMessage {
   role: 'user' | 'assistant';

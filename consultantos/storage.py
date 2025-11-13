@@ -47,16 +47,22 @@ if STORAGE_AVAILABLE:
                 client = self._get_client()
                 try:
                     self._bucket = client.bucket(self.bucket_name)
-                    # Attempt to create bucket (will fail if already exists, which is fine)
-                    try:
-                        self._bucket.create()
-                        logger.info(f"Created bucket: {self.bucket_name}")
-                    except google_exceptions.Conflict:
-                        # Bucket already exists (409 Conflict)
-                        logger.debug(f"Bucket {self.bucket_name} already exists")
-                    except Exception as create_error:
-                        # Re-raise any other exceptions
-                        raise
+                    # Check if bucket exists, create if it doesn't
+                    if not self._bucket.exists():
+                        try:
+                            # Attempt to create bucket (requires proper GCP permissions)
+                            self._bucket.create()
+                            logger.info(f"Created bucket: {self.bucket_name}")
+                        except google_exceptions.Conflict:
+                            # Bucket was created by another process
+                            logger.debug(f"Bucket {self.bucket_name} already exists")
+                        except Exception as create_error:
+                            # If bucket creation fails (e.g., no permissions, bucket doesn't exist in project)
+                            # This will be caught by the calling code and fall back to local storage
+                            logger.warning(f"Failed to create bucket {self.bucket_name}: {create_error}")
+                            raise
+                    else:
+                        logger.debug(f"Bucket {self.bucket_name} exists")
                 except Exception as e:
                     logger.error(f"Failed to access bucket {self.bucket_name}: {e}")
                     raise
@@ -259,7 +265,17 @@ def get_storage_service() -> Union[StorageService, LocalFileStorageService]:
             if _storage_service is None:
                 if STORAGE_AVAILABLE and settings.environment != "test":
                     try:
-                        _storage_service = StorageService()
+                        # Try to initialize Cloud Storage
+                        service = StorageService()
+                        # Test bucket access by trying to get the bucket (this will fail if bucket doesn't exist or no permissions)
+                        try:
+                            service._get_bucket()
+                            _storage_service = service
+                            logger.info(f"Using Cloud Storage with bucket: {service.bucket_name}")
+                        except Exception as bucket_error:
+                            # Bucket access failed, fall back to local storage
+                            logger.warning(f"Cloud Storage bucket access failed, falling back to local storage: {bucket_error}")
+                            _storage_service = LocalFileStorageService()
                     except Exception as e:
                         logger.warning(f"Failed to initialize Cloud Storage, falling back to local storage: {e}")
                         _storage_service = LocalFileStorageService()

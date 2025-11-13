@@ -81,7 +81,12 @@ describe('Scenario 9: Frontend Dashboard Testing', () => {
     await page.goto(`${config.frontendUrl}/analysis`, { waitUntil: 'networkidle0' });
     
     // Check for tabs or analysis form
-    const hasTabs = await helpers.elementExists(page, '[role="tab"], button:has-text("Quick"), button:has-text("Batch")');
+    // Check for tabs using valid selectors
+    const hasTabs = await helpers.elementExists(page, '[role="tab"]') ||
+                    await page.evaluate(() => {
+                      const buttons = Array.from(document.querySelectorAll('button'));
+                      return buttons.some(btn => btn.textContent?.includes('Quick') || btn.textContent?.includes('Batch'));
+                    });
     const hasForm = await helpers.elementExists(page, 'input[placeholder*="company" i], input[name="company"]');
     
     expect(hasTabs || hasForm).toBeTruthy();

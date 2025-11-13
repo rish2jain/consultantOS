@@ -1,0 +1,1684 @@
+{
+  "timestamp": "2025-11-12T14:30:05.354491",
+  "total_screenshots_analyzed": 26,
+  "total_screenshots_available": 160,
+  "sampling_strategy": "Representative views (2 per view type)",
+  "results": [
+    {
+      "image_path": "tests/e2e/screenshots/scenario13B-sync-2025-11-08T20-17-44-702Z.png",
+      "timestamp": "2025-11-12T14:11:49.850349",
+      "overall_score": 30.649436203443393,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        {
+          "issue": "Low contrast on placeholder text",
+          "recommendation": "The placeholder text 'Search by company or industry...' has low contrast against the background. Increase the text color's contrast to meet WCAG AA guidelines."
+        },
+        {
+          "issue": "Missing form labels",
+          "recommendation": "The search input field should have a corresponding <label> element for better screen reader support, even if it's visually hidden."
+        },
+        {
+          "issue": "Small text size",
+          "recommendation": "The 'Not logged in' text and footer links are small, which can be difficult for users with visual impairments to read. Increase the font size to at least 14px."
+        }
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        {
+          "recommendation": "Improve visual hierarchy for primary actions",
+          "details": "Make the '+ New Analysis' button more prominent by using a solid background color. This will guide the user to the primary action on the page."
+        },
+        {
+          "recommendation": "Enhance table readability",
+          "details": "For the 'Frameworks' column, instead of truncating with '+1', consider showing the full list in a tooltip on hover to provide more context without cluttering the UI."
+        },
+        {
+          "recommendation": "Design for an empty state",
+          "details": "Create a design for when the reports table is empty. This should include a clear message and a call-to-action to encourage users to create their first report."
+        },
+        {
+          "recommendation": "Improve visual hierarchy for primary actions",
+          "details": "Make the '+ New Analysis' button more prominent by using a solid background color. This will guide the user to the primary action on the page."
+        },
+        {
+          "recommendation": "Enhance table readability",
+          "details": "For the 'Frameworks' column, instead of truncating with '+1', consider showing the full list in a tooltip on hover to provide more context without cluttering the UI."
+        },
+        {
+          "recommendation": "Design for an empty state",
+          "details": "Create a design for when the reports table is empty. This should include a clear message and a call-to-action to encourage users to create their first report."
+        },
+        {
+          "recommendation": "Clarify user status",
+          "details": "Instead of 'Guest' and 'Not logged in', use a single, clear 'Log in' or 'Sign up' button to avoid redundancy and make the call to action clearer."
+        }
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1262
+        ],
+        "aspect_ratio": 1.5213946117274169,
+        "brightness": 249.47621981752948,
+        "contrast": 15.299650440222155,
+        "whitespace_ratio": 0.979752707342842,
+        "visual_hierarchy_score": 0.012285943771719312,
+        "color_contrast_score": 0.11327858737608193,
+        "text_readability_score": 0.09458512096592242,
+        "ui_components_detected": [
+          "Navigation bar",
+          "Search input",
+          "Buttons",
+          "Data table",
+          "Pagination controls",
+          "Checkboxes",
+          "Status badge",
+          "User profile section",
+          "Footer"
+        ],
+        "accessibility_issues": [
+          {
+            "issue": "Low contrast on placeholder text",
+            "recommendation": "The placeholder text 'Search by company or industry...' has low contrast against the background. Increase the text color's contrast to meet WCAG AA guidelines."
+          },
+          {
+            "issue": "Missing form labels",
+            "recommendation": "The search input field should have a corresponding <label> element for better screen reader support, even if it's visually hidden."
+          },
+          {
+            "issue": "Small text size",
+            "recommendation": "The 'Not logged in' text and footer links are small, which can be difficult for users with visual impairments to read. Increase the font size to at least 14px."
+          },
+          {
+            "issue": "Unlabeled action button",
+            "recommendation": "The 'three dots' icon for actions should have an 'aria-label' attribute describing its function, for example, 'aria-label=\"More actions\"'."
+          }
+        ],
+        "design_recommendations": [
+          {
+            "recommendation": "Improve visual hierarchy for primary actions",
+            "details": "Make the '+ New Analysis' button more prominent by using a solid background color. This will guide the user to the primary action on the page."
+          },
+          {
+            "recommendation": "Enhance table readability",
+            "details": "For the 'Frameworks' column, instead of truncating with '+1', consider showing the full list in a tooltip on hover to provide more context without cluttering the UI."
+          },
+          {
+            "recommendation": "Design for an empty state",
+            "details": "Create a design for when the reports table is empty. This should include a clear message and a call-to-action to encourage users to create their first report."
+          },
+          {
+            "recommendation": "Clarify user status",
+            "details": "Instead of 'Guest' and 'Not logged in', use a single, clear 'Log in' or 'Sign up' button to avoid redundancy and make the call to action clearer."
+          }
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario13B-sync-2025-11-08T20-14-10-295Z.png",
+      "timestamp": "2025-11-12T14:12:12.318079",
+      "overall_score": 29.649436203443393,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        "Low contrast: The light gray text on the white background for form labels and descriptions may not meet WCAG AA/AAA contrast ratios.",
+        "Small text size: The text in the navigation bar, form labels, and framework list appears to be small, which can be difficult to read for users with visual impairments.",
+        "Insufficient touch target size: The checkboxes in the 'Analysis Frameworks' section are small and closely packed, which could be difficult for users with motor impairments to select accurately on a touch screen."
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Improve contrast: Use a darker color for text to ensure a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text.",
+        "Increase font size: Increase the base font size for body text and labels to at least 16px to improve readability.",
+        "Increase touch target size: Ensure all interactive elements have a minimum touch target size of 44x44 CSS pixels.",
+        "Improve contrast: Use a darker color for text to ensure a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text.",
+        "Increase font size: Increase the base font size for body text and labels to at least 16px to improve readability.",
+        "Increase touch target size: Ensure all interactive elements have a minimum touch target size of 44x44 CSS pixels.",
+        "Improve visual hierarchy: Make the primary call-to-action, 'Run Analysis', more prominent. Use color, size, and placement to guide the user's attention to the most important elements on the page.",
+        "Consistent button styling: Use a consistent style for all buttons to create a more cohesive user experience. Primary actions ('Run Analysis') should be visually distinct from secondary actions ('Clear Selection')."
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1262
+        ],
+        "aspect_ratio": 1.5213946117274169,
+        "brightness": 249.47621981752948,
+        "contrast": 15.299650440222155,
+        "whitespace_ratio": 0.979752707342842,
+        "visual_hierarchy_score": 0.012285943771719312,
+        "color_contrast_score": 0.11327858737608193,
+        "text_readability_score": 0.09458512096592242,
+        "ui_components_detected": [
+          "Navigation bar with links (Dashboard, Analysis, Frameworks, etc.)",
+          "Login button",
+          "Main title: 'Run New Analysis'",
+          "Form with input fields: 'Analysis Name', 'Analysis Type', 'Description', 'Source Code URL', 'Primary Programming Language', 'Primary Cloud Provider'",
+          "Dropdown/select menus for 'Analysis Type', 'Primary Programming Language', 'Primary Cloud Provider'",
+          "Text area for 'Description'",
+          "Submit button: 'Run Analysis'",
+          "Section title: 'Analysis Frameworks'",
+          "Checkboxes for selecting analysis frameworks",
+          "Dropdown menu: 'Select Preset'",
+          "Button: 'Clear Selection'"
+        ],
+        "accessibility_issues": [
+          "Low contrast: The light gray text on the white background for form labels and descriptions may not meet WCAG AA/AAA contrast ratios.",
+          "Small text size: The text in the navigation bar, form labels, and framework list appears to be small, which can be difficult to read for users with visual impairments.",
+          "Insufficient touch target size: The checkboxes in the 'Analysis Frameworks' section are small and closely packed, which could be difficult for users with motor impairments to select accurately on a touch screen.",
+          "Missing focus indicators: It's not possible to tell from a static image, but it's a common issue. Ensure all interactive elements (links, buttons, form fields, checkboxes) have a clear and visible focus state when navigated via a keyboard.",
+          "Potentially unclear link purpose: The 'Clear Selection' button's purpose is clear, but its styling as a link might be confusing for some users."
+        ],
+        "design_recommendations": [
+          "Improve contrast: Use a darker color for text to ensure a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text.",
+          "Increase font size: Increase the base font size for body text and labels to at least 16px to improve readability.",
+          "Increase touch target size: Ensure all interactive elements have a minimum touch target size of 44x44 CSS pixels.",
+          "Improve visual hierarchy: Make the primary call-to-action, 'Run Analysis', more prominent. Use color, size, and placement to guide the user's attention to the most important elements on the page.",
+          "Consistent button styling: Use a consistent style for all buttons to create a more cohesive user experience. Primary actions ('Run Analysis') should be visually distinct from secondary actions ('Clear Selection').",
+          "Better form layout: Consider a two-column layout for the form to make better use of the available space and reduce the need for vertical scrolling.",
+          "Group related elements: Use visual cues like background colors or borders to group related elements, such as the 'Analysis Frameworks' section, to improve scannability.",
+          "Provide helper text: Add helper text or tooltips to explain the purpose of less obvious form fields, like the 'Select Preset' dropdown."
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-playwright-5-dashboard-2025-11-12T02-16-56-153Z.png",
+      "timestamp": "2025-11-12T14:12:39.156623",
+      "overall_score": 49.78526642538519,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        {
+          "issue": "Low Contrast",
+          "details": "The gray text used for the table body content and the 'Showing 1 to 1 of 1 entries' text appears to have insufficient contrast against the white background, which can be difficult for users with visual impairments to read.",
+          "recommendation": "Use a darker shade of gray for the text to meet WCAG AA contrast ratio guidelines (at least 4.5:1 for normal text)."
+        },
+        {
+          "issue": "Small Text Size",
+          "details": "The text within the data table and the pagination information is small, which can be challenging for users with low vision to read.",
+          "recommendation": "Increase the base font size for the table content and supplementary text to at least 16px."
+        },
+        {
+          "issue": "Ambiguous Action Button",
+          "details": "The 'New' button is generic. Users might not know what will be created without clicking it first.",
+          "recommendation": "Provide a more descriptive label for the button, such as 'New Analysis' or 'New Report', depending on the primary action. If it has multiple options, consider making the most common one the default."
+        }
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)",
+        {
+          "recommendation": "Improve Table Readability",
+          "details": "The data table is dense. The rows are very close to each other, making it hard to scan.",
+          "action": "Increase the vertical padding within table cells and consider using zebra-striping (alternating background colors for rows) to improve scannability and separate rows visually."
+        },
+        {
+          "recommendation": "Enhance Visual Hierarchy",
+          "details": "The primary action button ('New') is visually similar to the navigation links. It doesn't stand out as the main action on the page.",
+          "action": "Use a stronger, contrasting color for the primary 'New' button to draw the user's attention to it as the key call-to-action on the dashboard."
+        },
+        {
+          "recommendation": "Add Confirmation for Destructive Actions",
+          "details": "The 'Delete' action in the table is a destructive action that can lead to data loss if clicked accidentally.",
+          "action": "Implement a confirmation modal/dialog (e.g., 'Are you sure you want to delete this item?') that appears when a user clicks 'Delete'. This provides a safety net and prevents accidental deletions."
+        },
+        {
+          "recommendation": "Improve Table Readability",
+          "details": "The data table is dense. The rows are very close to each other, making it hard to scan.",
+          "action": "Increase the vertical padding within table cells and consider using zebra-striping (alternating background colors for rows) to improve scannability and separate rows visually."
+        },
+        {
+          "recommendation": "Enhance Visual Hierarchy",
+          "details": "The primary action button ('New') is visually similar to the navigation links. It doesn't stand out as the main action on the page.",
+          "action": "Use a stronger, contrasting color for the primary 'New' button to draw the user's attention to it as the key call-to-action on the dashboard."
+        },
+        {
+          "recommendation": "Add Confirmation for Destructive Actions",
+          "details": "The 'Delete' action in the table is a destructive action that can lead to data loss if clicked accidentally.",
+          "action": "Implement a confirmation modal/dialog (e.g., 'Are you sure you want to delete this item?') that appears when a user clicks 'Delete'. This provides a safety net and prevents accidental deletions."
+        },
+        {
+          "recommendation": "Provide More Context in the Dashboard",
+          "details": "The dashboard currently only shows a table of recent items. It could provide a more valuable overview of the system's status.",
+          "action": "Consider adding summary statistics or data visualizations (e.g., charts, graphs) at the top of the dashboard to give users a quick overview of key metrics before they dive into the table details."
+        }
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2086
+        ],
+        "aspect_ratio": 0.9132310642377757,
+        "brightness": 228.7320863415563,
+        "contrast": 59.15049412113135,
+        "whitespace_ratio": 0.8076915721105332,
+        "visual_hierarchy_score": 0.15979632161473326,
+        "color_contrast_score": 0.4029086756829994,
+        "text_readability_score": 0.34594524561507684,
+        "ui_components_detected": [
+          "Navigation bar with links: Dashboard, Analysis, Frameworks, Jobs, Templates, Reports, Analytics, Admin",
+          "Brand/logo: ConsultantOS",
+          "User profile dropdown/menu",
+          "Primary action button with dropdown: 'New'",
+          "Main content title: 'Dashboard'",
+          "Data table with columns: 'ID', 'Name', 'Description', 'Created At', 'Actions'",
+          "Action buttons within the table: 'View', 'Delete'",
+          "Table pagination controls: 'Previous', 'Next'",
+          "Table information text: 'Showing 1 to 1 of 1 entries'"
+        ],
+        "accessibility_issues": [
+          {
+            "issue": "Low Contrast",
+            "details": "The gray text used for the table body content and the 'Showing 1 to 1 of 1 entries' text appears to have insufficient contrast against the white background, which can be difficult for users with visual impairments to read.",
+            "recommendation": "Use a darker shade of gray for the text to meet WCAG AA contrast ratio guidelines (at least 4.5:1 for normal text)."
+          },
+          {
+            "issue": "Small Text Size",
+            "details": "The text within the data table and the pagination information is small, which can be challenging for users with low vision to read.",
+            "recommendation": "Increase the base font size for the table content and supplementary text to at least 16px."
+          },
+          {
+            "issue": "Ambiguous Action Button",
+            "details": "The 'New' button is generic. Users might not know what will be created without clicking it first.",
+            "recommendation": "Provide a more descriptive label for the button, such as 'New Analysis' or 'New Report', depending on the primary action. If it has multiple options, consider making the most common one the default."
+          }
+        ],
+        "design_recommendations": [
+          {
+            "recommendation": "Improve Table Readability",
+            "details": "The data table is dense. The rows are very close to each other, making it hard to scan.",
+            "action": "Increase the vertical padding within table cells and consider using zebra-striping (alternating background colors for rows) to improve scannability and separate rows visually."
+          },
+          {
+            "recommendation": "Enhance Visual Hierarchy",
+            "details": "The primary action button ('New') is visually similar to the navigation links. It doesn't stand out as the main action on the page.",
+            "action": "Use a stronger, contrasting color for the primary 'New' button to draw the user's attention to it as the key call-to-action on the dashboard."
+          },
+          {
+            "recommendation": "Add Confirmation for Destructive Actions",
+            "details": "The 'Delete' action in the table is a destructive action that can lead to data loss if clicked accidentally.",
+            "action": "Implement a confirmation modal/dialog (e.g., 'Are you sure you want to delete this item?') that appears when a user clicks 'Delete'. This provides a safety net and prevents accidental deletions."
+          },
+          {
+            "recommendation": "Provide More Context in the Dashboard",
+            "details": "The dashboard currently only shows a table of recent items. It could provide a more valuable overview of the system's status.",
+            "action": "Consider adding summary statistics or data visualizations (e.g., charts, graphs) at the top of the dashboard to give users a quick overview of key metrics before they dive into the table details."
+          }
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-playwright-5-dashboard-2025-11-12T02-16-28-304Z.png",
+      "timestamp": "2025-11-12T14:13:40.531386",
+      "overall_score": 42.78896553781695,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2086
+        ],
+        "aspect_ratio": 0.9132310642377757,
+        "brightness": 228.73019656100035,
+        "contrast": 59.143717509256966,
+        "whitespace_ratio": 0.8074967977996039,
+        "visual_hierarchy_score": 0.15981662924142817,
+        "color_contrast_score": 0.40285388998009924,
+        "text_readability_score": 0.3459113247962246,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-error-2025-11-10T14-03-30-541Z.png",
+      "timestamp": "2025-11-12T14:14:41.590758",
+      "overall_score": 19.86991085867919,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too little whitespace - layout feels cramped",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Increase padding and margins between elements",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1080
+        ],
+        "aspect_ratio": 1.7777777777777777,
+        "brightness": 34.17865210262346,
+        "contrast": 8.32745085953356,
+        "whitespace_ratio": 0.0,
+        "visual_hierarchy_score": 0.007320924119124776,
+        "color_contrast_score": 0.06232848709143505,
+        "text_readability_score": 0.12373615682952846,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-error-2025-11-10T04-56-34-871Z.png",
+      "timestamp": "2025-11-12T14:15:42.683169",
+      "overall_score": 15.9028125,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too little whitespace - layout feels cramped",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Increase padding and margins between elements",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1080
+        ],
+        "aspect_ratio": 1.7777777777777777,
+        "brightness": 18.0,
+        "contrast": 0.0,
+        "whitespace_ratio": 0.0,
+        "visual_hierarchy_score": 0.0,
+        "color_contrast_score": 0.0,
+        "text_readability_score": 0.042187499999999996,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-2-form-filled-2025-11-08T20-19-51-008Z.png",
+      "timestamp": "2025-11-12T14:15:59.263315",
+      "overall_score": 28.72530623197691,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.4062639918172,
+        "contrast": 22.862853289529244,
+        "whitespace_ratio": 0.94637274201019,
+        "visual_hierarchy_score": 0.017289288464985394,
+        "color_contrast_score": 0.1737744283621061,
+        "text_readability_score": 0.13943991862265262,
+        "ui_components_detected": [],
+        "accessibility_issues": [],
+        "design_recommendations": []
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-2-form-filled-2025-11-08T20-16-53-876Z.png",
+      "timestamp": "2025-11-12T14:16:32.310892",
+      "overall_score": 29.66057947647556,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        {
+          "component": "Color Contrast",
+          "issue": "The light gray text on the white background in the 'Recent Analyses' and 'Helpful Tips' sections may not have sufficient contrast for users with visual impairments. For example, the 'Your most recent analysis requests' and 'No recent analyses yet' text has low contrast."
+        },
+        {
+          "component": "Form Labels",
+          "issue": "While the form fields have labels, the optional fields are only indicated by placeholder text. It would be more accessible to have a clear '(optional)' text next to the label."
+        },
+        {
+          "component": "Focus Indicators",
+          "issue": "It is not possible to determine from a static image, but it's important to ensure that all interactive elements have a clear and visible focus indicator when navigating with a keyboard."
+        }
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)",
+        {
+          "area": "Layout",
+          "recommendation": "The main content area is very wide, which can make it difficult to read. Consider constraining the width of the main content to a maximum of 1200px to improve readability."
+        },
+        {
+          "area": "Visual Hierarchy",
+          "recommendation": "The 'Recent Analyses' and 'Helpful Tips' sections on the right side could be more visually distinct. Using a slightly different background color or a border could help separate them from the main form."
+        },
+        {
+          "area": "User Experience",
+          "recommendation": "For the 'Business Frameworks' selection, consider adding a 'Select All' option to make it easier for users to choose all available frameworks."
+        },
+        {
+          "area": "Layout",
+          "recommendation": "The main content area is very wide, which can make it difficult to read. Consider constraining the width of the main content to a maximum of 1200px to improve readability."
+        },
+        {
+          "area": "Visual Hierarchy",
+          "recommendation": "The 'Recent Analyses' and 'Helpful Tips' sections on the right side could be more visually distinct. Using a slightly different background color or a border could help separate them from the main form."
+        },
+        {
+          "area": "User Experience",
+          "recommendation": "For the 'Business Frameworks' selection, consider adding a 'Select All' option to make it easier for users to choose all available frameworks."
+        },
+        {
+          "area": "User Experience",
+          "recommendation": "The 'Analysis Depth' options are clear, but the estimated time could be more prominent. Consider making the time estimate a larger font size or a different color to draw more attention to it."
+        },
+        {
+          "area": "Feedback",
+          "recommendation": "When a user clicks 'Generate Analysis', provide immediate feedback that the analysis is being processed. A loading spinner or a progress bar would be helpful, especially for the 'Deep Analysis' which takes longer."
+        }
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372537849775,
+        "contrast": 22.777573360471834,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.017111277770613643,
+        "color_contrast_score": 0.17331108177408522,
+        "text_readability_score": 0.1390043383860054,
+        "ui_components_detected": [
+          "Header",
+          "Navigation",
+          "Tabs",
+          "Form",
+          "Text Input",
+          "Dropdown",
+          "Radio Buttons",
+          "Text Area",
+          "Button",
+          "Tooltip",
+          "Card",
+          "Icon"
+        ],
+        "accessibility_issues": [
+          {
+            "component": "Color Contrast",
+            "issue": "The light gray text on the white background in the 'Recent Analyses' and 'Helpful Tips' sections may not have sufficient contrast for users with visual impairments. For example, the 'Your most recent analysis requests' and 'No recent analyses yet' text has low contrast."
+          },
+          {
+            "component": "Form Labels",
+            "issue": "While the form fields have labels, the optional fields are only indicated by placeholder text. It would be more accessible to have a clear '(optional)' text next to the label."
+          },
+          {
+            "component": "Focus Indicators",
+            "issue": "It is not possible to determine from a static image, but it's important to ensure that all interactive elements have a clear and visible focus indicator when navigating with a keyboard."
+          },
+          {
+            "component": "Alternative Text",
+            "issue": "It is not possible to determine from a static image, but all icons and images should have appropriate alternative text for screen readers."
+          }
+        ],
+        "design_recommendations": [
+          {
+            "area": "Layout",
+            "recommendation": "The main content area is very wide, which can make it difficult to read. Consider constraining the width of the main content to a maximum of 1200px to improve readability."
+          },
+          {
+            "area": "Visual Hierarchy",
+            "recommendation": "The 'Recent Analyses' and 'Helpful Tips' sections on the right side could be more visually distinct. Using a slightly different background color or a border could help separate them from the main form."
+          },
+          {
+            "area": "User Experience",
+            "recommendation": "For the 'Business Frameworks' selection, consider adding a 'Select All' option to make it easier for users to choose all available frameworks."
+          },
+          {
+            "area": "User Experience",
+            "recommendation": "The 'Analysis Depth' options are clear, but the estimated time could be more prominent. Consider making the time estimate a larger font size or a different color to draw more attention to it."
+          },
+          {
+            "area": "Feedback",
+            "recommendation": "When a user clicks 'Generate Analysis', provide immediate feedback that the analysis is being processed. A loading spinner or a progress bar would be helpful, especially for the 'Deep Analysis' which takes longer."
+          }
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-5-dashboard-2025-11-08T20-18-31-804Z.png",
+      "timestamp": "2025-11-12T14:17:34.093901",
+      "overall_score": 46.039222261397775,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.01531280177377,
+        "contrast": 64.88658149831451,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16938790127896533,
+        "color_contrast_score": 0.43738719637420015,
+        "text_readability_score": 0.3834788980827832,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-5-dashboard-2025-11-08T20-14-58-539Z.png",
+      "timestamp": "2025-11-12T14:17:53.612246",
+      "overall_score": 51.02382077667276,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 222.93678512545412,
+        "contrast": 64.85155467318626,
+        "whitespace_ratio": 0.7706656031800843,
+        "visual_hierarchy_score": 0.16918830441254412,
+        "color_contrast_score": 0.43706909512785735,
+        "text_readability_score": 0.3834402764517175,
+        "ui_components_detected": [],
+        "accessibility_issues": [],
+        "design_recommendations": []
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9K-navigation-2025-11-08T20-17-35-919Z.png",
+      "timestamp": "2025-11-12T14:18:23.139977",
+      "overall_score": 53.03634692511258,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        "Low contrast between the gray text and light gray background in the table, potentially failing WCAG AA standards.",
+        "The text size for the sidebar navigation and table content is small, which could be difficult for users with visual impairments to read.",
+        "The 'View' button inside the table is generic. For screen reader users, it would be more descriptive if it included the Job ID, for example: 'View Job 123e4567-e89b-12d3-a456-426614174000'."
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)",
+        "Increase the font size of the table data and sidebar links to improve readability.",
+        "Use a higher contrast color for the body text in the table to meet accessibility standards.",
+        "Make the 'Create New Job' button more prominent by using a primary color and a slightly larger size to draw the user's attention to the primary action on the page.",
+        "Increase the font size of the table data and sidebar links to improve readability.",
+        "Use a higher contrast color for the body text in the table to meet accessibility standards.",
+        "Make the 'Create New Job' button more prominent by using a primary color and a slightly larger size to draw the user's attention to the primary action on the page.",
+        "Implement zebra striping (alternating row colors) in the table to improve scannability of job entries.",
+        "Add icons to the 'Status' badges to provide a quicker visual cue of the job status (e.g., a checkmark for 'Completed', a spinner for 'In Progress')."
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1619
+        ],
+        "aspect_ratio": 1.18591723285979,
+        "brightness": 223.01754158516917,
+        "contrast": 64.88154778502077,
+        "whitespace_ratio": 0.7708651816965205,
+        "visual_hierarchy_score": 0.1695358387797972,
+        "color_contrast_score": 0.4373924848911226,
+        "text_readability_score": 0.3834773763335457,
+        "ui_components_detected": [
+          "Navigation Bar",
+          "Sidebar Navigation",
+          "Main Content Area",
+          "Header",
+          "Button",
+          "Table",
+          "Table Header",
+          "Table Body",
+          "Table Row",
+          "Status Badge"
+        ],
+        "accessibility_issues": [
+          "Low contrast between the gray text and light gray background in the table, potentially failing WCAG AA standards.",
+          "The text size for the sidebar navigation and table content is small, which could be difficult for users with visual impairments to read.",
+          "The 'View' button inside the table is generic. For screen reader users, it would be more descriptive if it included the Job ID, for example: 'View Job 123e4567-e89b-12d3-a456-426614174000'."
+        ],
+        "design_recommendations": [
+          "Increase the font size of the table data and sidebar links to improve readability.",
+          "Use a higher contrast color for the body text in the table to meet accessibility standards.",
+          "Make the 'Create New Job' button more prominent by using a primary color and a slightly larger size to draw the user's attention to the primary action on the page.",
+          "Implement zebra striping (alternating row colors) in the table to improve scannability of job entries.",
+          "Add icons to the 'Status' badges to provide a quicker visual cue of the job status (e.g., a checkmark for 'Completed', a spinner for 'In Progress').",
+          "Consider adding a search or filter bar above the table to allow users to easily find specific jobs as the list grows.",
+          "Design an 'empty state' for the table that appears when there are no jobs, guiding the user on how to create their first job."
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9K-navigation-2025-11-08T20-14-01-404Z.png",
+      "timestamp": "2025-11-12T14:19:24.328430",
+      "overall_score": 46.01970167248207,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1619
+        ],
+        "aspect_ratio": 1.18591723285979,
+        "brightness": 222.93313473680598,
+        "contrast": 64.84363518728074,
+        "whitespace_ratio": 0.7708648599958823,
+        "visual_hierarchy_score": 0.1693215804730568,
+        "color_contrast_score": 0.43704858952030506,
+        "text_readability_score": 0.3834344781248248,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario10C-metrics-2025-11-08T19-59-07-576Z.png",
+      "timestamp": "2025-11-12T14:19:42.758959",
+      "overall_score": 51.043423354974394,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.0349451531653,
+        "contrast": 64.89610221254581,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16943909576473007,
+        "color_contrast_score": 0.43747339954292014,
+        "text_readability_score": 0.3834932269773134,
+        "ui_components_detected": [],
+        "accessibility_issues": [],
+        "design_recommendations": []
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario10C-metrics-2025-11-08T19-43-34-480Z.png",
+      "timestamp": "2025-11-12T14:20:10.752972",
+      "overall_score": 52.043423354974394,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        {
+          "issue": "Low Contrast",
+          "details": "The light gray text used for subheadings ('Key Metrics', 'Analyses Over Time') and the labels within the metric cards has insufficient contrast against the white background, which can be difficult for users with visual impairments to read."
+        },
+        {
+          "issue": "Small Text Size",
+          "details": "The text in the 'Recent Activity' table and the labels on the chart axes are small, which may be difficult to read for users with visual impairments."
+        },
+        {
+          "issue": "Missing Chart Labels",
+          "details": "The pie chart slices lack percentage labels, making it difficult to quickly understand the exact distribution of job statuses without tooltips. The line chart is missing explicit labels for the X and Y axes."
+        }
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)",
+        {
+          "recommendation": "Improve Text Contrast",
+          "details": "Use a darker shade of gray for all secondary text and labels to meet WCAG AA contrast ratio standards (at least 4.5:1 for normal text)."
+        },
+        {
+          "recommendation": "Increase Font Size",
+          "details": "Increase the base font size for the table data and chart labels to at least 14px to improve readability."
+        },
+        {
+          "recommendation": "Enhance Chart Readability",
+          "details": "Add explicit percentage labels to the donut chart slices. Add clear, descriptive titles for the X and Y axes on the line chart (e.g., 'Date' and 'Number of Analyses')."
+        },
+        {
+          "recommendation": "Improve Text Contrast",
+          "details": "Use a darker shade of gray for all secondary text and labels to meet WCAG AA contrast ratio standards (at least 4.5:1 for normal text)."
+        },
+        {
+          "recommendation": "Increase Font Size",
+          "details": "Increase the base font size for the table data and chart labels to at least 14px to improve readability."
+        },
+        {
+          "recommendation": "Enhance Chart Readability",
+          "details": "Add explicit percentage labels to the donut chart slices. Add clear, descriptive titles for the X and Y axes on the line chart (e.g., 'Date' and 'Number of Analyses')."
+        },
+        {
+          "recommendation": "Establish Clearer Visual Hierarchy",
+          "details": "Increase the font size and weight of the main page title ('Analytics Dashboard') to make it more prominent than the navigation links, establishing a stronger visual hierarchy."
+        },
+        {
+          "recommendation": "Make Data Actionable",
+          "details": "Convert the 'Job ID' entries in the 'Recent Activity' table into clickable links that navigate the user to a detailed view of that specific job."
+        }
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.0349451531653,
+        "contrast": 64.89610221254581,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16943909576473007,
+        "color_contrast_score": 0.43747339954292014,
+        "text_readability_score": 0.3834932269773134,
+        "ui_components_detected": [
+          "Navigation Bar (Header)",
+          "Sign Out Button",
+          "Side Navigation Menu",
+          "Metric Cards (KPIs)",
+          "Line Chart",
+          "Donut Chart",
+          "Data Table (Recent Activity)"
+        ],
+        "accessibility_issues": [
+          {
+            "issue": "Low Contrast",
+            "details": "The light gray text used for subheadings ('Key Metrics', 'Analyses Over Time') and the labels within the metric cards has insufficient contrast against the white background, which can be difficult for users with visual impairments to read."
+          },
+          {
+            "issue": "Small Text Size",
+            "details": "The text in the 'Recent Activity' table and the labels on the chart axes are small, which may be difficult to read for users with visual impairments."
+          },
+          {
+            "issue": "Missing Chart Labels",
+            "details": "The pie chart slices lack percentage labels, making it difficult to quickly understand the exact distribution of job statuses without tooltips. The line chart is missing explicit labels for the X and Y axes."
+          },
+          {
+            "issue": "Lack of Alt Text",
+            "details": "Assuming this is a web interface, the charts are complex visual elements and would need appropriate alternative text or descriptions for screen reader users to understand the data they represent."
+          }
+        ],
+        "design_recommendations": [
+          {
+            "recommendation": "Improve Text Contrast",
+            "details": "Use a darker shade of gray for all secondary text and labels to meet WCAG AA contrast ratio standards (at least 4.5:1 for normal text)."
+          },
+          {
+            "recommendation": "Increase Font Size",
+            "details": "Increase the base font size for the table data and chart labels to at least 14px to improve readability."
+          },
+          {
+            "recommendation": "Enhance Chart Readability",
+            "details": "Add explicit percentage labels to the donut chart slices. Add clear, descriptive titles for the X and Y axes on the line chart (e.g., 'Date' and 'Number of Analyses')."
+          },
+          {
+            "recommendation": "Establish Clearer Visual Hierarchy",
+            "details": "Increase the font size and weight of the main page title ('Analytics Dashboard') to make it more prominent than the navigation links, establishing a stronger visual hierarchy."
+          },
+          {
+            "recommendation": "Make Data Actionable",
+            "details": "Convert the 'Job ID' entries in the 'Recent Activity' table into clickable links that navigate the user to a detailed view of that specific job."
+          }
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-3-submit-analysis-2025-11-08T20-20-28-563Z.png",
+      "timestamp": "2025-11-12T14:21:12.770986",
+      "overall_score": 23.814174303179417,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.34314159719005,
+        "contrast": 23.163318086042707,
+        "whitespace_ratio": 0.9459307935772734,
+        "visual_hierarchy_score": 0.017314217018253114,
+        "color_contrast_score": 0.17526459125655808,
+        "text_readability_score": 0.14063097576117625,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-3-submit-analysis-2025-11-08T20-16-55-307Z.png",
+      "timestamp": "2025-11-12T14:22:14.197168",
+      "overall_score": 23.814174303179417,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.34314159719005,
+        "contrast": 23.163318086042707,
+        "whitespace_ratio": 0.9459307935772734,
+        "visual_hierarchy_score": 0.017314217018253114,
+        "color_contrast_score": 0.17526459125655808,
+        "text_readability_score": 0.14063097576117625,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-1-analysis-page-2025-11-08T20-19-15-200Z.png",
+      "timestamp": "2025-11-12T14:22:39.264516",
+      "overall_score": 30.710933239284785,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        {
+          "issue": "Low Contrast",
+          "element": "Placeholder text in input fields",
+          "details": "The placeholder text in the 'Analysis Name' and 'Analysis Description' fields has low contrast against the background, making it difficult to read for users with visual impairments."
+        },
+        {
+          "issue": "Missing Labels",
+          "element": "Dropdown/Select",
+          "details": "The dropdown for 'Analysis Type' does not have a visible, persistent label, which can be confusing for screen reader users."
+        },
+        {
+          "issue": "Insufficient Touch Target Size",
+          "element": "Buttons",
+          "details": "The 'Save as Draft' and 'Cancel' buttons are small and placed close together, which could lead to accidental taps on mobile devices."
+        }
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)",
+        {
+          "recommendation": "Improve Input Field Contrast",
+          "details": "Increase the contrast of the placeholder text in all input fields to meet WCAG AA standards (a contrast ratio of at least 4.5:1)."
+        },
+        {
+          "recommendation": "Add Visible Labels to Form Fields",
+          "details": "Add a clear, always-visible label above or to the left of the 'Analysis Type' dropdown to improve clarity and accessibility."
+        },
+        {
+          "recommendation": "Increase Button Size and Spacing",
+          "details": "Increase the size of all buttons to have a minimum touch target of 44x44 pixels. Add more space between the 'Save as Draft' and 'Cancel' buttons to prevent mis-clicks."
+        },
+        {
+          "recommendation": "Improve Input Field Contrast",
+          "details": "Increase the contrast of the placeholder text in all input fields to meet WCAG AA standards (a contrast ratio of at least 4.5:1)."
+        },
+        {
+          "recommendation": "Add Visible Labels to Form Fields",
+          "details": "Add a clear, always-visible label above or to the left of the 'Analysis Type' dropdown to improve clarity and accessibility."
+        },
+        {
+          "recommendation": "Increase Button Size and Spacing",
+          "details": "Increase the size of all buttons to have a minimum touch target of 44x44 pixels. Add more space between the 'Save as Draft' and 'Cancel' buttons to prevent mis-clicks."
+        },
+        {
+          "recommendation": "Provide Clearer Call-to-Action",
+          "details": "Make the primary action button, 'Run Analysis', visually distinct from the secondary actions ('Save as Draft', 'Cancel') by using a solid background color for the primary button and ghost or outline styles for the others."
+        },
+        {
+          "recommendation": "Use a More Structured Layout",
+          "details": "Group related form elements using fieldsets and legends. For example, the 'Analysis Name' and 'Analysis Description' could be in one group, and the 'Analysis Type' in another. This would improve the overall organization of the form."
+        }
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.4392933649838,
+        "contrast": 22.8660832506891,
+        "whitespace_ratio": 0.9471811313107921,
+        "visual_hierarchy_score": 0.01735772612154846,
+        "color_contrast_score": 0.17398500339716336,
+        "text_readability_score": 0.1395099085538335,
+        "ui_components_detected": [
+          "Header",
+          "Navigation Bar",
+          "Main Content Area",
+          "Form",
+          "Text Input Field (for 'Analysis Name')",
+          "Text Area (for 'Analysis Description')",
+          "Dropdown/Select (for 'Analysis Type')",
+          "Button (labeled 'Run Analysis')",
+          "Button (labeled 'Save as Draft')",
+          "Button (labeled 'Cancel')"
+        ],
+        "accessibility_issues": [
+          {
+            "issue": "Low Contrast",
+            "element": "Placeholder text in input fields",
+            "details": "The placeholder text in the 'Analysis Name' and 'Analysis Description' fields has low contrast against the background, making it difficult to read for users with visual impairments."
+          },
+          {
+            "issue": "Missing Labels",
+            "element": "Dropdown/Select",
+            "details": "The dropdown for 'Analysis Type' does not have a visible, persistent label, which can be confusing for screen reader users."
+          },
+          {
+            "issue": "Insufficient Touch Target Size",
+            "element": "Buttons",
+            "details": "The 'Save as Draft' and 'Cancel' buttons are small and placed close together, which could lead to accidental taps on mobile devices."
+          }
+        ],
+        "design_recommendations": [
+          {
+            "recommendation": "Improve Input Field Contrast",
+            "details": "Increase the contrast of the placeholder text in all input fields to meet WCAG AA standards (a contrast ratio of at least 4.5:1)."
+          },
+          {
+            "recommendation": "Add Visible Labels to Form Fields",
+            "details": "Add a clear, always-visible label above or to the left of the 'Analysis Type' dropdown to improve clarity and accessibility."
+          },
+          {
+            "recommendation": "Increase Button Size and Spacing",
+            "details": "Increase the size of all buttons to have a minimum touch target of 44x44 pixels. Add more space between the 'Save as Draft' and 'Cancel' buttons to prevent mis-clicks."
+          },
+          {
+            "recommendation": "Provide Clearer Call-to-Action",
+            "details": "Make the primary action button, 'Run Analysis', visually distinct from the secondary actions ('Save as Draft', 'Cancel') by using a solid background color for the primary button and ghost or outline styles for the others."
+          },
+          {
+            "recommendation": "Use a More Structured Layout",
+            "details": "Group related form elements using fieldsets and legends. For example, the 'Analysis Name' and 'Analysis Description' could be in one group, and the 'Analysis Type' in another. This would improve the overall organization of the form."
+          }
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-1-analysis-page-2025-11-08T20-16-48-896Z.png",
+      "timestamp": "2025-11-12T14:23:10.451829",
+      "overall_score": 29.66058026926262,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        {
+          "issue": "Low Contrast",
+          "details": "The placeholder text in the dropdown menus ('Select a Framework', 'Select a Persona', 'Select a Company') has low contrast against the dark background, making it difficult to read for users with visual impairments."
+        },
+        {
+          "issue": "Missing Form Labels",
+          "details": "The text input and dropdown menus use placeholder text instead of proper <label> elements. This can cause issues for screen reader users who may not get the context of the form field."
+        },
+        {
+          "issue": "Color as Sole Indicator",
+          "details": "The selected radio button ('RAG') is primarily indicated by a change in color. Relying on color alone to convey information can be problematic for users with color blindness."
+        }
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)",
+        {
+          "recommendation": "Improve Contrast",
+          "details": "Increase the contrast ratio for placeholder text and all other UI elements to meet WCAG AA guidelines (at least 4.5:1 for normal text)."
+        },
+        {
+          "recommendation": "Use Proper Labels",
+          "details": "Implement explicit <label> elements for all form fields. For a cleaner look, you can use floating labels that move out of the way when the user starts typing."
+        },
+        {
+          "recommendation": "Enhance Visual Cues",
+          "details": "Add a more distinct visual indicator for the selected radio button, such as a more prominent border or a checkmark icon, to supplement the color change."
+        },
+        {
+          "recommendation": "Improve Contrast",
+          "details": "Increase the contrast ratio for placeholder text and all other UI elements to meet WCAG AA guidelines (at least 4.5:1 for normal text)."
+        },
+        {
+          "recommendation": "Use Proper Labels",
+          "details": "Implement explicit <label> elements for all form fields. For a cleaner look, you can use floating labels that move out of the way when the user starts typing."
+        },
+        {
+          "recommendation": "Enhance Visual Cues",
+          "details": "Add a more distinct visual indicator for the selected radio button, such as a more prominent border or a checkmark icon, to supplement the color change."
+        },
+        {
+          "recommendation": "Standardize Font Sizes",
+          "details": "Ensure all form labels and text have a consistent and readable font size."
+        },
+        {
+          "recommendation": "Clarify Button States",
+          "details": "The 'View Results' button should be disabled or visually de-emphasized until an analysis is complete to guide the user's workflow and prevent confusion."
+        }
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372434129902,
+        "contrast": 22.777575326919287,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.01711127684332915,
+        "color_contrast_score": 0.17331109750131699,
+        "text_readability_score": 0.13900435182600218,
+        "ui_components_detected": [
+          "Navigation Bar",
+          "Heading",
+          "Text Input Field (Business Objective)",
+          "Radio Buttons (RAG, Autonomous)",
+          "Dropdown Menu (Select a Framework)",
+          "Dropdown Menu (Select a Persona)",
+          "Dropdown Menu (Select a Company)",
+          "Button (Start Analysis)",
+          "Button (View Results)"
+        ],
+        "accessibility_issues": [
+          {
+            "issue": "Low Contrast",
+            "details": "The placeholder text in the dropdown menus ('Select a Framework', 'Select a Persona', 'Select a Company') has low contrast against the dark background, making it difficult to read for users with visual impairments."
+          },
+          {
+            "issue": "Missing Form Labels",
+            "details": "The text input and dropdown menus use placeholder text instead of proper <label> elements. This can cause issues for screen reader users who may not get the context of the form field."
+          },
+          {
+            "issue": "Color as Sole Indicator",
+            "details": "The selected radio button ('RAG') is primarily indicated by a change in color. Relying on color alone to convey information can be problematic for users with color blindness."
+          },
+          {
+            "issue": "Text Size",
+            "details": "The labels for the radio buttons ('RAG', 'Autonomous') appear smaller than the surrounding text, which could be difficult for some users to read."
+          }
+        ],
+        "design_recommendations": [
+          {
+            "recommendation": "Improve Contrast",
+            "details": "Increase the contrast ratio for placeholder text and all other UI elements to meet WCAG AA guidelines (at least 4.5:1 for normal text)."
+          },
+          {
+            "recommendation": "Use Proper Labels",
+            "details": "Implement explicit <label> elements for all form fields. For a cleaner look, you can use floating labels that move out of the way when the user starts typing."
+          },
+          {
+            "recommendation": "Enhance Visual Cues",
+            "details": "Add a more distinct visual indicator for the selected radio button, such as a more prominent border or a checkmark icon, to supplement the color change."
+          },
+          {
+            "recommendation": "Standardize Font Sizes",
+            "details": "Ensure all form labels and text have a consistent and readable font size."
+          },
+          {
+            "recommendation": "Clarify Button States",
+            "details": "The 'View Results' button should be disabled or visually de-emphasized until an analysis is complete to guide the user's workflow and prevent confusion."
+          },
+          {
+            "recommendation": "Group Related Controls",
+            "details": "Visually group the 'RAG' and 'Autonomous' radio buttons using a <fieldset> with a <legend> to improve the form's structure and provide better context for screen reader users."
+          }
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-registration-form-2025-11-08T20-17-55-692Z.png",
+      "timestamp": "2025-11-12T14:23:37.658753",
+      "overall_score": 55.64073348917633,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low",
+        {
+          "component": "Text Input Placeholder",
+          "issue": "The light gray placeholder text inside the input fields may have insufficient contrast against the white background, making it difficult for users with low vision to read. All text should meet WCAG AA contrast ratios.",
+          "recommendation": "Increase the contrast of the placeholder text or, preferably, rely on the labels above the fields which are clearly visible."
+        },
+        {
+          "component": "Form Error Handling",
+          "issue": "The form does not show how errors would be displayed. If errors are only indicated by color (e.g., a red border), this will not be accessible to users who are colorblind.",
+          "recommendation": "When displaying validation errors, use both color and text/icons to indicate the issue. For example, a red border combined with an error message below the input field."
+        },
+        {
+          "component": "Focus Indication",
+          "issue": "It is not possible to determine from a static image if there is a clear and visible focus indicator for keyboard navigation.",
+          "recommendation": "Ensure that when a user navigates the form using a keyboard, the currently focused element (input, button, link) has a highly visible outline or highlight."
+        }
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        {
+          "component": "Password Inputs",
+          "recommendation": "Add a 'show/hide' password toggle icon within the password fields. This allows users to check their input for typos, which is a common source of frustration and login failure."
+        },
+        {
+          "component": "Password Input",
+          "recommendation": "Implement a real-time password strength meter as the user types. This provides immediate feedback and encourages the creation of stronger passwords."
+        },
+        {
+          "component": "Form Submission",
+          "recommendation": "Upon clicking the 'Create Account' button, disable the button and provide a visual loading indicator (e.g., a spinner) to give the user feedback that their request is being processed and prevent duplicate submissions."
+        },
+        {
+          "component": "Password Inputs",
+          "recommendation": "Add a 'show/hide' password toggle icon within the password fields. This allows users to check their input for typos, which is a common source of frustration and login failure."
+        },
+        {
+          "component": "Password Input",
+          "recommendation": "Implement a real-time password strength meter as the user types. This provides immediate feedback and encourages the creation of stronger passwords."
+        },
+        {
+          "component": "Form Submission",
+          "recommendation": "Upon clicking the 'Create Account' button, disable the button and provide a visual loading indicator (e.g., a spinner) to give the user feedback that their request is being processed and prevent duplicate submissions."
+        },
+        {
+          "component": "Form Validation",
+          "recommendation": "Implement inline validation. As a user moves from one field to the next, validate the input they just provided (e.g., check if the email has a valid format). This provides faster feedback than waiting for a full form submission."
+        },
+        {
+          "component": "Overall Form",
+          "recommendation": "Consider offering social login/registration options (e.g., 'Sign up with Google', 'Sign up with GitHub'). This can significantly reduce the friction of creating a new account."
+        }
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 242.6690100147941,
+        "contrast": 19.360693940784792,
+        "whitespace_ratio": 0.2142913593803944,
+        "visual_hierarchy_score": 0.02002247667473035,
+        "color_contrast_score": 0.1242831870473918,
+        "text_readability_score": 0.11824273871100036,
+        "ui_components_detected": [
+          "Heading",
+          "Form",
+          "Text Input with Label (Full Name)",
+          "Text Input with Label (Email Address)",
+          "Password Input with Label (Password)",
+          "Password Input with Label (Confirm Password)",
+          "Button (Create Account)",
+          "Link (Sign In)"
+        ],
+        "accessibility_issues": [
+          {
+            "component": "Text Input Placeholder",
+            "issue": "The light gray placeholder text inside the input fields may have insufficient contrast against the white background, making it difficult for users with low vision to read. All text should meet WCAG AA contrast ratios.",
+            "recommendation": "Increase the contrast of the placeholder text or, preferably, rely on the labels above the fields which are clearly visible."
+          },
+          {
+            "component": "Form Error Handling",
+            "issue": "The form does not show how errors would be displayed. If errors are only indicated by color (e.g., a red border), this will not be accessible to users who are colorblind.",
+            "recommendation": "When displaying validation errors, use both color and text/icons to indicate the issue. For example, a red border combined with an error message below the input field."
+          },
+          {
+            "component": "Focus Indication",
+            "issue": "It is not possible to determine from a static image if there is a clear and visible focus indicator for keyboard navigation.",
+            "recommendation": "Ensure that when a user navigates the form using a keyboard, the currently focused element (input, button, link) has a highly visible outline or highlight."
+          }
+        ],
+        "design_recommendations": [
+          {
+            "component": "Password Inputs",
+            "recommendation": "Add a 'show/hide' password toggle icon within the password fields. This allows users to check their input for typos, which is a common source of frustration and login failure."
+          },
+          {
+            "component": "Password Input",
+            "recommendation": "Implement a real-time password strength meter as the user types. This provides immediate feedback and encourages the creation of stronger passwords."
+          },
+          {
+            "component": "Form Submission",
+            "recommendation": "Upon clicking the 'Create Account' button, disable the button and provide a visual loading indicator (e.g., a spinner) to give the user feedback that their request is being processed and prevent duplicate submissions."
+          },
+          {
+            "component": "Form Validation",
+            "recommendation": "Implement inline validation. As a user moves from one field to the next, validate the input they just provided (e.g., check if the email has a valid format). This provides faster feedback than waiting for a full form submission."
+          },
+          {
+            "component": "Overall Form",
+            "recommendation": "Consider offering social login/registration options (e.g., 'Sign up with Google', 'Sign up with GitHub'). This can significantly reduce the friction of creating a new account."
+          }
+        ]
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-registration-form-2025-11-08T20-15-47-106Z.png",
+      "timestamp": "2025-11-12T14:24:38.787702",
+      "overall_score": 48.82671723274718,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1262
+        ],
+        "aspect_ratio": 1.5213946117274169,
+        "brightness": 242.5637547598609,
+        "contrast": 19.89960901973915,
+        "whitespace_ratio": 0.21358376254622294,
+        "visual_hierarchy_score": 0.020044022382943495,
+        "color_contrast_score": 0.12757742307682834,
+        "text_readability_score": 0.12079539593535593,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-1-access-app-2025-11-08T20-17-52-674Z.png",
+      "timestamp": "2025-11-12T14:25:40.086452",
+      "overall_score": 46.043423354974394,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.0349451531653,
+        "contrast": 64.89610221254581,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16943909576473007,
+        "color_contrast_score": 0.43747339954292014,
+        "text_readability_score": 0.3834932269773134,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-1-access-app-2025-11-08T20-15-45-958Z.png",
+      "timestamp": "2025-11-12T14:26:41.403366",
+      "overall_score": 46.03913978192242,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1619
+        ],
+        "aspect_ratio": 1.18591723285979,
+        "brightness": 223.03052788930066,
+        "contrast": 64.8878462665766,
+        "whitespace_ratio": 0.7708651816965205,
+        "visual_hierarchy_score": 0.16956966512051705,
+        "color_contrast_score": 0.43744981037397335,
+        "text_readability_score": 0.38348706752123307,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-3-registration-submit-2025-11-08T20-17-59-816Z.png",
+      "timestamp": "2025-11-12T14:27:42.552844",
+      "overall_score": 48.969873951007486,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 242.42372617448174,
+        "contrast": 20.41143780998304,
+        "whitespace_ratio": 0.22045330704501873,
+        "visual_hierarchy_score": 0.02608585097975257,
+        "color_contrast_score": 0.13216282433102403,
+        "text_readability_score": 0.12433336881027549,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-3-registration-submit-2025-11-08T20-14-26-742Z.png",
+      "timestamp": "2025-11-12T14:28:44.103093",
+      "overall_score": 48.969873951007486,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 242.42372617448174,
+        "contrast": 20.41143780998304,
+        "whitespace_ratio": 0.22045330704501873,
+        "visual_hierarchy_score": 0.02608585097975257,
+        "color_contrast_score": 0.13216282433102403,
+        "text_readability_score": 0.12433336881027549,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-3-login-2025-11-08T20-16-48-882Z.png",
+      "timestamp": "2025-11-12T14:29:04.096646",
+      "overall_score": 28.66058026926262,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372434129902,
+        "contrast": 22.777575326919287,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.01711127684332915,
+        "color_contrast_score": 0.17331109750131699,
+        "text_readability_score": 0.13900435182600218,
+        "ui_components_detected": [],
+        "accessibility_issues": [],
+        "design_recommendations": []
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-3-login-2025-11-08T20-13-14-311Z.png",
+      "timestamp": "2025-11-12T14:30:05.354383",
+      "overall_score": 23.66058026926262,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372434129902,
+        "contrast": 22.777575326919287,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.01711127684332915,
+        "color_contrast_score": 0.17331109750131699,
+        "text_readability_score": 0.13900435182600218,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      }
+    }
+  ]
+}

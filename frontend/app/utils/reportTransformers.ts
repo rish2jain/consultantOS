@@ -53,6 +53,14 @@ interface FrameworkAnalysis {
     threat_of_new_entry?: string;
     overall_assessment?: string;
   };
+  porter_five_forces?: {
+    competitive_rivalry?: string;
+    supplier_power?: string;
+    buyer_power?: string;
+    threat_of_substitution?: string;
+    threat_of_new_entry?: string;
+    overall_assessment?: string;
+  };
   swot_analysis?: {
     strengths?: string[];
     weaknesses?: string[];
@@ -100,20 +108,19 @@ function transformFrameworkAnalysis(
     return undefined;
   }
 
+  const porterData =
+    framework_analysis.porters_five_forces ||
+    framework_analysis.porter_five_forces;
+
   return {
-    porter: framework_analysis.porters_five_forces
+    porter: porterData
       ? {
-          competitive_rivalry:
-            framework_analysis.porters_five_forces.competitive_rivalry || '',
-          supplier_power:
-            framework_analysis.porters_five_forces.supplier_power || '',
-          buyer_power: framework_analysis.porters_five_forces.buyer_power || '',
-          threat_of_substitution:
-            framework_analysis.porters_five_forces.threat_of_substitution || '',
-          threat_of_new_entry:
-            framework_analysis.porters_five_forces.threat_of_new_entry || '',
-          overall_assessment:
-            framework_analysis.porters_five_forces.overall_assessment || '',
+          competitive_rivalry: porterData.competitive_rivalry || '',
+          supplier_power: porterData.supplier_power || '',
+          buyer_power: porterData.buyer_power || '',
+          threat_of_substitution: porterData.threat_of_substitution || '',
+          threat_of_new_entry: porterData.threat_of_new_entry || '',
+          overall_assessment: porterData.overall_assessment || '',
         }
       : undefined,
     swot: framework_analysis.swot_analysis
@@ -167,4 +174,3 @@ export function transformReportData(
     analysis: transformFrameworkAnalysis(apiData.framework_analysis),
   };
 }
-

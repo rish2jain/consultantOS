@@ -5,6 +5,8 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
+import tempfile
 from typing import Any, Optional, List, Dict
 from functools import wraps, partial
 try:
@@ -29,6 +31,17 @@ logger = logging.getLogger(__name__)
 _disk_cache: Optional[diskcache.Cache] = None
 _disk_cache_lock = threading.Lock()
 
+def _resolve_cache_dir() -> str:
+    """Determine the on-disk cache directory respecting settings."""
+    configured_dir = (settings.cache_dir or "").strip()
+    if configured_dir:
+        cache_dir = os.path.expanduser(configured_dir)
+    else:
+        cache_dir = os.path.join(tempfile.gettempdir(), "consultantos_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    return cache_dir
+
+
 def get_disk_cache():
     """Get or create disk cache instance (thread-safe)"""
     global _disk_cache
@@ -39,9 +52,13 @@ def get_disk_cache():
         with _disk_cache_lock:
             # Double-checked locking pattern
             if _disk_cache is None:
-                cache_dir = "/tmp/consultantos_cache"
-                _disk_cache = diskcache.Cache(cache_dir, size_limit=int(1e9))  # 1GB
-                logger.info(f"Initialized disk cache at {cache_dir}")
+                try:
+                    cache_dir = _resolve_cache_dir()
+                    _disk_cache = diskcache.Cache(cache_dir, size_limit=int(1e9))  # 1GB
+                    logger.info(f"Initialized disk cache at {cache_dir}")
+                except Exception as e:
+                    logger.error(f"Failed to initialize disk cache: {e}")
+                    _disk_cache = None
     return _disk_cache
 
 # Level 2: Semantic Vector Cache (ChromaDB)
@@ -50,39 +67,106 @@ _chroma_collection: Optional[chromadb.Collection] = None
 _chroma_lock = threading.Lock()
 
 def get_chroma_collection():
-    """Get or create ChromaDB collection for semantic caching (thread-safe)"""
+    """Get or create ChromaDB collection for semantic caching (thread-safe, non-blocking)"""
     global _chroma_client, _chroma_collection
     if not CHROMADB_AVAILABLE:
         logger.warning("ChromaDB not available, semantic caching disabled")
         return None
-    if _chroma_client is None:
-        with _chroma_lock:
-            # Double-checked locking pattern
-            if _chroma_client is None:
-                try:
-                    _chroma_client = chromadb.Client(Settings(
-                        chroma_db_impl="duckdb+parquet",
-                        persist_directory="/tmp/consultantos_chroma"
-                    ))
-                    _chroma_collection = _chroma_client.get_or_create_collection(
-                        name="analysis_cache",
-                        metadata={"description": "Semantic cache for analysis results"}
-                    )
-                    logger.info("Initialized ChromaDB semantic cache")
-                except Exception as e:
-                    logger.warning(f"Failed to initialize ChromaDB: {e}. Semantic caching disabled.")
-                    _chroma_collection = None
+    
+    # Fast path: already initialized (check for both None and False)
+    if _chroma_client is not None and _chroma_client is not False:
+        return _chroma_collection
+    
+    # If initialization previously failed, return None immediately
+    if _chroma_client is False:
+        return None
+    
+    # Use non-blocking lock acquisition to prevent deadlocks
+    # If lock is held, another thread is initializing - return None gracefully
+    lock_acquired = False
+    try:
+        lock_acquired = _chroma_lock.acquire(blocking=False)
+        if not lock_acquired:
+            # Another thread is initializing, return None for now
+            # The caller should handle None gracefully (semantic cache is optional)
+            logger.debug("ChromaDB initialization in progress, skipping this request")
+            return None
+        
+        # Double-checked locking pattern
+        if _chroma_client is None:
+            try:
+                # ChromaDB initialization can block if DuckDB file locks are held
+                # Disable telemetry to avoid network calls that might block
+                _chroma_client = chromadb.Client(Settings(
+                    chroma_db_impl="duckdb+parquet",
+                    persist_directory="/tmp/consultantos_chroma",
+                    anonymized_telemetry=False  # Disable telemetry to avoid blocking
+                ))
+                _chroma_collection = _chroma_client.get_or_create_collection(
+                    name="analysis_cache",
+                    metadata={"description": "Semantic cache for analysis results"}
+                )
+                logger.info("Initialized ChromaDB semantic cache")
+            except Exception as e:
+                logger.warning(f"Failed to initialize ChromaDB: {e}. Semantic caching disabled.")
+                # Mark as failed to avoid repeated attempts
+                _chroma_client = False  # Use False to indicate failed init (not None)
+                _chroma_collection = None
+    finally:
+        if lock_acquired:
+            _chroma_lock.release()
+    
+    # Return None if initialization failed (False indicates failed init)
+    if _chroma_client is False:
+        return None
+    
     return _chroma_collection
 
 
-def cache_key(company: str, frameworks: List[str], industry: Optional[str] = None) -> str:
+def cache_key(
+    company: str,
+    frameworks: List[str],
+    industry: Optional[str] = None,
+    depth: Optional[str] = None,
+) -> str:
     """Generate cache key from request parameters"""
-    key_parts = [company.lower().strip()]
-    if industry:
-        key_parts.append(industry.lower().strip())
-    key_parts.extend(sorted([f.lower().strip() for f in frameworks]))
+    def _normalize(value: Optional[str]) -> Optional[str]:
+        return value.lower().strip() if value else None
+
+    key_parts = [part for part in [
+        _normalize(company),
+        _normalize(industry),
+        _normalize(depth)
+    ] if part]
+    key_parts.extend(sorted([
+        f.lower().strip() for f in frameworks if f and f.strip()
+    ]))
     key_string = ":".join(key_parts)
     return hashlib.md5(key_string.encode()).hexdigest()
+
+
+async def store_disk_cache_result(
+    cache_key_str: str,
+    result: Any,
+    ttl: Optional[int] = None,
+):
+    """Persist result in disk cache so semantic cache can point to it."""
+    disk = get_disk_cache()
+    if disk is None:
+        return
+    ttl_seconds = ttl or settings.cache_ttl_seconds
+    try:
+        await asyncio.to_thread(
+            partial(disk.set, cache_key_str, result, expire=ttl_seconds)
+        )
+        logger.info(
+            f"Cached result (disk): {cache_key_str} (TTL: {ttl_seconds}s)"
+        )
+    except Exception as e:
+        logger.warning(
+            f"Cache set failed for key {cache_key_str} (TTL: {ttl_seconds}s): {e}",
+            exc_info=True,
+        )
 
 
 def cached_analysis(cache_key_str: str, ttl: Optional[int] = None):
@@ -113,15 +197,7 @@ def cached_analysis(cache_key_str: str, ttl: Optional[int] = None):
             
             # Store in disk cache (with error handling)
             if disk is not None:
-                try:
-                    ttl_seconds = ttl or settings.cache_ttl_seconds
-                    await asyncio.to_thread(
-                        partial(disk.set, cache_key_str, result, expire=ttl_seconds)
-                    )
-                    logger.info(f"Cached result (disk): {cache_key_str} (TTL: {ttl_seconds}s)")
-                except Exception as e:
-                    logger.warning(f"Cache set failed for key {cache_key_str} (TTL: {ttl_seconds}s): {e}", exc_info=True)
-                    # Silently ignore caching errors - function result still returned
+                await store_disk_cache_result(cache_key_str, result, ttl)
 
             return result
         return wrapper
@@ -131,6 +207,8 @@ def cached_analysis(cache_key_str: str, ttl: Optional[int] = None):
 async def semantic_cache_lookup(
     company: str,
     frameworks: List[str],
+    industry: Optional[str] = None,
+    depth: Optional[str] = None,
     threshold: float = 0.95
 ) -> Optional[Any]:
     """
@@ -149,8 +227,14 @@ async def semantic_cache_lookup(
         return None
     
     try:
-        # Create query text
-        query_text = f"{company} {' '.join(frameworks)}"
+        normalized_company = company.lower().strip()
+        normalized_industry = industry.lower().strip() if industry else None
+        normalized_depth = depth.lower().strip() if depth else None
+        framework_signature = " ".join(sorted([f.lower().strip() for f in frameworks]))
+
+        # Create query text that includes contextual dimensions
+        context_bits = [normalized_company, normalized_industry, normalized_depth, framework_signature]
+        query_text = " | ".join(filter(None, context_bits))
         
         # Search for similar queries
         results = await asyncio.to_thread(
@@ -173,10 +257,19 @@ async def semantic_cache_lookup(
                 )
                 
                 if cached_data and 'metadatas' in cached_data and cached_data['metadatas']:
-                    cache_key_str = cached_data['metadatas'][0].get('cache_key')
+                    metadata = cached_data['metadatas'][0]
+                    # Ensure metadata context matches request to avoid cross-company leakage
+                    if metadata.get('industry') and normalized_industry and metadata['industry'] != normalized_industry:
+                        return None
+                    if metadata.get('depth') and normalized_depth and metadata['depth'] != normalized_depth:
+                        return None
+                    if metadata.get('framework_signature') and metadata['framework_signature'] != framework_signature:
+                        return None
+
+                    cache_key_str = metadata.get('cache_key')
                     if cache_key_str:
                         disk = get_disk_cache()
-                        result = await asyncio.to_thread(disk.get, cache_key_str)
+                        result = await asyncio.to_thread(disk.get, cache_key_str) if disk else None
                         if result:
                             logger.info(
                                 f"Cache hit (semantic): {company} "
@@ -194,7 +287,9 @@ async def semantic_cache_store(
     company: str,
     frameworks: List[str],
     cache_key_str: str,
-    result: Any
+    result: Any,
+    industry: Optional[str] = None,
+    depth: Optional[str] = None,
 ):
     """
     Store analysis result in semantic cache
@@ -210,9 +305,15 @@ async def semantic_cache_store(
         return
     
     try:
+        normalized_company = company.lower().strip()
+        normalized_industry = industry.lower().strip() if industry else None
+        normalized_depth = depth.lower().strip() if depth else None
+        framework_signature = " ".join(sorted([f.lower().strip() for f in frameworks]))
+
         # Create document text for semantic search
-        doc_text = f"{company} {' '.join(frameworks)}"
-        
+        context_bits = [normalized_company, normalized_industry, normalized_depth, framework_signature]
+        doc_text = " | ".join(filter(None, context_bits))
+
         # Store in ChromaDB
         await asyncio.to_thread(
             collection.add,
@@ -220,14 +321,19 @@ async def semantic_cache_store(
             ids=[cache_key_str],
             metadatas=[{
                 "cache_key": cache_key_str,
-                "company": company,
+                "company": normalized_company,
+                "industry": normalized_industry,
+                "depth": normalized_depth,
+                "framework_signature": framework_signature,
                 "frameworks": json.dumps(frameworks)
             }]
         )
         logger.info(f"Stored in semantic cache: {cache_key_str}")
     except Exception as e:
         logger.warning(f"Semantic cache store failed: {e}")
-
+    
+    # Ensure disk cache holds the underlying report for subsequent fetches
+    await store_disk_cache_result(cache_key_str, result)
 
 def clear_cache(pattern: Optional[str] = None):
     """

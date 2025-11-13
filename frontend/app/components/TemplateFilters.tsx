@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './Card';
 import { Button } from './Button';
 import { Badge } from './Badge';
 import { X, Filter } from 'lucide-react';
-import type { Template } from './TemplateCard';
+import type { Template } from '@/types/templates';
 
 export interface TemplateFiltersState {
   categories: Template['category'][];
@@ -248,3 +248,4 @@ export const TemplateFilters: React.FC<TemplateFiltersProps> = ({
     </Card>
   );
 };
+export default TemplateFilters;

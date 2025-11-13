@@ -15,6 +15,7 @@ import {
   DecisionCard,
   StrategicContext,
 } from '@/types/strategic-intelligence';
+import type { SocialPulseSnapshot } from '@/types/strategic-intelligence';
 
 // Force dynamic rendering to avoid static generation issues with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -95,6 +96,7 @@ function StrategicIntelligenceDashboardContent() {
   };
 
   const transformApiDataToUI = (apiData: any): StrategicIntelligenceOverview => {
+    const demoFallback = generateDemoData();
     // Transform backend API data to frontend UI format
     return {
       executive_brief: {
@@ -145,7 +147,7 @@ function StrategicIntelligenceDashboardContent() {
         }] : [],
         last_updated: apiData.generated_at || new Date().toISOString(),
       },
-      strategic_context: generateDemoData().strategic_context, // Use demo context for now
+      strategic_context: demoFallback.strategic_context, // Use demo context for now
       intelligence_feed: {
         cards: [],
         unread_count: 0,
@@ -154,6 +156,7 @@ function StrategicIntelligenceDashboardContent() {
       company: apiData.company || 'Unknown',
       industry: apiData.industry || 'Unknown',
       analysis_date: apiData.generated_at || new Date().toISOString(),
+      social_pulse: apiData.social_pulse || demoFallback.social_pulse,
     };
   };
 
@@ -194,11 +197,11 @@ function StrategicIntelligenceDashboardContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Strategic Intelligence</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">Strategic Intelligence</h1>
+              <p className="text-sm text-gray-600">
                 {data.company} • {data.industry} • {new Date(data.analysis_date).toLocaleDateString()}
               </p>
             </div>
@@ -254,6 +257,7 @@ function StrategicIntelligenceDashboardContent() {
             <ExecutiveBriefLayer
               key="executive"
               brief={data.executive_brief}
+              socialPulse={data.social_pulse}
               onDecisionAction={handleDecisionAction}
             />
           )}
@@ -285,8 +289,9 @@ function StrategicIntelligenceDashboardContent() {
 
 const ExecutiveBriefLayer: React.FC<{
   brief: ExecutiveBrief;
+  socialPulse?: SocialPulseSnapshot;
   onDecisionAction: (decisionId: string, action: 'accept' | 'view') => void;
-}> = ({ brief, onDecisionAction }) => {
+}> = ({ brief, socialPulse, onDecisionAction }) => {
   const getHealthColor = (score: number): string => {
     if (score >= 70) return 'text-green-600';
     if (score >= 40) return 'text-yellow-600';
@@ -390,6 +395,8 @@ const ExecutiveBriefLayer: React.FC<{
         </div>
       </div>
 
+      {socialPulse && <SocialPulseCard pulse={socialPulse} />}
+
       {/* Decisions Required */}
       {brief.decisions_required.length > 0 && (
         <div className="bg-white rounded-lg shadow-lg p-6">
@@ -437,6 +444,66 @@ const ExecutiveBriefLayer: React.FC<{
         </div>
       )}
     </motion.div>
+  );
+};
+
+const SocialPulseCard: React.FC<{ pulse: SocialPulseSnapshot }> = ({ pulse }) => {
+  const sentimentIndex = Math.round((pulse.sentiment + 1) * 50);
+  return (
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            💬 SOCIAL PULSE
+            <span className="px-2 py-1 rounded-full text-xs font-semibold capitalize bg-blue-50 text-blue-700">
+              {pulse.label}
+            </span>
+          </h2>
+          <p className="text-sm text-gray-600">Real-time Reddit + Twitter narrative map</p>
+        </div>
+        <div className="text-right">
+          <p className="text-4xl font-bold text-blue-600">{sentimentIndex}</p>
+          <p className="text-xs text-gray-500">Sentiment Index /100</p>
+          <p className="text-xs text-gray-500 capitalize">Momentum: {pulse.momentum}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <p className="text-xs font-semibold text-gray-500 mb-1">Top Narratives</p>
+          <ul className="space-y-2">
+            {pulse.top_narratives.slice(0, 3).map((topic, idx) => (
+              <li key={topic} className="text-sm text-gray-800 flex gap-2">
+                <span className="text-blue-500">#{idx + 1}</span>
+                <span>{topic}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-gray-500 mb-1">Risks surfaced</p>
+          <ul className="space-y-2">
+            {pulse.risk_alerts.slice(0, 3).map((risk) => (
+              <li key={risk} className="text-sm text-red-600">
+                • {risk}
+              </li>
+            ))}
+            {!pulse.risk_alerts.length && <p className="text-sm text-gray-500">No acute risks</p>}
+          </ul>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-gray-500 mb-1">Opportunities</p>
+          <ul className="space-y-2">
+            {pulse.opportunity_alerts.slice(0, 3).map((opp) => (
+              <li key={opp} className="text-sm text-green-600">
+                • {opp}
+              </li>
+            ))}
+            {!pulse.opportunity_alerts.length && <p className="text-sm text-gray-500">Monitoring…</p>}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -945,6 +1012,14 @@ function generateDemoData(): StrategicIntelligenceOverview {
     company: 'Tesla',
     industry: 'Electric Vehicles',
     analysis_date: new Date().toISOString(),
+    social_pulse: {
+      sentiment: 0.18,
+      label: 'positive',
+      momentum: 'Tailwind',
+      top_narratives: ['AI copilots', 'Supply chain resilience', 'Pricing transparency'],
+      risk_alerts: ['Privacy backlash in r/privacy', 'Pricing fatigue across Twitter threads'],
+      opportunity_alerts: ['Creators demanding workflow automation', 'Enterprise teams praising dashboard UX'],
+    },
   };
 }
 

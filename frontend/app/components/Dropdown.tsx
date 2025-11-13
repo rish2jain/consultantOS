@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 export interface DropdownItem {
   label: string;
@@ -21,9 +21,9 @@ export interface DropdownProps {
   /** Change handler */
   onChange?: (value: string) => void;
   /** Dropdown placement */
-  placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
+  placement?: "bottom-start" | "bottom-end" | "top-start" | "top-end";
   /** Dropdown width */
-  width?: 'auto' | 'full' | 'trigger';
+  width?: "auto" | "full" | "trigger";
   /** Disabled state */
   disabled?: boolean;
   /** Custom trigger button class */
@@ -35,10 +35,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
   items,
   value,
   onChange,
-  placement = 'bottom-start',
-  width = 'trigger',
+  placement = "bottom-start",
+  width = "trigger",
   disabled = false,
-  triggerClassName = '',
+  triggerClassName = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,41 +47,44 @@ export const Dropdown: React.FC<DropdownProps> = ({
   // Close on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
 
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setIsOpen(false);
         triggerRef.current?.focus();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen]);
 
   // Keyboard navigation
   const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
-    if (event.key === 'ArrowDown') {
+    if (event.key === "ArrowDown") {
       event.preventDefault();
       // Find next enabled item, wrapping around
       let nextIndex = (index + 1) % items.length;
@@ -91,10 +94,12 @@ export const Dropdown: React.FC<DropdownProps> = ({
         attempts++;
       }
       if (!items[nextIndex].disabled) {
-        const nextItem = dropdownRef.current?.querySelectorAll('[role="menuitem"]')[nextIndex] as HTMLElement;
+        const nextItem = dropdownRef.current?.querySelectorAll(
+          '[role="menuitem"]'
+        )[nextIndex] as HTMLElement;
         nextItem?.focus();
       }
-    } else if (event.key === 'ArrowUp') {
+    } else if (event.key === "ArrowUp") {
       event.preventDefault();
       // Find previous enabled item, wrapping around
       let prevIndex = index === 0 ? items.length - 1 : index - 1;
@@ -104,10 +109,12 @@ export const Dropdown: React.FC<DropdownProps> = ({
         attempts++;
       }
       if (!items[prevIndex].disabled) {
-        const prevItem = dropdownRef.current?.querySelectorAll('[role="menuitem"]')[prevIndex] as HTMLElement;
+        const prevItem = dropdownRef.current?.querySelectorAll(
+          '[role="menuitem"]'
+        )[prevIndex] as HTMLElement;
         prevItem?.focus();
       }
-    } else if (event.key === 'Enter' || event.key === ' ') {
+    } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       if (!items[index].disabled) {
         handleItemClick(items[index]);
@@ -125,22 +132,24 @@ export const Dropdown: React.FC<DropdownProps> = ({
   };
 
   const placementClasses = {
-    'bottom-start': 'top-full left-0 mt-2',
-    'bottom-end': 'top-full right-0 mt-2',
-    'top-start': 'bottom-full left-0 mb-2',
-    'top-end': 'bottom-full right-0 mb-2',
+    "bottom-start": "top-full left-0 mt-2",
+    "bottom-end": "top-full right-0 mt-2",
+    "top-start": "bottom-full left-0 mb-2",
+    "top-end": "bottom-full right-0 mb-2",
   };
 
   const widthClasses = {
-    auto: 'w-auto',
-    full: 'w-full',
-    trigger: 'w-auto', // Match trigger's intrinsic width
+    auto: "w-auto",
+    full: "w-full",
+    trigger: "w-auto", // Size to content width (not trigger width)
   };
 
   const defaultTrigger = (
     <span className="flex items-center gap-2">
-      {items.find(item => item.value === value)?.label || 'Select...'}
-      <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      {items.find((item) => item.value === value)?.label || "Select..."}
+      <ChevronDown
+        className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+      />
     </span>
   );
 
@@ -158,7 +167,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
     <div className="relative inline-block" ref={dropdownRef}>
       {trigger ? (
         <div
-          ref={triggerRef as React.RefObject<HTMLDivElement>}
+          ref={triggerRef}
           onClick={handleTriggerClick}
           className={triggerClassName}
           role="button"
@@ -167,7 +176,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
           aria-expanded={isOpen}
           aria-disabled={disabled}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               if (!disabled) {
                 setIsOpen(!isOpen);
@@ -220,10 +229,15 @@ export const Dropdown: React.FC<DropdownProps> = ({
               className={`
                 w-full flex items-center gap-2 px-4 py-2 text-sm text-left
                 transition-colors
-                ${item.value === value ? 'bg-primary-50 text-primary-700' : 'text-gray-700'}
-                ${item.disabled
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-gray-100 cursor-pointer'
+                ${
+                  item.value === value
+                    ? "bg-primary-50 text-primary-700"
+                    : "text-gray-700"
+                }
+                ${
+                  item.disabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-gray-100 cursor-pointer"
                 }
                 focus:outline-none focus:bg-gray-100
               `}
@@ -240,7 +254,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
 export const useDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState<string>('');
+  const [selectedValue, setSelectedValue] = useState<string>("");
 
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);

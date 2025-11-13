@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/Card';
+import { Badge } from '@/app/components/Badge';
 import { Lightbulb, Target, TrendingUp, CheckCircle } from 'lucide-react';
 
 interface NarrativeSection {
@@ -70,7 +70,7 @@ export default function NarrativeViewer({
             <Badge className={getPersonaBadgeColor(narrative.generated_for_persona)}>
               {narrative.generated_for_persona}
             </Badge>
-            <Badge variant="outline">
+            <Badge variant="default">
               {narrative.length_words} words
             </Badge>
           </div>

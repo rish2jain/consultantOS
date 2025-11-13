@@ -9,7 +9,7 @@ Advanced strategic analysis endpoints providing:
 - Strategic decision intelligence
 - Executive insights feed
 """
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 import logging
@@ -58,6 +58,10 @@ class StrategicOverviewResponse(BaseModel):
     
     # Immediate actions
     immediate_actions: List[str] = Field(default_factory=list)
+    social_pulse: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Summarized Reddit/Twitter narratives"
+    )
     
 
 class IntelligenceFeedResponse(BaseModel):

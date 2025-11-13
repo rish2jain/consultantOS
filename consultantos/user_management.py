@@ -115,7 +115,49 @@ def create_user(email: str, password: str, name: Optional[str] = None) -> Dict:
     
     # Store in database (with password hash in a separate collection for security)
     try:
-        db_service.create_user(user_account, password_hash)
+        success = db_service.create_user(user_account, password_hash)
+        if not success:
+            logger.error(f"Database service returned False when creating user {user_id}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create user account in database"
+            )
+        
+        # Verify password hash was stored correctly
+        stored_hash = db_service.get_user_password_hash(user_id)
+        if not stored_hash:
+            logger.error(f"Password hash not found after creating user {user_id}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Password hash was not stored correctly"
+            )
+        
+        # Verify the stored hash matches what we created
+        if stored_hash != password_hash:
+            logger.error(
+                f"Password hash mismatch for user {user_id} - stored hash differs from created hash",
+                extra={"user_id": user_id}
+            )
+            # Attempt rollback by deleting the user
+            try:
+                rollback_success = db_service.delete_user(user_id)
+                if rollback_success:
+                    logger.info(f"Successfully rolled back user creation for user {user_id}")
+                else:
+                    logger.error(
+                        f"Failed to rollback user creation for user {user_id} - user may exist with incorrect password hash",
+                        extra={"user_id": user_id}
+                    )
+            except Exception as rollback_error:
+                logger.error(
+                    f"Exception during rollback for user {user_id}: {rollback_error}",
+                    exc_info=True,
+                    extra={"user_id": user_id, "rollback_error": str(rollback_error)}
+                )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Password hash verification failed - user creation rolled back"
+            )
         
         # Generate verification token
         verification_token = secrets.token_urlsafe(32)
@@ -135,8 +177,10 @@ def create_user(email: str, password: str, name: Optional[str] = None) -> Dict:
             "verification_token": verification_token,
             "email_verified": False
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to create user: {e}")
+        logger.error(f"Failed to create user: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user account"
@@ -153,24 +197,56 @@ def authenticate_user(email: str, password: str) -> Optional[Dict]:
     
     Returns:
         User info dict if authenticated, None otherwise
+        
+    Raises:
+        Exception: If database operations fail critically
     """
-    db_service = get_db_service()
-    user_account = db_service.get_user_by_email(email)
+    try:
+        db_service = get_db_service()
+    except Exception as e:
+        logger.error(f"Failed to get database service: {e}", exc_info=True)
+        raise
+    
+    try:
+        user_account = db_service.get_user_by_email(email)
+    except Exception as e:
+        logger.error(f"Database error while fetching user by email: {e}", exc_info=True)
+        raise
     
     if not user_account:
+        logger.debug(f"User not found: email={email}")
         return None
     
-    # Get password hash
-    password_hash = db_service.get_user_password_hash(user_account.user_id)
+    try:
+        # Get password hash
+        password_hash = db_service.get_user_password_hash(user_account.user_id)
+    except Exception as e:
+        logger.error(f"Database error while fetching password hash: {e}", exc_info=True)
+        raise
     
-    if not password_hash or not verify_password(password, password_hash):
+    if not password_hash:
+        logger.warning(f"No password hash found for user: id={user_account.user_id}")
         return None
+    
+    # Verify password
+    try:
+        if not verify_password(password, password_hash):
+            logger.debug(f"Password verification failed for user: id={user_account.user_id}")
+            return None
+    except Exception as e:
+        logger.error(f"Password verification error: {e}", exc_info=True)
+        raise
     
     # Update last login
-    db_service.update_user(user_account.user_id, {
-        "last_login": datetime.now().isoformat()
-    })
+    try:
+        db_service.update_user(user_account.user_id, {
+            "last_login": datetime.now().isoformat()
+        })
+    except Exception as e:
+        logger.warning(f"Failed to update last login for user: id={user_account.user_id}, error={str(e)}")
+        # Don't fail authentication if last login update fails
     
+    logger.info(f"User authenticated successfully: id={user_account.user_id}")
     return {
         "user_id": user_account.user_id,
         "email": user_account.email,

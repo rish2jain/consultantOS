@@ -141,6 +141,10 @@ class DashboardService:
         """Get dashboard by ID"""
         return await self.repository.get_dashboard(dashboard_id)
 
+    async def list_dashboards(self, user_id: str) -> List[LiveDashboard]:
+        """List all dashboards for a user"""
+        return await self.repository.list_dashboards_for_user(user_id)
+
     async def refresh_dashboard(self, dashboard_id: str) -> LiveDashboard:
         """Force refresh of dashboard data"""
         dashboard = await self.get_dashboard(dashboard_id)

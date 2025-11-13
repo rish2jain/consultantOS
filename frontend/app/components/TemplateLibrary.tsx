@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { TemplateCard, Template } from './TemplateCard';
+import { TemplateCard } from './TemplateCard';
 import { TemplateFilters, TemplateFiltersState } from './TemplateFilters';
 import { TemplateDetail } from './TemplateDetail';
 import { TemplateCreator, TemplateFormData } from './TemplateCreator';
@@ -10,6 +10,8 @@ import { Input } from './Input';
 import { InlineLoading } from './Spinner';
 import { Alert } from './Alert';
 import { Grid, List, Plus, Search, Filter, X } from 'lucide-react';
+import type { Template } from '@/types/templates';
+import { starterTemplates } from '@/lib/starter-templates';
 
 export interface TemplateLibraryProps {
   /** API endpoint for templates */
@@ -22,6 +24,55 @@ export interface TemplateLibraryProps {
   initialViewMode?: 'grid' | 'list';
 }
 
+const DEFAULT_PROMPT = `Analyze {{company}} in the {{industry}} industry.
+
+Summarize:
+- Competitive posture
+- Market signals
+- Leading risks and mitigations
+- Next best actions for the consulting team.`;
+
+const normalizeTemplatesResponse = (data: any): Template[] => {
+  const rawList = Array.isArray(data?.templates)
+    ? data.templates
+    : Array.isArray(data)
+      ? data
+      : Array.isArray(data?.results)
+        ? data.results
+        : [];
+
+  return rawList.map((item: any, index: number): Template => {
+    const inferredId = item.id || item.template_id || item.templateId || `template-${index}`;
+    const frameworks: string[] = Array.isArray(item.frameworks) && item.frameworks.length > 0
+      ? item.frameworks
+      : item.framework_type
+        ? [item.framework_type]
+        : [];
+
+    return {
+      id: inferredId,
+      template_id: item.template_id || inferredId,
+      name: item.name || 'Untitled Template',
+      description: item.description || 'No description provided.',
+      category: item.category || item.framework_type || 'strategic',
+      framework_type: item.framework_type || frameworks[0] || 'swot',
+      visibility: item.visibility || 'public',
+      industry: item.industry || item.default_settings?.industry,
+      region: item.region || item.default_settings?.region,
+      prompt_template: item.prompt_template || DEFAULT_PROMPT,
+      created_by: item.created_by || 'system',
+      created_at: item.created_at || new Date().toISOString(),
+      updated_at: item.updated_at,
+      fork_count: item.fork_count ?? item.forks ?? 0,
+      usage_count: item.usage_count ?? item.times_used ?? 0,
+      frameworks,
+      depth: item.depth || item.default_settings?.depth,
+      custom_focus: item.custom_focus || item.default_settings?.focus || [],
+      tags: item.tags || item.default_settings?.tags || [],
+    };
+  });
+};
+
 export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   apiEndpoint = '/api/templates',
   onUseTemplate,
@@ -29,9 +80,9 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   initialViewMode = 'grid',
 }) => {
   // State
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [filteredTemplates, setFilteredTemplates] = useState<Template[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [templates, setTemplates] = useState<Template[]>(starterTemplates);
+  const [filteredTemplates, setFilteredTemplates] = useState<Template[]>(starterTemplates);
+  const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialViewMode);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(true);
@@ -77,17 +128,20 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
           params.append('region', filters.region);
         }
 
-        const response = await fetch(`${apiEndpoint}?${params.toString()}`);
+        const queryString = params.toString();
+        const url = queryString ? `${apiEndpoint}?${queryString}` : apiEndpoint;
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error('Failed to fetch templates');
         }
 
         const data = await response.json();
-        setTemplates(data.templates || []);
+        const normalized = normalizeTemplatesResponse(data);
+        setTemplates(normalized.length > 0 ? normalized : starterTemplates);
       } catch (error) {
         console.error('Error fetching templates:', error);
-        setTemplates([]);
+        setTemplates(starterTemplates);
       } finally {
         setIsLoading(false);
       }
@@ -310,19 +364,25 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
               <InlineLoading message="Loading templates..." size="lg" centered />
             </div>
           ) : isEmpty ? (
-            <div className="text-center py-12 px-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                <Search className="w-8 h-8 text-gray-400" aria-hidden="true" />
+            <div className="py-8 px-4">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-gray-100">
+                  <Search className="w-6 h-6 text-gray-400" aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No Templates Found</h3>
+                  <p className="text-gray-500">{emptyMessage}</p>
+                </div>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Templates Found</h3>
-              <p className="text-gray-500 mb-6 max-w-md mx-auto">{emptyMessage}</p>
-              <Button
-                variant="primary"
-                leftIcon={<Plus className="w-4 h-4" />}
-                onClick={() => setShowCreatorModal(true)}
-              >
-                Create Your First Template
-              </Button>
+              <div className="flex justify-start">
+                <Button
+                  variant="primary"
+                  leftIcon={<Plus className="w-4 h-4" />}
+                  onClick={() => setShowCreatorModal(true)}
+                >
+                  Create Your First Template
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
@@ -341,7 +401,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
               >
                 {paginatedTemplates.map((template) => (
                   <TemplateCard
-                    key={template.id}
+                    key={template.template_id || template.id || template.name}
                     template={template}
                     onView={handleViewTemplate}
                     onUse={handleUseTemplate}
@@ -419,3 +479,4 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     </div>
   );
 };
+export default TemplateLibrary;

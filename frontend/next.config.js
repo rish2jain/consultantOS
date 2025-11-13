@@ -2,50 +2,23 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
-    // Only ignore in development, require fixes for production
-    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
+    // Allow ESLint errors during build only if SKIP_LINT env var is set
+    ignoreDuringBuilds: process.env.SKIP_LINT === 'true',
   },
   typescript: {
-    // Only ignore in development, require fixes for production
-    ignoreBuildErrors: process.env.NODE_ENV === 'development',
+    // Allow TypeScript errors during build only if SKIP_TYPE_CHECK env var is set
+    ignoreBuildErrors: process.env.SKIP_TYPE_CHECK === 'true',
   },
+  // Enable typed routes for Next.js
+  typedRoutes: true,
   // Enable standalone output for Cloud Run deployment
   output: "standalone",
   env: {
     NEXT_PUBLIC_API_URL:
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
-  },
-  // Fix for missing chunk files - ensure proper webpack configuration
-  webpack: (config, { isServer }) => {
-    // Fix for dynamic imports and code splitting
-    if (!isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // Vendor chunk for node_modules
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /node_modules/,
-              priority: 20,
-            },
-            // Common chunk for shared code
-            common: {
-              name: 'common',
-              minChunks: 2,
-              chunks: 'all',
-              priority: 10,
-              reuseExistingChunk: true,
-            },
-          },
-        },
-      };
-    }
-    return config;
+      process.env.NEXT_PUBLIC_API_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? "https://consultantos-api-187550875653.us-central1.run.app"
+        : "http://localhost:8080"),
   },
   // Ensure proper handling of static files
   generateBuildId: async () => {

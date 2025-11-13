@@ -9,6 +9,7 @@ from consultantos.models.disruption import DisruptionAssessment
 from consultantos.models.decisions import DecisionBrief, StrategicDecision
 from consultantos.models.systems import SystemDynamicsAnalysis
 from consultantos.models.momentum import MomentumAnalysis
+from consultantos.models.social_media import SocialSignalSummary
 
 
 class StrategicHealthScore(BaseModel):
@@ -66,6 +67,7 @@ class EnhancedStrategicReport(BaseModel):
     system_dynamics: Optional[SystemDynamicsAnalysis] = None
     flywheel_momentum: Optional[MomentumAnalysis] = None
     decision_brief: Optional[DecisionBrief] = None
+    social_signals: Optional[SocialSignalSummary] = None
     
     # Meta scores and insights
     overall_strategic_health: Optional[StrategicHealthScore] = None

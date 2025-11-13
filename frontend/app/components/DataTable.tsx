@@ -347,3 +347,4 @@ export const DataTableSkeleton: React.FC<DataTableSkeletonProps> = ({
     </div>
   );
 };
+export default DataTable;

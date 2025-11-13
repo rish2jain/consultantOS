@@ -391,16 +391,18 @@ def track_operation(operation_name: str, **context):
         raise
 
 
-def log_request(request_id: str, company: str, frameworks: list, user_ip: str):
+def log_request(request_id: str, company: str, frameworks: list, user_ip: str, user_id: Optional[str] = None):
     """Log analysis request"""
     metrics.increment("requests_total")
-    logger.info(
-        "analysis_request_received",
-        report_id=request_id,
-        company=company,
-        frameworks=frameworks,
-        user_ip=user_ip
-    )
+    log_data = {
+        "report_id": request_id,
+        "company": company,
+        "frameworks": frameworks,
+        "user_ip": user_ip
+    }
+    if user_id:
+        log_data["user_id"] = user_id
+    logger.info("analysis_request_received", **log_data)
 
 
 def log_request_success(request_id: str, execution_time: float, confidence: float):

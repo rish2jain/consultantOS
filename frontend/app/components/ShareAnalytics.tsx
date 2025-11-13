@@ -410,3 +410,4 @@ export const ShareAnalytics: React.FC<ShareAnalyticsProps> = ({ shareId }) => {
     </div>
   );
 };
+export default ShareAnalytics;

@@ -8,9 +8,19 @@ standards to prevent false alerts in continuous monitoring.
 import logging
 from typing import Any, Dict, List, Optional, Union
 import pandas as pd
-import pandera as pa
-from pandera import Column, DataFrameSchema, Check
-from pandera.errors import SchemaError, SchemaErrors
+
+# Import pandera classes using pandera.pandas namespace
+# Note: Using pandera.pandas namespace for better compatibility
+try:
+    import pandera.pandas as pa
+    from pandera.pandas import Column, DataFrameSchema, Check
+    from pandera.errors import SchemaError, SchemaErrors
+except ImportError:
+    # Fallback to top-level imports if pandera.pandas is not available
+    # This may occur with older pandera versions
+    import pandera as pa
+    from pandera import Column, DataFrameSchema, Check
+    from pandera.errors import SchemaError, SchemaErrors
 
 logger = logging.getLogger(__name__)
 

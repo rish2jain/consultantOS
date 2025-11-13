@@ -416,6 +416,12 @@ class PrometheusMetrics:
         for _ in range(increment):
             self.jobs_total.labels(job_type="analysis", status=status).inc()
 
+    def track_user_activity(self, action: str) -> None:
+        """Track user activity (action-level job metric)."""
+        # Record user activity as a job metric
+        # Note: This records only action-level metrics, not per-user tracking
+        self.jobs_total.labels(job_type="user_activity", status=action).inc()
+
     # ===== Error Metrics Methods =====
 
     def record_error(self, error_type: str, component: str) -> None:

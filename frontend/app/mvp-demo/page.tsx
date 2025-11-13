@@ -129,7 +129,7 @@ export default function MVPDemoPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">AI Chat Assistant</h3>
             <p className="text-sm text-gray-600">
               Get instant answers about competitive intelligence, market analysis, and business strategy
-              powered by Google Gemini 1.5.
+              powered by Google Gemini 2.5 Flash.
             </p>
           </div>
 
@@ -165,7 +165,7 @@ export default function MVPDemoPage() {
               <p className="text-sm text-gray-600">
                 Powered by{' '}
                 <span className="font-semibold text-gray-900">Google Cloud Run</span> &{' '}
-                <span className="font-semibold text-gray-900">Gemini 1.5</span>
+                <span className="font-semibold text-gray-900">Gemini 2.5 Flash</span>
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Hackathon MVP Demo • November 2025

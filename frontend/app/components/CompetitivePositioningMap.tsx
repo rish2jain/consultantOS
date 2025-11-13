@@ -324,6 +324,7 @@ export default function CompetitivePositioningMap({
 
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [isPlaying, data.historical_snapshots]);
 
   return (

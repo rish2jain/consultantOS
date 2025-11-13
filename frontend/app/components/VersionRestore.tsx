@@ -212,3 +212,4 @@ const VersionRestore: React.FC<VersionRestoreProps> = ({
 };
 
 export { VersionRestore };
+export default VersionRestore;

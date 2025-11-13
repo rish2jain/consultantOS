@@ -139,8 +139,13 @@ class DashboardRepository:
                 data = json.load(handle)
                 if isinstance(data, dict):
                     self._dashboards = data
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError) as e:
             # Corrupt cache – start fresh
+            logger.warning(
+                "Cache corruption detected, resetting dashboards cache",
+                extra={"cache_file": str(self._file), "error": str(e)},
+                exc_info=True
+            )
             self._dashboards = {}
 
     def _write_locked(self) -> None:

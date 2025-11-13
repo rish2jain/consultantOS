@@ -39,14 +39,14 @@ def get_intelligence_monitor() -> IntelligenceMonitor:
 
     Override this in tests or configure with production dependencies.
     """
-    from consultantos.orchestrator.analysis_orchestrator import get_orchestrator
-    from consultantos.database import get_database_service
-    from consultantos.cache import get_cache_service
+    from consultantos.orchestrator import AnalysisOrchestrator
+    from consultantos.database import get_db_service
+    from consultantos.cache import get_disk_cache
 
     return IntelligenceMonitor(
-        orchestrator=get_orchestrator(),
-        db_service=get_database_service(),
-        cache_service=get_cache_service(),
+        orchestrator=AnalysisOrchestrator(),
+        db_service=get_db_service(),
+        cache_service=get_disk_cache(),
     )
 
 
@@ -87,10 +87,7 @@ async def create_monitor(
         )
 
         logger.info(
-            "monitor_created_via_api",
-            monitor_id=monitor.id,
-            company=company,
-            user_id=user_id,
+            f"monitor_created_via_api: monitor_id={monitor.id}, company={company}, user_id={user_id}"
         )
 
         return monitor
@@ -98,11 +95,10 @@ async def create_monitor(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
         logger.error(
-            "monitor_creation_failed",
-            company=request.company,
-            user_id=user_id,
-            error=str(e),
+            f"monitor_creation_failed: company={request.company}, user_id={user_id}, error={str(e)}, traceback={error_trace}"
         )
         raise HTTPException(status_code=500, detail="Failed to create monitor")
 
@@ -137,9 +133,7 @@ async def list_monitors(
 
     except Exception as e:
         logger.error(
-            "list_monitors_failed",
-            user_id=user_id,
-            error=str(e),
+            f"list_monitors_failed: user_id={user_id}, error={str(e)}"
         )
         raise HTTPException(status_code=500, detail="Failed to list monitors")
 
@@ -180,9 +174,7 @@ async def get_monitor(
         raise
     except Exception as e:
         logger.error(
-            "get_monitor_failed",
-            monitor_id=monitor_id,
-            error=str(e),
+            f"get_monitor_failed: monitor_id={monitor_id}, error={str(e)}"
         )
         raise HTTPException(status_code=500, detail="Failed to get monitor")
 
@@ -224,9 +216,7 @@ async def update_monitor(
         )
 
         logger.info(
-            "monitor_updated",
-            monitor_id=monitor_id,
-            user_id=user_id,
+            f"monitor_updated: monitor_id={monitor_id}, user_id={user_id}"
         )
 
         return updated
@@ -237,9 +227,7 @@ async def update_monitor(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(
-            "update_monitor_failed",
-            monitor_id=monitor_id,
-            error=str(e),
+            f"update_monitor_failed: monitor_id={monitor_id}, error={str(e)}"
         )
         raise HTTPException(status_code=500, detail="Failed to update monitor")
 
@@ -270,18 +258,14 @@ async def delete_monitor(
         await monitor_service.delete_monitor(monitor_id)
 
         logger.info(
-            "monitor_deleted",
-            monitor_id=monitor_id,
-            user_id=user_id,
+            f"monitor_deleted: monitor_id={monitor_id}, user_id={user_id}"
         )
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(
-            "delete_monitor_failed",
-            monitor_id=monitor_id,
-            error=str(e),
+            f"delete_monitor_failed: monitor_id={monitor_id}, error={str(e)}"
         )
         raise HTTPException(status_code=500, detail="Failed to delete monitor")
 
@@ -317,9 +301,7 @@ async def check_monitor_now(
         alerts = await monitor_service.check_for_updates(monitor_id)
 
         logger.info(
-            "manual_monitor_check",
-            monitor_id=monitor_id,
-            alerts_generated=len(alerts),
+            f"manual_monitor_check: monitor_id={monitor_id}, alerts_generated={len(alerts)}"
         )
 
         return alerts
@@ -328,9 +310,7 @@ async def check_monitor_now(
         raise
     except Exception as e:
         logger.error(
-            "manual_check_failed",
-            monitor_id=monitor_id,
-            error=str(e),
+            f"manual_check_failed: monitor_id={monitor_id}, error={str(e)}"
         )
         raise HTTPException(status_code=500, detail="Failed to check monitor")
 
@@ -382,9 +362,7 @@ async def get_monitor_alerts(
         raise
     except Exception as e:
         logger.error(
-            "get_alerts_failed",
-            monitor_id=monitor_id,
-            error=str(e),
+            f"get_alerts_failed: monitor_id={monitor_id}, error={str(e)}"
         )
         raise HTTPException(status_code=500, detail="Failed to get alerts")
 
@@ -420,10 +398,10 @@ async def mark_alert_read(
             raise HTTPException(status_code=404, detail="Alert not found")
 
         # Mark as read
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         alert.read = True
-        alert.read_at = datetime.utcnow()
+        alert.read_at = datetime.now(timezone.utc)
 
         await monitor_service.db.update_alert(alert)
 

@@ -11,8 +11,14 @@ import {
   FlywheelVelocity,
 } from '@/types/strategic-intelligence';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://consultantos-api-187550875653.us-central1.run.app'
+    : 'http://localhost:8080');
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 
+  (process.env.NODE_ENV === 'production'
+    ? 'wss://consultantos-api-187550875653.us-central1.run.app'
+    : 'ws://localhost:8080');
 
 // ============================================================================
 // API Client Configuration

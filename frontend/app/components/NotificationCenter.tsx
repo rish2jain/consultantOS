@@ -8,6 +8,7 @@ import { Button } from "./Button";
 import { Spinner } from "./Spinner";
 import { Alert } from "./Alert";
 import { NotificationItem, Notification } from "./NotificationItem";
+import { getApiKey } from "@/lib/auth";
 
 export interface NotificationCenterProps {
   /** User ID to fetch notifications for */
@@ -40,12 +41,22 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const fetchNotifications = useCallback(async () => {
     try {
       setError(null);
+      
+      // Get API key for authentication
+      const apiKey = getApiKey();
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      // Add API key if available
+      if (apiKey) {
+        headers["X-API-Key"] = apiKey;
+      }
+      
       const response = await fetch(
         `${apiBaseUrl}/notifications?user_id=${userId}`,
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers,
         }
       );
 
@@ -228,10 +239,12 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     if (!notification.link) return;
 
     // Use Next.js router for internal routes
-    if (notification.link.startsWith("/")) {
+    if (notification.link && notification.link.startsWith("/")) {
       // Internal route - use Next.js router for client-side navigation
-      router.push(notification.link);
-    } else {
+      // Ensure link is a valid string
+      const link = String(notification.link);
+      router.push(link);
+    } else if (notification.link) {
       // External URL - validate protocol
       try {
         const url = new URL(notification.link);
@@ -410,3 +423,4 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     </div>
   );
 };
+export default NotificationCenter;

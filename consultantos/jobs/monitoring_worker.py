@@ -13,7 +13,7 @@ from consultantos.models.monitoring import Monitor, MonitorStatus
 from consultantos.monitoring.intelligence_monitor import IntelligenceMonitor
 from consultantos.database import DatabaseService
 from consultantos.cache import CacheService
-from consultantos.orchestrator.analysis_orchestrator import AnalysisOrchestrator
+from consultantos.orchestrator import AnalysisOrchestrator
 import logging
 
 logger = logging.getLogger(__name__)
@@ -196,14 +196,10 @@ async def run_monitoring_worker() -> None:
 
     Initializes dependencies and starts worker loop.
     """
-    # Initialize dependencies
-    from consultantos.orchestrator.analysis_orchestrator import get_orchestrator
-    from consultantos.database import get_database_service
-    from consultantos.cache import get_cache_service
-
-    orchestrator = get_orchestrator()
-    db_service = get_database_service()
-    cache_service = get_cache_service()
+    # Initialize dependencies (using top-level imports)
+    orchestrator = AnalysisOrchestrator()
+    db_service = get_db_service()
+    cache_service = get_disk_cache()
 
     # Create intelligence monitor
     intelligence_monitor = IntelligenceMonitor(

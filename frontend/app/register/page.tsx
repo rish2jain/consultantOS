@@ -2,18 +2,22 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import axios from 'axios'
+import { Alert } from '@/app/components/Alert'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
 export default function RegisterPage() {
   const router = useRouter()
   const [error, setError] = useState<string>('')
+  const [success, setSuccess] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSuccess('')
     setLoading(true)
 
     const formData = new FormData(e.target as HTMLFormElement)
@@ -28,9 +32,13 @@ export default function RegisterPage() {
         name: name || undefined,
       })
 
-      // Registration successful, redirect to login
-      alert('Registration successful! Please login.')
-      router.push('/')
+      // Registration successful, show success message
+      setSuccess('Registration successful! Redirecting to login...')
+      
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        router.push('/')
+      }, 2000)
     } catch (error: any) {
       let errorMessage = 'Registration failed';
       
@@ -65,11 +73,33 @@ export default function RegisterPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
           Create Account
         </h1>
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
+        
+        {/* Success Alert */}
+        {success && (
+          <Alert
+            variant="success"
+            title="Registration Successful"
+            description={success}
+            showIcon
+            className="mb-4"
+            autoDismiss={3000}
+            onClose={() => setSuccess('')}
+          />
         )}
+        
+        {/* Error Alert */}
+        {error && (
+          <Alert
+            variant="error"
+            title="Registration Failed"
+            description={error}
+            showIcon
+            dismissible
+            onClose={() => setError('')}
+            className="mb-4"
+          />
+        )}
+        
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -117,9 +147,9 @@ export default function RegisterPage() {
         </form>
         <p className="mt-4 text-sm text-center text-gray-600">
           Already have an account?{' '}
-          <a href="/" className="text-primary-600 hover:underline">
+          <Link href="/" className="text-primary-600 hover:underline">
             Sign In
-          </a>
+          </Link>
         </p>
       </div>
     </div>

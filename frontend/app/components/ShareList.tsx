@@ -535,3 +535,4 @@ export const ShareList: React.FC<ShareListProps> = ({
     </>
   );
 };
+export default ShareList;

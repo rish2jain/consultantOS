@@ -93,16 +93,18 @@ class DigestGenerator:
 
             logger.info(
                 "digest_generated",
-                user_id=user_id,
-                companies=len(digest.monitored_companies),
-                team_items=len(digest.team_activity),
-                alerts=len(digest.alerts)
+                extra={
+                    "user_id": user_id,
+                    "companies": len(digest.monitored_companies),
+                    "team_items": len(digest.team_activity),
+                    "alerts": len(digest.alerts)
+                }
             )
 
             return digest
 
         except Exception as e:
-            logger.error("generate_digest_failed", user_id=user_id, error=str(e))
+            logger.error(f"generate_digest_failed: user_id={user_id}, error={str(e)}")
             raise
 
     async def send_digest(self, user_id: str):
@@ -116,13 +118,13 @@ class DigestGenerator:
             # Get user
             user = await self.db.get_user(user_id)
             if not user:
-                logger.warning("user_not_found", user_id=user_id)
+                logger.warning(f"user_not_found: user_id={user_id}")
                 return
 
             # Get preferences
             prefs = await self.db.get_digest_preferences(user_id)
             if not prefs or not prefs.enabled:
-                logger.info("digest_disabled", user_id=user_id)
+                logger.info(f"digest_disabled: user_id={user_id}")
                 return
 
             # Generate digest
@@ -130,7 +132,7 @@ class DigestGenerator:
 
             # Check if there's content to send
             if not self._has_content(digest):
-                logger.info("digest_empty", user_id=user_id)
+                logger.info(f"digest_empty: user_id={user_id}")
                 return
 
             # Format email
@@ -150,10 +152,10 @@ class DigestGenerator:
                 html_body=email_html
             )
 
-            logger.info("digest_sent", user_id=user_id, email=user.email)
+            logger.info(f"digest_sent: user_id={user_id}, email={user.email}")
 
         except Exception as e:
-            logger.error("send_digest_failed", user_id=user_id, error=str(e))
+            logger.error(f"send_digest_failed: user_id={user_id}, error={str(e)}")
             raise
 
     async def send_all_digests(self, frequency: DigestFrequency):
@@ -177,18 +179,15 @@ class DigestGenerator:
                     await self.send_digest(user.id)
                     sent_count += 1
                 except Exception as e:
-                    logger.error("digest_send_failed", user_id=user.id, error=str(e))
+                    logger.error(f"digest_send_failed: user_id={user.id}, error={str(e)}")
                     error_count += 1
 
             logger.info(
-                "digests_batch_complete",
-                frequency=frequency.value,
-                sent=sent_count,
-                errors=error_count
+                f"digests_batch_complete: frequency={frequency.value}, sent={sent_count}, errors={error_count}"
             )
 
         except Exception as e:
-            logger.error("send_all_digests_failed", frequency=frequency.value, error=str(e))
+            logger.error(f"send_all_digests_failed: frequency={frequency.value}, error={str(e)}")
             raise
 
     # ===== Helper Methods =====

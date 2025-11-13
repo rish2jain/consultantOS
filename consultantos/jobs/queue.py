@@ -158,6 +158,10 @@ class JobQueue:
         """
         List jobs with optional filters
         
+        Includes both:
+        - Actual job records (from async jobs with report_id starting with "job_")
+        - Completed reports (from sync jobs) treated as completed jobs
+        
         Args:
             user_id: Filter by user ID
             status: Filter by single status (deprecated, use statuses)
@@ -175,7 +179,7 @@ class JobQueue:
             
             # Use report listing with job filter
             try:
-                reports = self.db_service.list_reports(user_id=user_id, limit=limit * 2)
+                reports = self.db_service.list_reports(user_id=user_id, limit=limit * 3)
             except Exception as db_error:
                 logger.error(f"Database list_reports failed: {db_error}", exc_info=True)
                 return []
@@ -192,35 +196,70 @@ class JobQueue:
             jobs = []
             for report in reports:
                 try:
-                    # Skip if report_id is missing or not a job
+                    # Skip if report_id is missing
                     if not report or not hasattr(report, 'report_id') or not report.report_id:
                         continue
                     
-                    if not report.report_id.startswith("job_"):
-                        continue
-                    
-                    job_id = report.report_id.replace("job_", "")
-                    
-                    # Safely get job status
-                    try:
-                        if hasattr(report, 'status') and report.status:
-                            if report.status in [s.value for s in JobStatus]:
-                                job_status = JobStatus(report.status)
+                    # Handle job records (from async jobs)
+                    if report.report_id.startswith("job_"):
+                        job_id = report.report_id.replace("job_", "")
+                        
+                        # Safely get job status
+                        try:
+                            if hasattr(report, 'status') and report.status:
+                                if report.status in [s.value for s in JobStatus]:
+                                    job_status = JobStatus(report.status)
+                                else:
+                                    job_status = JobStatus.PENDING
                             else:
                                 job_status = JobStatus.PENDING
-                        else:
+                        except (ValueError, AttributeError, TypeError) as status_error:
+                            logger.warning(f"Failed to parse job status for {job_id}: {status_error}")
                             job_status = JobStatus.PENDING
-                    except (ValueError, AttributeError, TypeError) as status_error:
-                        logger.warning(f"Failed to parse job status for {job_id}: {status_error}")
-                        job_status = JobStatus.PENDING
+                        
+                        # Apply status filter if specified
+                        if filter_statuses is None or job_status in filter_statuses:
+                            jobs.append({
+                                "job_id": job_id,
+                                "status": job_status.value,
+                                "company": getattr(report, 'company', 'Unknown') or 'Unknown',
+                                "industry": getattr(report, 'industry', None),
+                                "frameworks": getattr(report, 'frameworks', []),
+                                "created_at": getattr(report, 'created_at', None) or datetime.now().isoformat(),
+                                "updated_at": getattr(report, 'updated_at', None) or getattr(report, 'created_at', None) or datetime.now().isoformat(),
+                                "result": {
+                                    "report_id": getattr(report, 'report_id', None) if not getattr(report, 'report_id', '').startswith('job_') else None
+                                } if hasattr(report, 'report_id') and not report.report_id.startswith('job_') else None
+                            })
                     
-                    # Apply status filter if specified
-                    if filter_statuses is None or job_status in filter_statuses:
-                        jobs.append({
-                            "job_id": job_id,
-                            "status": job_status.value,
-                            "company": getattr(report, 'company', 'Unknown') or 'Unknown',
-                            "created_at": getattr(report, 'created_at', None) or datetime.now().isoformat()
+                    # Handle completed reports (from sync jobs) - only include if filtering for completed or no filter
+                    elif filter_statuses is None or JobStatus.COMPLETED in filter_statuses:
+                        # Only include completed reports (from sync analysis)
+                        report_status = getattr(report, 'status', None)
+                        # Normalize status to JobStatus enum value
+                        if report_status is None:
+                            report_status = JobStatus.COMPLETED.value
+                        elif isinstance(report_status, JobStatus):
+                            report_status = report_status.value
+                        elif report_status not in [s.value for s in JobStatus]:
+                            report_status = JobStatus.COMPLETED.value
+                        
+                        if report_status == JobStatus.COMPLETED.value:
+                            # Use report_id as job_id for sync jobs
+                            job_id = report.report_id
+                            
+                            jobs.append({
+                                "job_id": job_id,
+                                "status": JobStatus.COMPLETED.value,
+                                "company": getattr(report, 'company', 'Unknown') or 'Unknown',
+                                "industry": getattr(report, 'industry', None),
+                                "frameworks": getattr(report, 'frameworks', []),
+                                "created_at": getattr(report, 'created_at', None) or datetime.now().isoformat(),
+                                "updated_at": getattr(report, 'updated_at', None) or getattr(report, 'created_at', None) or datetime.now().isoformat(),
+                                "progress": 100,
+                                "result": {
+                                    "report_id": report.report_id
+                                }
                         })
                     
                     if len(jobs) >= limit:

@@ -3,10 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  FlywheelVelocity,
   MomentumComponent,
-  HistoricalMatch,
-  InflectionPoint,
   FlywheelDashboardProps,
 } from '@/types/strategic-intelligence';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';

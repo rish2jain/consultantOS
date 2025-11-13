@@ -217,14 +217,18 @@ export const SharedReportView: React.FC<SharedReportViewProps> = ({
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md" padding="lg">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 mb-4">
-              <Lock className="w-6 h-6 text-primary-600" />
+          <div className="mb-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-primary-100">
+                <Lock className="w-5 h-5 text-primary-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="mb-1">Password Required</CardTitle>
+                <p className="text-sm text-gray-600">
+                  This report is password protected. Enter the password to view.
+                </p>
+              </div>
             </div>
-            <CardTitle>Password Required</CardTitle>
-            <p className="text-sm text-gray-600 mt-2">
-              This report is password protected. Enter the password to view.
-            </p>
           </div>
 
           {error && (
@@ -427,3 +431,4 @@ export const SharedReportView: React.FC<SharedReportViewProps> = ({
     </div>
   );
 };
+export default SharedReportView;

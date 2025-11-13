@@ -48,7 +48,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/versions/${reportId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/versions/report/${reportId}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch versions: ${response.statusText}`);
@@ -296,3 +296,4 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
 };
 
 export { VersionHistory };
+export default VersionHistory;

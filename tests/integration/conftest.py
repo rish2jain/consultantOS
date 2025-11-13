@@ -12,6 +12,8 @@ from unittest.mock import Mock, AsyncMock
 from consultantos.api.main import app
 from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
 
+TEST_API_KEY = os.environ.get("CONSULTANTOS_TEST_API_KEY", "test_valid_key_123")
+
 
 # ============================================================================
 # TEST CLIENT FIXTURES
@@ -27,7 +29,8 @@ async def test_client() -> AsyncGenerator[AsyncClient, None]:
     """
     from httpx import ASGITransport
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    headers = {"X-API-Key": TEST_API_KEY}
+    async with AsyncClient(transport=transport, base_url="http://test", headers=headers) as client:
         yield client
 
 
@@ -40,7 +43,8 @@ def sync_test_client() -> Generator:
         TestClient for synchronous API testing
     """
     from fastapi.testclient import TestClient
-    with TestClient(app) as client:
+    headers = {"X-API-Key": TEST_API_KEY}
+    with TestClient(app, headers=headers) as client:
         yield client
 
 

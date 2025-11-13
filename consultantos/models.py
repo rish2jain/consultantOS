@@ -4,6 +4,7 @@ Data models for ConsultantOS using Pydantic
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+from consultantos.models.social_media import SocialSignalSummary
 
 
 # ============================================================================
@@ -19,6 +20,8 @@ class AnalysisRequest(BaseModel):
         description="Frameworks to apply"
     )
     depth: str = Field(default="standard", description="Analysis depth: quick/standard/deep")
+    additional_context: Optional[str] = Field(None, description="Additional context or specific questions for the analysis")
+    region: Optional[str] = Field(None, description="Geographic region focus for the analysis")
 
 
 # ============================================================================
@@ -220,4 +223,7 @@ class StrategicReport(BaseModel):
         default_factory=dict,
         description="Generation metadata: timestamp, agent versions, quality scores"
     )
-
+    social_signals: Optional[SocialSignalSummary] = Field(
+        default=None,
+        description="Aggregated Reddit/Twitter signals"
+    )

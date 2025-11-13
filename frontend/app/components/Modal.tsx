@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
-import { Button } from './Button';
 
 export interface ModalProps {
   /** Whether modal is open */
@@ -119,6 +118,7 @@ export const Modal: React.FC<ModalProps> = ({
         document.removeEventListener('keydown', handleTab);
       };
     }
+    return undefined;
   }, [isOpen]);
 
   if (!isOpen) return null;

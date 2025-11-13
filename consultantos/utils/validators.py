@@ -129,6 +129,60 @@ class AnalysisRequestValidator:
         return depth
     
     @staticmethod
+    def validate_additional_context(additional_context: Optional[str]) -> Optional[str]:
+        """
+        Validate additional context field
+        
+        Args:
+            additional_context: Additional context text
+        
+        Returns:
+            Sanitized additional context or None
+        """
+        if not additional_context:
+            return None
+        
+        additional_context = additional_context.strip()
+        
+        # Sanitize HTML/JS characters (same as validate_company)
+        additional_context = re.sub(r'[<>"\']', '', additional_context)
+        
+        # Normalize whitespace
+        additional_context = re.sub(r'\s+', ' ', additional_context).strip()
+        
+        if len(additional_context) > 1000:
+            raise ValueError("Additional context too long (max 1000 characters)")
+        
+        return additional_context
+    
+    @staticmethod
+    def validate_region(region: Optional[str]) -> Optional[str]:
+        """
+        Validate region field
+        
+        Args:
+            region: Geographic region
+        
+        Returns:
+            Sanitized region or None
+        """
+        if not region:
+            return None
+        
+        region = region.strip()
+        
+        # Sanitize HTML/JS characters (same as validate_company)
+        region = re.sub(r'[<>"\']', '', region)
+        
+        # Normalize whitespace
+        region = re.sub(r'\s+', ' ', region).strip()
+        
+        if len(region) > 100:
+            raise ValueError("Region name too long (max 100 characters)")
+        
+        return region
+    
+    @staticmethod
     def validate_request(request: AnalysisRequest) -> AnalysisRequest:
         """
         Validate complete analysis request
@@ -147,6 +201,8 @@ class AnalysisRequestValidator:
         request.industry = AnalysisRequestValidator.validate_industry(request.industry)
         request.frameworks = AnalysisRequestValidator.validate_frameworks(request.frameworks)
         request.depth = AnalysisRequestValidator.validate_depth(request.depth)
+        request.additional_context = AnalysisRequestValidator.validate_additional_context(request.additional_context)
+        request.region = AnalysisRequestValidator.validate_region(request.region)
         
         return request
 

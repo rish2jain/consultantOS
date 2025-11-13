@@ -5,21 +5,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { Eye, Copy, FileText } from 'lucide-react';
+import type { Template } from '@/types/templates';
 
-export interface Template {
-  id: string;
-  name: string;
-  description: string;
-  category: 'strategic' | 'financial' | 'operational' | 'market' | 'risk';
-  framework_type: 'porter' | 'swot' | 'pestel' | 'blue_ocean';
-  visibility: 'public' | 'private' | 'shared';
-  industry?: string;
-  region?: string;
-  prompt_template: string;
-  created_by: string;
-  created_at: string;
-  fork_count: number;
-}
+export type { Template } from '@/types/templates';
 
 export interface TemplateCardProps {
   /** Template data */
@@ -34,12 +22,22 @@ export interface TemplateCardProps {
   clickable?: boolean;
 }
 
-const categoryColors: Record<Template['category'], string> = {
+type BadgeVariant = 'primary' | 'success' | 'info' | 'warning' | 'danger' | 'default';
+
+const categoryColors: Record<string, BadgeVariant> = {
   strategic: 'primary',
   financial: 'success',
   operational: 'info',
   market: 'warning',
   risk: 'danger',
+  porter: 'primary',
+  swot: 'warning',
+  pestel: 'info',
+  blue_ocean: 'success',
+};
+
+const getCategoryBadgeVariant = (category: string): BadgeVariant => {
+  return categoryColors[category] || 'default';
 };
 
 const frameworkLabels: Record<Template['framework_type'], string> = {
@@ -76,7 +74,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
       <CardHeader>
         <div className="flex items-start justify-between gap-2 mb-2">
           <Badge
-            variant={categoryColors[template.category]}
+            variant={getCategoryBadgeVariant(template.category)}
             size="sm"
           >
             {template.category}
@@ -128,7 +126,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
             <span>Created {formatDate(template.created_at)}</span>
             <span className="flex items-center gap-1">
               <Copy className="w-3 h-3" aria-hidden="true" />
-              {template.fork_count} forks
+              {template.fork_count ?? 0} forks
             </span>
           </div>
 

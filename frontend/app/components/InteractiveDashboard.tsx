@@ -8,11 +8,13 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
+import { MetricCard } from '@/app/components';
 import { RefreshCw, Download, Settings } from 'lucide-react';
 import { getApiKey } from '@/lib/auth';
 
@@ -91,7 +93,7 @@ export function InteractiveDashboard({ dashboardId, apiUrl = '/api' }: Dashboard
     ? `/dashboards/${dashboardId}/ws?api_key=${encodeURIComponent(apiKey)}`
     : null;
 
-  const { lastMessage, isConnected, reconnect } = useWebSocket(
+  const { isConnected } = useWebSocket(
     wsPath,
     {
       onMessage: (message) => {
@@ -188,9 +190,19 @@ export function InteractiveDashboard({ dashboardId, apiUrl = '/api' }: Dashboard
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center justify-between"
+      >
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{data.company}</h1>
           <p className="text-gray-600">{data.industry}</p>
@@ -199,9 +211,20 @@ export function InteractiveDashboard({ dashboardId, apiUrl = '/api' }: Dashboard
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={isConnected ? 'default' : 'destructive'}>
-            {isConnected ? 'Live' : 'Disconnected'}
-          </Badge>
+          <motion.div
+            animate={{
+              scale: isConnected ? [1, 1.1, 1] : 1,
+            }}
+            transition={{
+              duration: 2,
+              repeat: isConnected ? Infinity : 0,
+              repeatDelay: 1,
+            }}
+          >
+            <Badge variant={isConnected ? 'default' : 'destructive'}>
+              {isConnected ? 'Live' : 'Disconnected'}
+            </Badge>
+          </motion.div>
           <Button onClick={refreshDashboard} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -215,68 +238,92 @@ export function InteractiveDashboard({ dashboardId, apiUrl = '/api' }: Dashboard
             Settings
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Key Metrics */}
       {data.metrics.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {data.metrics.map((metric) => (
-            <MetricCard key={metric.id} metric={metric} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
+          {data.metrics.map((metric, index) => (
+            <motion.div
+              key={metric.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <MetricCard
+                title={metric.name}
+                value={`${metric.value.toLocaleString()} ${metric.unit}`}
+                trend={metric.trend}
+                trendValue={`${Math.abs(metric.change).toFixed(1)}%`}
+                subtitle={`${(metric.confidence * 100).toFixed(0)}% confidence`}
+                color={
+                  metric.trend === 'up' ? 'green' :
+                  metric.trend === 'down' ? 'red' : 'blue'
+                }
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Alerts */}
-      {data.alerts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Critical Alerts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.alerts.slice(0, 5).map((alert) => (
-                <AlertItem key={alert.id} alert={alert} />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <AnimatePresence>
+        {data.alerts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Critical Alerts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {data.alerts.slice(0, 5).map((alert, index) => (
+                    <motion.div
+                      key={alert.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <AlertItem alert={alert} />
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Dashboard Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
         {data.sections
           .sort((a, b) => a.order - b.order)
-          .map((section) => (
-            <DashboardSectionComponent key={section.id} section={section} />
+          .map((section, index) => (
+            <motion.div
+              key={section.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <DashboardSectionComponent section={section} />
+            </motion.div>
           ))}
-      </div>
-    </div>
-  );
-}
-
-function MetricCard({ metric }: { metric: Metric }) {
-  const trendColor = metric.trend === 'up' ? 'text-green-600' : metric.trend === 'down' ? 'text-red-600' : 'text-gray-600';
-  const trendIcon = metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→';
-
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-2">
-          <p className="text-sm text-gray-600">{metric.name}</p>
-          <p className="text-2xl font-bold">
-            {metric.value.toLocaleString()} {metric.unit}
-          </p>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${trendColor}`}>
-              {trendIcon} {Math.abs(metric.change).toFixed(1)}%
-            </span>
-            <span className="text-xs text-gray-500">
-              {(metric.confidence * 100).toFixed(0)}% confidence
-            </span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </motion.div>
+    </motion.div>
   );
 }
 

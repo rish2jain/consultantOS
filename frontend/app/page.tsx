@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
   Card,
   CardHeader,
@@ -49,6 +50,9 @@ interface RecentReport {
   status: string;
   confidence_score?: number;
   created_at: string;
+  metadata?: Record<string, any>;
+  partial_results?: boolean;
+  errors?: Record<string, unknown> | string[];
 }
 
 export default function DashboardPage() {
@@ -66,6 +70,16 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSampleData, setIsSampleData] = useState(false);
   const isMountedRef = useRef(true);
+  const getPartialStatus = useCallback((report: RecentReport) => {
+    if (typeof report.partial_results === 'boolean') {
+      return report.partial_results;
+    }
+    const metaFlag = report.metadata?.partial_results;
+    if (typeof metaFlag === 'boolean') {
+      return metaFlag;
+    }
+    return report.status === 'partial_success';
+  }, []);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -87,9 +101,37 @@ export default function DashboardPage() {
         reports = reportsResponse?.reports || [];
         if (isMountedRef.current) {
           setIsSampleData(false);
+          setError(null); // Clear any previous errors
         }
       } catch (reportsErr) {
-        console.warn('Falling back to sample dashboard reports', reportsErr);
+        console.error('Failed to fetch reports:', reportsErr);
+        
+        // Log detailed error information
+        if (reportsErr instanceof Error) {
+          console.error('Error message:', reportsErr.message);
+          console.error('Error stack:', reportsErr.stack);
+        }
+        
+        // Check if it's an APIError for better messaging
+        if (reportsErr instanceof APIError) {
+          console.error('API Error status:', reportsErr.status);
+          console.error('API Error data:', reportsErr.data);
+          
+          if (isMountedRef.current) {
+            // Set a more specific error message
+            if (reportsErr.status === 0) {
+              setError(`Cannot connect to backend API. Please ensure the backend is running at ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}`);
+            } else {
+              setError(`API Error (${reportsErr.status}): ${reportsErr.message}`);
+            }
+          }
+        } else {
+          if (isMountedRef.current) {
+            setError(`Failed to load reports: ${reportsErr instanceof Error ? reportsErr.message : 'Unknown error'}`);
+          }
+        }
+        
+        // Fall back to sample data
         reports = [
           {
             report_id: 'sample-1',
@@ -165,13 +207,30 @@ export default function DashboardPage() {
     {
       key: 'company',
       label: 'Company',
+      accessor: (row: RecentReport) => row.company || row.report_id || '',
       render: (value: any, report: RecentReport) => (
         <div>
           <div className="font-semibold text-gray-900">{report.company || value || '-'}</div>
           {report.industry && (
             <div className="text-sm text-gray-700">{report.industry}</div>
           )}
+          {getPartialStatus(report) && (
+            <div className="mt-1">
+              <Badge variant="warning">Partial data</Badge>
+            </div>
+          )}
         </div>
+      ),
+    },
+    {
+      key: 'confidence_score',
+      label: 'Confidence',
+      render: (value: any, report: RecentReport) => (
+        <span className="text-gray-900">
+          {report.confidence_score != null
+            ? `${(report.confidence_score * 100).toFixed(0)}%`
+            : value ?? '—'}
+        </span>
       ),
     },
     {
@@ -211,6 +270,36 @@ export default function DashboardPage() {
         </Badge>
       ),
     },
+    {
+      key: 'actions',
+      label: '',
+      render: (_: any, report: RecentReport) => (
+        <div className="flex justify-end gap-2">
+          {getPartialStatus(report) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(event) => {
+                event.stopPropagation();
+                router.push(`/reports/${report.report_id}?tab=health`);
+              }}
+            >
+              View Issues
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(event) => {
+              event.stopPropagation();
+              router.push(`/reports/${report.report_id}`);
+            }}
+          >
+            Open
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   // No full-page loading - use skeleton loaders instead
@@ -218,48 +307,74 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="text-4xl font-bold mb-4"
+            >
               Welcome to ConsultantOS
-            </h1>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto"
+            >
               Generate professional-grade business framework analyses in 30 minutes
               with our multi-agent AI system
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => router.push('/mvp-demo')}
-                className="!bg-white !text-blue-900 !border-white hover:!bg-blue-50 hover:!text-blue-900 focus:ring-blue-300 shadow-md"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Try MVP Demo
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => router.push('/analysis')}
-                className="!bg-white !text-blue-900 !border-white hover:!bg-blue-50 hover:!text-blue-900 focus:ring-blue-300 shadow-md"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Create Analysis
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => router.push('/reports')}
-                className="border-white text-white hover:bg-blue-700"
-              >
-                View Reports
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="flex justify-center gap-4 flex-wrap"
+            >
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => router.push('/mvp-demo')}
+                  className="!bg-white !text-blue-900 !border-white hover:!bg-blue-50 hover:!text-blue-900 focus:ring-blue-300 shadow-md"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Try MVP Demo
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => router.push('/analysis')}
+                  className="!bg-white !text-blue-900 !border-white hover:!bg-blue-50 hover:!text-blue-900 focus:ring-blue-300 shadow-md"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create Analysis
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => router.push('/reports')}
+                  className="border-white text-white hover:bg-blue-700"
+                >
+                  View Reports
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Alert with Retry */}
@@ -267,7 +382,7 @@ export default function DashboardPage() {
           <Alert 
             variant="error" 
             className="mb-6"
-            title="Data Fetch Error"
+            title={isSampleData ? "Showing sample dashboard data" : "Data Fetch Error"}
             actions={
               <div className="flex gap-2 mt-2">
                 <Button
@@ -276,27 +391,57 @@ export default function DashboardPage() {
                   onClick={loadDashboard}
                   className="bg-white text-red-700 hover:bg-red-50"
                 >
-                  Retry
+                  Retry Live Data
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => window.open('/help', '_blank')}
-                  className="border-red-300 text-red-700 hover:bg-red-50"
-                >
-                  Contact Support
-                </Button>
+                {!isSampleData && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open('/help', '_blank')}
+                    className="border-red-300 text-red-700 hover:bg-red-50"
+                  >
+                    Contact Support
+                  </Button>
+                )}
               </div>
             }
           >
             <div className="text-red-800">
               {error}
+              {isSampleData && (
+                <p className="mt-2 text-sm text-red-700">
+                  Data below is from a sample workspace—try reloading to fetch live metrics.
+                </p>
+              )}
             </div>
           </Alert>
         )}
 
+        {isSampleData && !error && (
+          <Alert
+            variant="warning"
+            className="mb-6"
+            title="Showing sample dashboard data"
+            description="We couldn't reach your latest reports. Data below is from a sample workspace—try reloading to fetch live metrics."
+            actions={
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={loadDashboard}
+              >
+                Retry Live Data
+              </Button>
+            }
+          />
+        )}
+
         {/* Key Metrics Dashboard */}
-        <section className="mb-8">
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mb-8"
+        >
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Dashboard Overview</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {loading ? (
@@ -342,7 +487,7 @@ export default function DashboardPage() {
               </>
             )}
           </div>
-        </section>
+        </motion.section>
 
         {/* Recent Reports Section */}
         <section className="mb-8 border-t border-gray-200 pt-8">
@@ -374,7 +519,7 @@ export default function DashboardPage() {
                 <DataTable
                   columns={columns}
                   data={recentReports}
-                  rowKey={(report) => report.report_id}
+                  rowKey={(report, index) => `${report.report_id}-${index}`}
                   onRowClick={(report) => router.push(`/reports/${report.report_id}`)}
                 />
               )}
@@ -383,10 +528,19 @@ export default function DashboardPage() {
         </section>
 
         {/* Quick Actions Section */}
-        <section className="mb-8 border-t border-gray-200 pt-8">
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="mb-8 border-t border-gray-200 pt-8"
+        >
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white shadow-sm" onClick={() => router.push('/analysis')}>
+            <motion.div
+              whileHover={{ y: -4, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white shadow-sm" onClick={() => router.push('/analysis')}>
               <CardHeader className="pb-3">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
                   <BarChart3 className="w-6 h-6 text-blue-600" aria-hidden="true" />
@@ -404,8 +558,13 @@ export default function DashboardPage() {
                 </Button>
               </CardContent>
             </Card>
+            </motion.div>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white shadow-sm" onClick={() => router.push('/templates')}>
+            <motion.div
+              whileHover={{ y: -4, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white shadow-sm" onClick={() => router.push('/templates')}>
               <CardHeader className="pb-3">
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-3">
                   <Layers className="w-6 h-6 text-green-600" aria-hidden="true" />
@@ -423,8 +582,13 @@ export default function DashboardPage() {
                 </Button>
               </CardContent>
             </Card>
+            </motion.div>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white shadow-sm" onClick={() => router.push('/jobs')}>
+            <motion.div
+              whileHover={{ y: -4, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white shadow-sm" onClick={() => router.push('/jobs')}>
               <CardHeader className="pb-3">
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
                   <Clock className="w-6 h-6 text-purple-600" aria-hidden="true" />
@@ -442,8 +606,13 @@ export default function DashboardPage() {
                 </Button>
               </CardContent>
             </Card>
+            </motion.div>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white shadow-sm" onClick={() => router.push('/profile')}>
+            <motion.div
+              whileHover={{ y: -4, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white shadow-sm" onClick={() => router.push('/profile')}>
               <CardHeader className="pb-3">
                 <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-3">
                   <User className="w-6 h-6 text-orange-600" aria-hidden="true" />
@@ -461,16 +630,27 @@ export default function DashboardPage() {
                 </Button>
               </CardContent>
             </Card>
+            </motion.div>
           </div>
-        </section>
+        </motion.section>
 
         {/* Getting Started Guide */}
-        <section className="border-t border-gray-200 pt-8">
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="border-t border-gray-200 pt-8"
+        >
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Getting Started</h2>
           <Card className="bg-white shadow-sm">
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-6">
-                <div className="text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-center"
+                >
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-2xl font-bold text-blue-600" aria-label="Step 1">1</span>
                   </div>
@@ -488,9 +668,14 @@ export default function DashboardPage() {
                   >
                     Open Analysis Form
                   </Button>
-                </div>
+                </motion.div>
 
-                <div className="text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-center"
+                >
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-2xl font-bold text-green-600" aria-label="Step 2">2</span>
                   </div>
@@ -508,9 +693,14 @@ export default function DashboardPage() {
                   >
                     Download Sample PDF
                   </Button>
-                </div>
+                </motion.div>
 
-                <div className="text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-center"
+                >
                   <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-2xl font-bold text-purple-600" aria-label="Step 3">3</span>
                   </div>
@@ -528,11 +718,11 @@ export default function DashboardPage() {
                   >
                     View Reports
                   </Button>
-                </div>
+                </motion.div>
               </div>
             </CardContent>
           </Card>
-        </section>
+        </motion.section>
       </main>
     </div>
   );

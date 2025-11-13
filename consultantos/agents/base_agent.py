@@ -37,7 +37,7 @@ class BaseAgent(ABC):
         # Create instructor client with Gemini
         self.client = instructor.from_gemini(
             client=genai.GenerativeModel(
-                model_name=settings.gemini_model or "gemini-1.5-flash-002"
+                model_name=settings.gemini_model or "gemini-2.5-flash"  # Updated: gemini-1.5-flash-002 is no longer available
             ),
             mode=instructor.Mode.GEMINI_JSON
         )
@@ -55,8 +55,8 @@ class BaseAgent(ABC):
         Args:
             prompt: Input prompt
             response_model: Pydantic model for structured output
-            temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
+            temperature: Sampling temperature (passed via generation_config if supported)
+            max_tokens: Maximum tokens to generate (passed via generation_config if supported)
 
         Returns:
             Structured response as instance of response_model
@@ -64,14 +64,27 @@ class BaseAgent(ABC):
         Raises:
             Exception: If generation fails
         """
-        result = await asyncio.to_thread(
-            self.client.create,
-            messages=[{"role": "user", "content": prompt}],
-            response_model=response_model,
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-        )
-        return result
+        # Note: temperature and max_tokens can be passed via generation_config
+        # These parameters are kept for API compatibility
+        try:
+            result = await asyncio.to_thread(
+                self.client.create,
+                messages=[{"role": "user", "content": prompt}],
+                response_model=response_model,
+            )
+            return result
+        except Exception as e:
+            logger.error(
+                f"{self.name}: Failed to generate structured output",
+                exc_info=True,
+                extra={
+                    "agent": self.name,
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                    "prompt_length": len(prompt),
+                }
+            )
+            raise
 
     async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """

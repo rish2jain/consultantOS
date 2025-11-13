@@ -23,16 +23,21 @@ User Request
 [API Layer] (/analyze, /monitors/*)
     ↓
 [AnalysisOrchestrator] - 3-Phase Execution
-    ├── Phase 1: Parallel Data Gathering (60s timeout per agent)
-    │   ├── ResearchAgent (Tavily web search)
-    │   ├── MarketAgent (Google Trends via pytrends)
-    │   └── FinancialAgent (yfinance + Finnhub + Alpha Vantage)
+    ├── Phase 1: Parallel Data Gathering (~30-60s, runs in parallel)
+    │   ├── ResearchAgent (Tavily web search) - 30-60s
+    │   ├── MarketAgent (Google Trends via pytrends) - 20-40s
+    │   └── FinancialAgent (yfinance + SEC EDGAR) - 15-30s
+    │   └── Total: ~60s (max of individual agents, runs in parallel)
     │
-    ├── Phase 2: Sequential Analysis (with graceful degradation)
-    │   └── FrameworkAgent (Porter, SWOT, PESTEL, Blue Ocean)
+    ├── Phase 2: Sequential Framework Analysis (~30-60s)
+    │   └── FrameworkAgent (Porter, SWOT, PESTEL, Blue Ocean) - 30-60s
     │
-    └── Phase 3: Synthesis (Executive Summary)
-        └── SynthesisAgent (LLM-powered summarization)
+    └── Phase 3: Synthesis (~40-90s) ⚠️ **BOTTLENECK**
+        └── SynthesisAgent (LLM-powered summarization) - 40-90s
+        └── Timeout increased to 90s to prevent failures
+    
+    **Total Analysis Time:** ~2-3.5 minutes (typical)
+    **Progress Tracking:** Real-time updates via SSE endpoint `/analyze/{report_id}/progress`
     ↓
 [Cache Layer] - Semantic + Disk Cache
     ↓
@@ -45,7 +50,10 @@ User Request
 
 All agents inherit from `BaseAgent` providing:
 - **Gemini + Instructor Setup**: Structured LLM outputs using Pydantic models
-- **Timeout Handling**: Per-agent 60s timeout with asyncio.wait_for()
+- **Timeout Handling**: Per-agent timeout with asyncio.wait_for()
+  - Research/Market/Financial: 60s
+  - Framework: 60s
+  - Synthesis: 90s (increased from 60s to prevent timeouts)
 - **Error Logging**: Context-aware logging with Sentry integration
 - **Performance Tracking**: Execution time measurement and breadcrumb tracking
 
@@ -344,7 +352,7 @@ _tavily_circuit_breaker = CircuitBreaker(
 **Gemini Integration:**
 ```python
 genai.configure(api_key=settings.gemini_api_key)
-gemini_model = genai.GenerativeModel("gemini-1.5-flash-002")
+gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 client = instructor.from_gemini(gemini_model)
 
 # Structured outputs via Instructor

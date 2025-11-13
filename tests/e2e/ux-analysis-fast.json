@@ -1,0 +1,2277 @@
+{
+  "timestamp": "2025-11-12T14:20:59.689880",
+  "analysis_mode": "fast_technical_only",
+  "total_screenshots_analyzed": 160,
+  "total_screenshots_found": 160,
+  "errors": 0,
+  "summary": {
+    "average_score": 34.5636103769562,
+    "min_score": 15.9028125,
+    "max_score": 50.29054210973212,
+    "total_views": 13
+  },
+  "by_view_type": {
+    "scenario_13": {
+      "count": 8,
+      "avg_score": 24.16872648789602,
+      "min_score": 23.66057947647556,
+      "max_score": 24.704310398796025
+    },
+    "scenario_1": {
+      "count": 15,
+      "avg_score": 46.618693345990415,
+      "min_score": 42.78170184131682,
+      "max_score": 50.29054210973212
+    },
+    "error": {
+      "count": 13,
+      "avg_score": 22.87575252730039,
+      "min_score": 15.9028125,
+      "max_score": 48.64073348917633
+    },
+    "form-filled": {
+      "count": 9,
+      "avg_score": 23.69149549233576,
+      "min_score": 23.66057947647556,
+      "max_score": 23.72530623197691
+    },
+    "dashboard": {
+      "count": 7,
+      "avg_score": 46.03343427199424,
+      "min_score": 46.02382077667276,
+      "max_score": 46.043423354974394
+    },
+    "scenario_9": {
+      "count": 54,
+      "avg_score": 34.82912160013224,
+      "min_score": 23.15960829842114,
+      "max_score": 49.12082237180164
+    },
+    "scenario_10": {
+      "count": 12,
+      "avg_score": 31.93380509144444,
+      "min_score": 21.849047044249872,
+      "max_score": 46.043423354974394
+    },
+    "submit-analysis": {
+      "count": 4,
+      "avg_score": 23.814173910459232,
+      "min_score": 23.814173517739047,
+      "max_score": 23.814174303179417
+    },
+    "analysis-page": {
+      "count": 9,
+      "avg_score": 23.68424208728095,
+      "min_score": 23.66058026926262,
+      "max_score": 23.710933239284785
+    },
+    "registration-form": {
+      "count": 10,
+      "avg_score": 48.715126986604666,
+      "min_score": 48.64073348917633,
+      "max_score": 48.82671723274718
+    },
+    "access-app": {
+      "count": 10,
+      "avg_score": 46.0417099257536,
+      "min_score": 46.03913978192242,
+      "max_score": 46.043423354974394
+    },
+    "registration-submit": {
+      "count": 5,
+      "avg_score": 38.020274779522005,
+      "min_score": 21.595876022293783,
+      "max_score": 48.969873951007486
+    },
+    "login": {
+      "count": 4,
+      "avg_score": 23.66058026926262,
+      "min_score": 23.66058026926262,
+      "max_score": 23.66058026926262
+    }
+  },
+  "top_issues": [
+    {
+      "issue": "Weak visual hierarchy - elements lack clear size/importance variation",
+      "count": 160
+    },
+    {
+      "issue": "Low color contrast - may affect readability",
+      "count": 160
+    },
+    {
+      "issue": "Text readability could be improved",
+      "count": 160
+    },
+    {
+      "issue": "Brightness may be too high or too low",
+      "count": 160
+    },
+    {
+      "issue": "Too much whitespace - may feel empty",
+      "count": 140
+    },
+    {
+      "issue": "Too little whitespace - layout feels cramped",
+      "count": 20
+    }
+  ],
+  "top_recommendations": [
+    {
+      "recommendation": "Increase size contrast between primary and secondary elements",
+      "count": 160
+    },
+    {
+      "recommendation": "Increase contrast between text and background colors",
+      "count": 160
+    },
+    {
+      "recommendation": "Adjust text color, size, or background for better readability",
+      "count": 160
+    },
+    {
+      "recommendation": "Adjust overall brightness for better visual comfort",
+      "count": 160
+    },
+    {
+      "recommendation": "Consider adding more content or reducing spacing",
+      "count": 140
+    },
+    {
+      "recommendation": "Consider standard screen aspect ratios (16:9, 16:10)",
+      "count": 86
+    },
+    {
+      "recommendation": "Increase padding and margins between elements",
+      "count": 20
+    }
+  ],
+  "results": [
+    {
+      "image_path": "tests/e2e/screenshots/scenario13A-integration-2025-11-08T19-58-05-573Z.png",
+      "timestamp": "2025-11-12T14:20:27.709394",
+      "overall_score": 23.66057947647556,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372537849775,
+        "contrast": 22.777573360471834,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.017111277770613643,
+        "color_contrast_score": 0.17331108177408522,
+        "text_readability_score": 0.1390043383860054,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "13",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_13"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-playwright-3-registration-submit-2025-11-12T02-16-51-462Z.png",
+      "timestamp": "2025-11-12T14:20:27.864638",
+      "overall_score": 50.28085043595125,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 241.67892428660363,
+        "contrast": 23.24548384789246,
+        "whitespace_ratio": 0.2159418662207636,
+        "visual_hierarchy_score": 0.0291082636742341,
+        "color_contrast_score": 0.15448735905839758,
+        "text_readability_score": 0.14170617254415144,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_1"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-error-2025-11-09T14-55-22-341Z.png",
+      "timestamp": "2025-11-12T14:20:28.007117",
+      "overall_score": 19.86991085867919,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too little whitespace - layout feels cramped",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Increase padding and margins between elements",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1080
+        ],
+        "aspect_ratio": 1.7777777777777777,
+        "brightness": 34.17865210262346,
+        "contrast": 8.32745085953356,
+        "whitespace_ratio": 0.0,
+        "visual_hierarchy_score": 0.007320924119124776,
+        "color_contrast_score": 0.06232848709143505,
+        "text_readability_score": 0.12373615682952846,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "2",
+        "view": "error",
+        "type": "error"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-2-form-filled-2025-11-08T19-57-18-843Z.png",
+      "timestamp": "2025-11-12T14:20:28.297226",
+      "overall_score": 23.66057947647556,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372537849775,
+        "contrast": 22.777573360471834,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.017111277770613643,
+        "color_contrast_score": 0.17331108177408522,
+        "text_readability_score": 0.1390043383860054,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "2",
+        "step": "2",
+        "view": "form-filled",
+        "type": "form-filled"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-5-dashboard-2025-11-08T19-37-04-584Z.png",
+      "timestamp": "2025-11-12T14:20:28.516577",
+      "overall_score": 46.043423354974394,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.0349451531653,
+        "contrast": 64.89610221254581,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16943909576473007,
+        "color_contrast_score": 0.43747339954292014,
+        "text_readability_score": 0.3834932269773134,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "5",
+        "view": "dashboard",
+        "type": "dashboard"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9K-1-navigation-2025-11-08T20-15-38-182Z.png",
+      "timestamp": "2025-11-12T14:20:28.730275",
+      "overall_score": 46.036389104677525,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 222.91774482482464,
+        "contrast": 64.86230229357037,
+        "whitespace_ratio": 0.770491489675588,
+        "visual_hierarchy_score": 0.16927284449511912,
+        "color_contrast_score": 0.4371664259302587,
+        "text_readability_score": 0.38355303371799876,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario10A-health-check-2025-11-08T20-18-33-347Z.png",
+      "timestamp": "2025-11-12T14:20:28.864595",
+      "overall_score": 21.85496560312542,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too little whitespace - layout feels cramped",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Increase padding and margins between elements",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1080
+        ],
+        "aspect_ratio": 1.7777777777777777,
+        "brightness": 19.642545331790124,
+        "contrast": 14.192412406288403,
+        "whitespace_ratio": 0.0016526813271604938,
+        "visual_hierarchy_score": 0.019630876739689444,
+        "color_contrast_score": 0.11087822192413004,
+        "text_readability_score": 0.12365197096827414,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "10",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_10"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-playwright-3-registration-submit-2025-11-12T00-59-27-713Z.png",
+      "timestamp": "2025-11-12T14:20:29.015680",
+      "overall_score": 50.28770320476621,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 241.67550153695132,
+        "contrast": 23.259524177262687,
+        "whitespace_ratio": 0.21592106850352105,
+        "visual_hierarchy_score": 0.029099885380550927,
+        "color_contrast_score": 0.1546162888612992,
+        "text_readability_score": 0.1418044454756802,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_1"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9A-auth-flow-2025-11-08T19-57-20-684Z.png",
+      "timestamp": "2025-11-12T14:20:29.171245",
+      "overall_score": 49.12082237180164,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1262
+        ],
+        "aspect_ratio": 1.5213946117274169,
+        "brightness": 242.52609848234724,
+        "contrast": 19.8887996564785,
+        "whitespace_ratio": 0.21373151082937136,
+        "visual_hierarchy_score": 0.022406699547171983,
+        "color_contrast_score": 0.13274302677598532,
+        "text_readability_score": 0.12449957542518818,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario13B-sync-2025-11-08T20-14-10-295Z.png",
+      "timestamp": "2025-11-12T14:20:29.349305",
+      "overall_score": 24.649436203443393,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1262
+        ],
+        "aspect_ratio": 1.5213946117274169,
+        "brightness": 249.47621981752948,
+        "contrast": 15.299650440222155,
+        "whitespace_ratio": 0.979752707342842,
+        "visual_hierarchy_score": 0.012285943771719312,
+        "color_contrast_score": 0.11327858737608193,
+        "text_readability_score": 0.09458512096592242,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "13",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_13"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-3-submit-analysis-2025-11-08T20-01-05-876Z.png",
+      "timestamp": "2025-11-12T14:20:29.636652",
+      "overall_score": 23.814173517739047,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.3431426425557,
+        "contrast": 23.16331614210754,
+        "whitespace_ratio": 0.9459307935772734,
+        "visual_hierarchy_score": 0.01731421810861888,
+        "color_contrast_score": 0.17526457562242254,
+        "text_readability_score": 0.14063096236720563,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "2",
+        "step": "3",
+        "view": "submit-analysis",
+        "type": "submit-analysis"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9H-1-profile-2025-11-08T20-15-06-092Z.png",
+      "timestamp": "2025-11-12T14:20:29.795186",
+      "overall_score": 23.23683461036185,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 249.46926679727633,
+        "contrast": 11.96470496563832,
+        "whitespace_ratio": 0.9902167538091019,
+        "visual_hierarchy_score": 0.011102478621391172,
+        "color_contrast_score": 0.09100518983032253,
+        "text_readability_score": 0.0790100388251095,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9B-dashboard-2025-11-08T20-16-56-890Z.png",
+      "timestamp": "2025-11-12T14:20:30.009055",
+      "overall_score": 46.01970167248207,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1619
+        ],
+        "aspect_ratio": 1.18591723285979,
+        "brightness": 222.93313473680598,
+        "contrast": 64.84363518728074,
+        "whitespace_ratio": 0.7708648599958823,
+        "visual_hierarchy_score": 0.1693215804730568,
+        "color_contrast_score": 0.43704858952030506,
+        "text_readability_score": 0.3834344781248248,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9D-1-reports-list-2025-11-08T20-13-11-814Z.png",
+      "timestamp": "2025-11-12T14:20:30.170660",
+      "overall_score": 24.668824388924243,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 249.46820639099985,
+        "contrast": 15.358600053349337,
+        "whitespace_ratio": 0.9796057584719501,
+        "visual_hierarchy_score": 0.011960487758473233,
+        "color_contrast_score": 0.11371535034614472,
+        "text_readability_score": 0.09490963651339539,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-1-analysis-page-2025-11-08T19-59-41-178Z.png",
+      "timestamp": "2025-11-12T14:20:30.463676",
+      "overall_score": 23.710933239284785,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.4392933649838,
+        "contrast": 22.8660832506891,
+        "whitespace_ratio": 0.9471811313107921,
+        "visual_hierarchy_score": 0.01735772612154846,
+        "color_contrast_score": 0.17398500339716336,
+        "text_readability_score": 0.1395099085538335,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "2",
+        "step": "1",
+        "view": "analysis-page",
+        "type": "analysis-page"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-error-2025-11-09T15-53-13-893Z.png",
+      "timestamp": "2025-11-12T14:20:30.599140",
+      "overall_score": 19.86991085867919,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too little whitespace - layout feels cramped",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Increase padding and margins between elements",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1080
+        ],
+        "aspect_ratio": 1.7777777777777777,
+        "brightness": 34.17865210262346,
+        "contrast": 8.32745085953356,
+        "whitespace_ratio": 0.0,
+        "visual_hierarchy_score": 0.007320924119124776,
+        "color_contrast_score": 0.06232848709143505,
+        "text_readability_score": 0.12373615682952846,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "2",
+        "view": "error",
+        "type": "error"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9B-dashboard-2025-11-08T20-13-22-230Z.png",
+      "timestamp": "2025-11-12T14:20:30.809305",
+      "overall_score": 46.01970167248207,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1619
+        ],
+        "aspect_ratio": 1.18591723285979,
+        "brightness": 222.93313473680598,
+        "contrast": 64.84363518728074,
+        "whitespace_ratio": 0.7708648599958823,
+        "visual_hierarchy_score": 0.1693215804730568,
+        "color_contrast_score": 0.43704858952030506,
+        "text_readability_score": 0.3834344781248248,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-registration-form-2025-11-08T19-58-20-655Z.png",
+      "timestamp": "2025-11-12T14:20:30.961773",
+      "overall_score": 48.64073348917633,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 242.6690100147941,
+        "contrast": 19.360693940784792,
+        "whitespace_ratio": 0.2142913593803944,
+        "visual_hierarchy_score": 0.02002247667473035,
+        "color_contrast_score": 0.1242831870473918,
+        "text_readability_score": 0.11824273871100036,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "2",
+        "view": "registration-form",
+        "type": "registration-form"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-1-access-app-2025-11-08T19-37-45-999Z.png",
+      "timestamp": "2025-11-12T14:20:31.169186",
+      "overall_score": 46.043423354974394,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.0349451531653,
+        "contrast": 64.89610221254581,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16943909576473007,
+        "color_contrast_score": 0.43747339954292014,
+        "text_readability_score": 0.3834932269773134,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "1",
+        "view": "access-app",
+        "type": "access-app"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-error-2025-11-10T14-03-30-541Z.png",
+      "timestamp": "2025-11-12T14:20:31.304687",
+      "overall_score": 19.86991085867919,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too little whitespace - layout feels cramped",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Increase padding and margins between elements",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1080
+        ],
+        "aspect_ratio": 1.7777777777777777,
+        "brightness": 34.17865210262346,
+        "contrast": 8.32745085953356,
+        "whitespace_ratio": 0.0,
+        "visual_hierarchy_score": 0.007320924119124776,
+        "color_contrast_score": 0.06232848709143505,
+        "text_readability_score": 0.12373615682952846,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "2",
+        "view": "error",
+        "type": "error"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-1-access-app-2025-11-08T19-48-44-399Z.png",
+      "timestamp": "2025-11-12T14:20:31.513701",
+      "overall_score": 46.03913978192242,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1619
+        ],
+        "aspect_ratio": 1.18591723285979,
+        "brightness": 223.03052788930066,
+        "contrast": 64.8878462665766,
+        "whitespace_ratio": 0.7708651816965205,
+        "visual_hierarchy_score": 0.16956966512051705,
+        "color_contrast_score": 0.43744981037397335,
+        "text_readability_score": 0.38348706752123307,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "1",
+        "view": "access-app",
+        "type": "access-app"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9H-1-profile-2025-11-08T19-55-30-897Z.png",
+      "timestamp": "2025-11-12T14:20:31.677804",
+      "overall_score": 23.17978657168871,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 249.49369330022336,
+        "contrast": 11.835050614695053,
+        "whitespace_ratio": 0.990440121292287,
+        "visual_hierarchy_score": 0.01115868298151881,
+        "color_contrast_score": 0.08996446987191942,
+        "text_readability_score": 0.07822428523794515,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-1-error-2025-11-10T03-16-00-195Z.png",
+      "timestamp": "2025-11-12T14:20:31.809357",
+      "overall_score": 15.9028125,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too little whitespace - layout feels cramped",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Increase padding and margins between elements",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1080
+        ],
+        "aspect_ratio": 1.7777777777777777,
+        "brightness": 18.0,
+        "contrast": 0.0,
+        "whitespace_ratio": 0.0,
+        "visual_hierarchy_score": 0.0,
+        "color_contrast_score": 0.0,
+        "text_readability_score": 0.042187499999999996,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "1",
+        "view": "error",
+        "type": "error"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario13A-integration-2025-11-08T20-14-06-340Z.png",
+      "timestamp": "2025-11-12T14:20:32.081375",
+      "overall_score": 23.66057947647556,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372537849775,
+        "contrast": 22.777573360471834,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.017111277770613643,
+        "color_contrast_score": 0.17331108177408522,
+        "text_readability_score": 0.1390043383860054,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "13",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_13"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-error-2025-11-08T19-36-06-014Z.png",
+      "timestamp": "2025-11-12T14:20:32.232421",
+      "overall_score": 48.64073348917633,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 242.6690100147941,
+        "contrast": 19.360693940784792,
+        "whitespace_ratio": 0.2142913593803944,
+        "visual_hierarchy_score": 0.02002247667473035,
+        "color_contrast_score": 0.1242831870473918,
+        "text_readability_score": 0.11824273871100036,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "2",
+        "view": "error",
+        "type": "error"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9K-navigation-2025-11-08T19-50-34-322Z.png",
+      "timestamp": "2025-11-12T14:20:32.441991",
+      "overall_score": 46.01970167248207,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1619
+        ],
+        "aspect_ratio": 1.18591723285979,
+        "brightness": 222.93313473680598,
+        "contrast": 64.84363518728074,
+        "whitespace_ratio": 0.7708648599958823,
+        "visual_hierarchy_score": 0.1693215804730568,
+        "color_contrast_score": 0.43704858952030506,
+        "text_readability_score": 0.3834344781248248,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-1-access-app-2025-11-08T20-17-52-674Z.png",
+      "timestamp": "2025-11-12T14:20:32.656299",
+      "overall_score": 46.043423354974394,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.0349451531653,
+        "contrast": 64.89610221254581,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16943909576473007,
+        "color_contrast_score": 0.43747339954292014,
+        "text_readability_score": 0.3834932269773134,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "1",
+        "view": "access-app",
+        "type": "access-app"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-1-analysis-page-2025-11-08T19-57-13-849Z.png",
+      "timestamp": "2025-11-12T14:20:32.929435",
+      "overall_score": 23.66058026926262,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372434129902,
+        "contrast": 22.777575326919287,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.01711127684332915,
+        "color_contrast_score": 0.17331109750131699,
+        "text_readability_score": 0.13900435182600218,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "2",
+        "step": "1",
+        "view": "analysis-page",
+        "type": "analysis-page"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-5-dashboard-2025-11-08T19-43-23-388Z.png",
+      "timestamp": "2025-11-12T14:20:33.135045",
+      "overall_score": 46.02382077667276,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 222.93678512545412,
+        "contrast": 64.85155467318626,
+        "whitespace_ratio": 0.7706656031800843,
+        "visual_hierarchy_score": 0.16918830441254412,
+        "color_contrast_score": 0.43706909512785735,
+        "text_readability_score": 0.3834402764517175,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "5",
+        "view": "dashboard",
+        "type": "dashboard"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-1-analysis-page-2025-11-08T20-19-15-200Z.png",
+      "timestamp": "2025-11-12T14:20:33.422503",
+      "overall_score": 23.710933239284785,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.4392933649838,
+        "contrast": 22.8660832506891,
+        "whitespace_ratio": 0.9471811313107921,
+        "visual_hierarchy_score": 0.01735772612154846,
+        "color_contrast_score": 0.17398500339716336,
+        "text_readability_score": 0.1395099085538335,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "2",
+        "step": "1",
+        "view": "analysis-page",
+        "type": "analysis-page"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario10C-metrics-2025-11-08T19-37-15-201Z.png",
+      "timestamp": "2025-11-12T14:20:33.632835",
+      "overall_score": 46.043423354974394,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.0349451531653,
+        "contrast": 64.89610221254581,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16943909576473007,
+        "color_contrast_score": 0.43747339954292014,
+        "text_readability_score": 0.3834932269773134,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "10",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_10"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9H-profile-2025-11-08T19-57-59-782Z.png",
+      "timestamp": "2025-11-12T14:20:33.814310",
+      "overall_score": 23.15960829842114,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1262
+        ],
+        "aspect_ratio": 1.5213946117274169,
+        "brightness": 249.5015076102747,
+        "contrast": 11.790220959385577,
+        "whitespace_ratio": 0.990502426703645,
+        "visual_hierarchy_score": 0.011087802003822323,
+        "color_contrast_score": 0.08962272267050304,
+        "text_readability_score": 0.07796674740777067,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9K-1-navigation-2025-11-08T19-46-38-727Z.png",
+      "timestamp": "2025-11-12T14:20:34.057439",
+      "overall_score": 46.039222261397775,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.01531280177377,
+        "contrast": 64.88658149831451,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16938790127896533,
+        "color_contrast_score": 0.43738719637420015,
+        "text_readability_score": 0.3834788980827832,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-3-registration-submit-2025-11-08T19-58-24-789Z.png",
+      "timestamp": "2025-11-12T14:20:34.202015",
+      "overall_score": 48.969873951007486,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 242.42372617448174,
+        "contrast": 20.41143780998304,
+        "whitespace_ratio": 0.22045330704501873,
+        "visual_hierarchy_score": 0.02608585097975257,
+        "color_contrast_score": 0.13216282433102403,
+        "text_readability_score": 0.12433336881027549,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "3",
+        "view": "registration-submit",
+        "type": "registration-submit"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-3-login-2025-11-08T19-49-47-345Z.png",
+      "timestamp": "2025-11-12T14:20:34.489647",
+      "overall_score": 23.66058026926262,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372434129902,
+        "contrast": 22.777575326919287,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.01711127684332915,
+        "color_contrast_score": 0.17331109750131699,
+        "text_readability_score": 0.13900435182600218,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "3",
+        "view": "login",
+        "type": "login"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-playwright-2-registration-form-2025-11-12T02-16-47-710Z.png",
+      "timestamp": "2025-11-12T14:20:34.641770",
+      "overall_score": 49.65855301178796,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 242.11022207802472,
+        "contrast": 21.570505251852794,
+        "whitespace_ratio": 0.2109113143741343,
+        "visual_hierarchy_score": 0.024655964771104204,
+        "color_contrast_score": 0.14076458106236192,
+        "text_readability_score": 0.1310893737482827,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_1"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-1-access-app-2025-11-08T20-14-18-912Z.png",
+      "timestamp": "2025-11-12T14:20:34.845597",
+      "overall_score": 46.043423354974394,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 223.0349451531653,
+        "contrast": 64.89610221254581,
+        "whitespace_ratio": 0.7706659274137985,
+        "visual_hierarchy_score": 0.16943909576473007,
+        "color_contrast_score": 0.43747339954292014,
+        "text_readability_score": 0.3834932269773134,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "1",
+        "view": "access-app",
+        "type": "access-app"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9D-1-reports-list-2025-11-08T19-45-14-656Z.png",
+      "timestamp": "2025-11-12T14:20:35.006153",
+      "overall_score": 24.722758113677152,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 249.44980054989165,
+        "contrast": 15.471931368686546,
+        "whitespace_ratio": 0.9791552799164763,
+        "visual_hierarchy_score": 0.011690382939457653,
+        "color_contrast_score": 0.11464530677739831,
+        "text_readability_score": 0.09560374470537039,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9H-1-profile-2025-11-08T19-46-06-764Z.png",
+      "timestamp": "2025-11-12T14:20:35.180030",
+      "overall_score": 23.17978657168871,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 249.49369330022336,
+        "contrast": 11.835050614695053,
+        "whitespace_ratio": 0.990440121292287,
+        "visual_hierarchy_score": 0.01115868298151881,
+        "color_contrast_score": 0.08996446987191942,
+        "text_readability_score": 0.07822428523794515,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-playwright-5-dashboard-2025-11-12T02-16-28-304Z.png",
+      "timestamp": "2025-11-12T14:20:35.449250",
+      "overall_score": 42.78896553781695,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2086
+        ],
+        "aspect_ratio": 0.9132310642377757,
+        "brightness": 228.73019656100035,
+        "contrast": 59.143717509256966,
+        "whitespace_ratio": 0.8074967977996039,
+        "visual_hierarchy_score": 0.15981662924142817,
+        "color_contrast_score": 0.40285388998009924,
+        "text_readability_score": 0.3459113247962246,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_1"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario13B-sync-2025-11-08T19-58-09-588Z.png",
+      "timestamp": "2025-11-12T14:20:35.609885",
+      "overall_score": 24.704310398796025,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1262
+        ],
+        "aspect_ratio": 1.5213946117274169,
+        "brightness": 249.45795777205493,
+        "contrast": 15.41253925219357,
+        "whitespace_ratio": 0.979305748151083,
+        "visual_hierarchy_score": 0.012077260722842134,
+        "color_contrast_score": 0.1142049155628895,
+        "text_readability_score": 0.09527635236576878,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "13",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_13"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-2-registration-form-2025-11-08T20-17-55-692Z.png",
+      "timestamp": "2025-11-12T14:20:35.759947",
+      "overall_score": 48.64073348917633,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 242.6690100147941,
+        "contrast": 19.360693940784792,
+        "whitespace_ratio": 0.2142913593803944,
+        "visual_hierarchy_score": 0.02002247667473035,
+        "color_contrast_score": 0.1242831870473918,
+        "text_readability_score": 0.11824273871100036,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "2",
+        "view": "registration-form",
+        "type": "registration-form"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-5-dashboard-2025-11-08T20-14-58-539Z.png",
+      "timestamp": "2025-11-12T14:20:35.984139",
+      "overall_score": 46.02382077667276,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1619
+        ],
+        "aspect_ratio": 1.1766522544780729,
+        "brightness": 222.93678512545412,
+        "contrast": 64.85155467318626,
+        "whitespace_ratio": 0.7706656031800843,
+        "visual_hierarchy_score": 0.16918830441254412,
+        "color_contrast_score": 0.43706909512785735,
+        "text_readability_score": 0.3834402764517175,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "5",
+        "view": "dashboard",
+        "type": "dashboard"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9C-analysis-page-2025-11-08T20-13-27-172Z.png",
+      "timestamp": "2025-11-12T14:20:36.268166",
+      "overall_score": 23.66057947647556,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372537849775,
+        "contrast": 22.777573360471834,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.017111277770613643,
+        "color_contrast_score": 0.17331108177408522,
+        "text_readability_score": 0.1390043383860054,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-2-form-filled-2025-11-08T20-00-25-029Z.png",
+      "timestamp": "2025-11-12T14:20:36.556780",
+      "overall_score": 23.710932444735626,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.43929441034945,
+        "contrast": 22.866081277089027,
+        "whitespace_ratio": 0.9471811313107921,
+        "visual_hierarchy_score": 0.01735772711916227,
+        "color_contrast_score": 0.17398498761278447,
+        "text_readability_score": 0.1395098950546926,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "2",
+        "step": "2",
+        "view": "form-filled",
+        "type": "form-filled"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-2-form-filled-2025-11-08T20-13-19-328Z.png",
+      "timestamp": "2025-11-12T14:20:36.844327",
+      "overall_score": 23.66057947647556,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          2176
+        ],
+        "aspect_ratio": 0.8823529411764706,
+        "brightness": 248.45372537849775,
+        "contrast": 22.777573360471834,
+        "whitespace_ratio": 0.9475865981158088,
+        "visual_hierarchy_score": 0.017111277770613643,
+        "color_contrast_score": 0.17331108177408522,
+        "text_readability_score": 0.1390043383860054,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "2",
+        "step": "2",
+        "view": "form-filled",
+        "type": "form-filled"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario2-2-form-filled-2025-11-08T20-16-17-940Z.png",
+      "timestamp": "2025-11-12T14:20:37.131265",
+      "overall_score": 23.723037958935862,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort",
+        "Consider standard screen aspect ratios (16:9, 16:10)"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          2176
+        ],
+        "aspect_ratio": 0.8754595588235294,
+        "brightness": 248.41357158020688,
+        "contrast": 22.851644607453363,
+        "whitespace_ratio": 0.9463746719160105,
+        "visual_hierarchy_score": 0.017300014639908098,
+        "color_contrast_score": 0.1737317941836738,
+        "text_readability_score": 0.1393929475374618,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "2",
+        "step": "2",
+        "view": "form-filled",
+        "type": "form-filled"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9F-jobs-queue-2025-11-08T19-57-28-688Z.png",
+      "timestamp": "2025-11-12T14:20:37.270651",
+      "overall_score": 24.249927044095756,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1920,
+          1080
+        ],
+        "aspect_ratio": 1.7777777777777777,
+        "brightness": 249.28915139531892,
+        "contrast": 14.578452595187331,
+        "whitespace_ratio": 0.985282600308642,
+        "visual_hierarchy_score": 0.01684259778526519,
+        "color_contrast_score": 0.10635795561974273,
+        "text_readability_score": 0.09017912035104111,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario1-playwright-3-registration-submit-2025-11-12T00-52-44-545Z.png",
+      "timestamp": "2025-11-12T14:20:37.416557",
+      "overall_score": 50.29054210973212,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 241.6740106179279,
+        "contrast": 23.26560658032497,
+        "whitespace_ratio": 0.21591649300572768,
+        "visual_hierarchy_score": 0.02909642045370945,
+        "color_contrast_score": 0.15467213309621392,
+        "text_readability_score": 0.14184703078158162,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "1",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_1"
+      }
+    },
+    {
+      "image_path": "tests/e2e/screenshots/scenario9H-1-profile-2025-11-08T20-11-31-488Z.png",
+      "timestamp": "2025-11-12T14:20:37.574216",
+      "overall_score": 23.17978657168871,
+      "strengths": [],
+      "weaknesses": [
+        "Weak visual hierarchy - elements lack clear size/importance variation",
+        "Too much whitespace - may feel empty",
+        "Low color contrast - may affect readability",
+        "Text readability could be improved",
+        "Brightness may be too high or too low"
+      ],
+      "recommendations": [
+        "Increase size contrast between primary and secondary elements",
+        "Consider adding more content or reducing spacing",
+        "Increase contrast between text and background colors",
+        "Adjust text color, size, or background for better readability",
+        "Adjust overall brightness for better visual comfort"
+      ],
+      "metrics": {
+        "image_size": [
+          1905,
+          1262
+        ],
+        "aspect_ratio": 1.5095087163232963,
+        "brightness": 249.49369330022336,
+        "contrast": 11.835050614695053,
+        "whitespace_ratio": 0.990440121292287,
+        "visual_hierarchy_score": 0.01115868298151881,
+        "color_contrast_score": 0.08996446987191942,
+        "text_readability_score": 0.07822428523794515,
+        "ui_components_detected": null,
+        "accessibility_issues": null,
+        "design_recommendations": null
+      },
+      "view_info": {
+        "scenario": "9",
+        "step": "unknown",
+        "view": "unknown",
+        "type": "scenario_9"
+      }
+    }
+  ]
+}

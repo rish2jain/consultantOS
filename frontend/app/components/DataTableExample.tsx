@@ -6,7 +6,6 @@ import {
   Column,
   TablePagination,
   usePagination,
-  TableSort,
   useSort,
   TableFilters,
   useFilters,
@@ -29,7 +28,7 @@ interface Report {
 }
 
 // Example usage demonstrating all table features
-export const DataTableExample: React.FC = () => {
+const DataTableExample: React.FC = () => {
   // Sample data
   const [reports] = React.useState<Report[]>([
     {
@@ -70,7 +69,7 @@ export const DataTableExample: React.FC = () => {
   } = usePagination(reports.length, 10);
 
   // Sorting hook
-  const { sortConfig, handleSort, sortData } = useSort<Report>({
+  const { sortData } = useSort<Report>({
     customSorters: {
       confidence: (a, b) => a.confidence - b.confidence,
       createdAt: (a, b) =>
@@ -84,7 +83,6 @@ export const DataTableExample: React.FC = () => {
     handleFilterChange,
     handleClearAll,
     filterData,
-    activeFilterCount,
   } = useFilters<Report>({
     customFilters: {
       status: (row, value) => row.status === value,
@@ -126,7 +124,7 @@ export const DataTableExample: React.FC = () => {
       render: (value: string[]) => (
         <div className="flex gap-1">
           {value.map((fw) => (
-            <Badge key={fw} variant="secondary" size="sm">
+            <Badge key={fw} variant="default" size="sm">
               {fw}
             </Badge>
           ))}
@@ -355,3 +353,5 @@ export const DataTableExample: React.FC = () => {
  * }
  * ```
  */
+
+export default DataTableExample;

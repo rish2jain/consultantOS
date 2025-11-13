@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/app/components/Card';
 import { Users, Brain, DollarSign, TrendingUp, BarChart } from 'lucide-react';
 
 export type Persona = 'executive' | 'technical' | 'sales' | 'investor' | 'analyst';

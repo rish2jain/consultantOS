@@ -30,7 +30,7 @@ diskcache>=5.6.0
 
 # Report Generation
 reportlab>=4.0.0
-plotly>=5.18.0
+plotly>=6.1.1  # Required for compatibility with kaleido 1.2.0+
 kaleido>=0.2.1
 openpyxl>=3.1.0  # Excel export
 python-docx>=1.1.0  # Word export
@@ -74,8 +74,9 @@ slack-sdk>=3.23.0  # Slack integration for alerts
 aiohttp>=3.9.0  # Async HTTP for webhooks
 
 # Data Validation
-pandera==0.17.0  # Pinned version for faster deployment
+pandera[pandas]==0.17.0  # Pinned version for faster deployment with pandas extra
 multimethod>=1.9.0,<2.0.0  # Required by pandera - pin compatible version
+typeguard>=3.0.0,<4.3.0  # Required by pandera for proper generic type validation (List[T], Dict[K, V]). <4.3.0 for AWS CDK compatibility
 
 # Anomaly Detection & Forecasting
 # prophet>=1.1.0  # Time series forecasting - TEMPORARILY DISABLED for faster deployment

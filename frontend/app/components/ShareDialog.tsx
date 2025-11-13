@@ -20,7 +20,7 @@ export interface ShareDialogProps {
   onSuccess?: (shareLink: string, shareId: string) => void;
 }
 
-interface ShareSettings {
+interface ShareSettingsData {
   password: string;
   expiresAt: string;
   permissions: 'view' | 'download';
@@ -192,7 +192,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 />
                 <Button
                   onClick={handleCopyLink}
-                  variant={copied ? 'success' : 'outline'}
+                  variant={copied ? 'primary' : 'outline'}
                   leftIcon={copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   aria-label={copied ? 'Link copied' : 'Copy link'}
                 >
@@ -313,3 +313,4 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     </Modal>
   );
 };
+export default ShareDialog;

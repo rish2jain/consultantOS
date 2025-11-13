@@ -90,10 +90,10 @@ export const IndustrySelector: React.FC<IndustrySelectorProps> = ({
     // Only add listener when dropdown is open
     if (isOpen) {
       // Use 'click' instead of 'mousedown' to allow option clicks to process first
-      // Add a small delay to ensure option button clicks are handled before outside click
+      // Defer to next tick to avoid catching the opening click
       const timeoutId = setTimeout(() => {
         document.addEventListener("click", handleClickOutside, true);
-      }, 100);
+      }, 0);
       
       return () => {
         clearTimeout(timeoutId);

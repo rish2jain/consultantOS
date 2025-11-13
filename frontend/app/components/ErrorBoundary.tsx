@@ -10,8 +10,8 @@
 'use client';
 
 import React, { Component, ReactNode } from 'react';
-import Button from './Button';
-import Alert from './Alert';
+import { Button } from './Button';
+import { Alert } from './Alert';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -137,9 +137,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
           <div className="max-w-md w-full">
             <Alert
-              type="error"
+              variant="error"
               title="Something went wrong"
-              message={
+              description={
                 <div>
                   <p className="mb-4">
                     We encountered an unexpected error. Our team has been notified and is working on a fix.

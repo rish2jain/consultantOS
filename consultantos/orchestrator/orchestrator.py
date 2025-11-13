@@ -4,7 +4,7 @@ Multi-agent orchestrator for ConsultantOS
 import asyncio
 import logging
 from contextlib import contextmanager
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Set, List
 from datetime import datetime
 from consultantos import models
 from consultantos.agents import (
@@ -16,6 +16,7 @@ from consultantos.agents import (
     DecisionIntelligenceEngine,
     is_agent_available
 )
+from consultantos.insights.social_signal_synthesizer import SocialSignalSynthesizer
 
 # Initialize logger before any optional imports so we can log failures
 logger = logging.getLogger(__name__)
@@ -44,7 +45,16 @@ except (ImportError, Exception) as e:
     logger.warning(f"SystemsAgent not available: {e}")
     SystemsAgent = None
     _SYSTEMS_AVAILABLE = False
+
+try:
+    from consultantos.agents.social_media_agent import SocialMediaAgent
+    _SOCIAL_MEDIA_AVAILABLE = True
+except (ImportError, Exception) as e:
+    logger.warning(f"SocialMediaAgent not available: {e}")
+    SocialMediaAgent = None
+    _SOCIAL_MEDIA_AVAILABLE = False
 from consultantos.cache import cache_key, semantic_cache_lookup, semantic_cache_store
+from consultantos.orchestrator.progress_tracker import ProgressTracker
 
 # Import monitoring functions from monitoring module (not package)
 # Note: consultantos.monitoring is a package, so we import from the parent and access the .py file
@@ -85,31 +95,55 @@ except (ImportError, AttributeError, Exception) as e:
 AnalysisRequest = models.AnalysisRequest
 StrategicReport = models.StrategicReport
 ExecutiveSummary = models.ExecutiveSummary
+FinancialSnapshot = models.FinancialSnapshot
 
 
 class AnalysisOrchestrator:
     """Orchestrates multi-agent analysis workflow"""
 
-    def __init__(self) -> None:
-        """Initialize orchestrator with all agent instances."""
+    def __init__(
+        self,
+        research_agent: Optional[Any] = None,
+        market_agent: Optional[Any] = None,
+        financial_agent: Optional[Any] = None,
+        framework_agent: Optional[Any] = None,
+        synthesis_agent: Optional[Any] = None,
+        decision_intelligence: Optional[Any] = None,
+        positioning_agent: Optional[Any] = ...,
+        disruption_agent: Optional[Any] = ...,
+        systems_agent: Optional[Any] = ...,
+        social_media_agent: Optional[Any] = ...,
+    ) -> None:
+        """Initialize orchestrator with all agent instances (supports dependency injection)."""
         # Phase 1: Data Gathering
-        self.research_agent = ResearchAgent()
-        self.market_agent = MarketAgent()
-        self.financial_agent = FinancialAgent()
+        self.research_agent = research_agent or ResearchAgent()
+        self.market_agent = market_agent or MarketAgent()
+        self.financial_agent = financial_agent or FinancialAgent()
 
         # Phase 2: Framework Analysis
-        self.framework_agent = FrameworkAgent()
+        self.framework_agent = framework_agent or FrameworkAgent()
 
-        # Phase 3: Synthesis
-        self.synthesis_agent = SynthesisAgent()
+        # Phase 3: Synthesis (increased timeout to 90s to prevent failures)
+        self.synthesis_agent = synthesis_agent or SynthesisAgent(timeout=90)
 
         # Phase 4: Strategic Intelligence (conditional)
-        self.positioning_agent = PositioningAgent() if _POSITIONING_AVAILABLE else None
-        self.disruption_agent = DisruptionAgent() if _DISRUPTION_AVAILABLE else None
-        self.systems_agent = SystemsAgent() if _SYSTEMS_AVAILABLE else None
+        if positioning_agent is ...:
+            positioning_agent = PositioningAgent() if _POSITIONING_AVAILABLE else None
+        if disruption_agent is ...:
+            disruption_agent = DisruptionAgent() if _DISRUPTION_AVAILABLE else None
+        if systems_agent is ...:
+            systems_agent = SystemsAgent() if _SYSTEMS_AVAILABLE else None
+        if social_media_agent is ...:
+            social_media_agent = SocialMediaAgent() if _SOCIAL_MEDIA_AVAILABLE else None
+
+        self.positioning_agent = positioning_agent
+        self.disruption_agent = disruption_agent
+        self.systems_agent = systems_agent
+        self.social_media_agent = social_media_agent
 
         # Phase 5: Decision Intelligence
-        self.decision_intelligence = DecisionIntelligenceEngine()
+        self.decision_intelligence = decision_intelligence or DecisionIntelligenceEngine()
+        self.social_signal_synthesizer = SocialSignalSynthesizer()
 
     async def orchestrate_analysis(
         self,
@@ -133,7 +167,12 @@ class AnalysisOrchestrator:
             enable_strategic_intelligence=enable_strategic_intelligence,
         )
     
-    async def execute(self, request: AnalysisRequest, enable_strategic_intelligence: bool = True) -> StrategicReport:
+    async def execute(
+        self, 
+        request: AnalysisRequest, 
+        enable_strategic_intelligence: bool = True,
+        progress_tracker: Optional[Any] = None
+    ) -> StrategicReport:
         """
         Execute complete analysis workflow
 
@@ -146,6 +185,7 @@ class AnalysisOrchestrator:
         Args:
             request: Analysis request containing company info and framework selection
             enable_strategic_intelligence: Enable Phase 4 & 5 advanced intelligence (default: True)
+            progress_tracker: Optional progress tracker for real-time updates
 
         Returns:
             Complete strategic report with all analysis phases
@@ -157,13 +197,16 @@ class AnalysisOrchestrator:
         cache_key_str = cache_key(
             request.company,
             request.frameworks,
-            request.industry
+            request.industry,
+            request.depth,
         )
         
         # Try semantic cache lookup
         cached_result = await semantic_cache_lookup(
             request.company,
-            request.frameworks
+            request.frameworks,
+            industry=request.industry,
+            depth=request.depth,
         )
         
         if cached_result:
@@ -178,18 +221,30 @@ class AnalysisOrchestrator:
             frameworks=request.frameworks
         ):
             try:
-                # Phase 1: Parallel data gathering
-                phase1_results = await self._execute_parallel_phase(request)
+                # Phase 1: Parallel data gathering (includes social media)
+                if progress_tracker:
+                    await progress_tracker.start_phase("phase_1", 1, 3)
+                phase1_results = await self._execute_parallel_phase(request, progress_tracker)
+                if progress_tracker:
+                    await progress_tracker.complete_phase("phase_1")
 
                 # Phase 2: Sequential framework analysis
+                if progress_tracker:
+                    await progress_tracker.start_phase("phase_2", 2, 3)
                 framework_results = await self._execute_framework_phase(
-                    request, phase1_results
+                    request, phase1_results, progress_tracker
                 )
+                if progress_tracker:
+                    await progress_tracker.complete_phase("phase_2")
 
                 # Phase 3: Synthesis
+                if progress_tracker:
+                    await progress_tracker.start_phase("phase_3", 3, 3)
                 synthesis_results = await self._execute_synthesis_phase(
-                    request, phase1_results, framework_results
+                    request, phase1_results, framework_results, progress_tracker
                 )
+                if progress_tracker:
+                    await progress_tracker.complete_phase("phase_3")
 
                 # Phase 4: Strategic Intelligence (conditional)
                 strategic_intelligence_results = None
@@ -220,15 +275,57 @@ class AnalysisOrchestrator:
                     request.company,
                     request.frameworks,
                     cache_key_str,
-                    report
+                    report,
+                    industry=request.industry,
+                    depth=request.depth,
                 )
 
                 return report
 
             except Exception as e:
                 raise Exception(f"Orchestration failed: {str(e)}")
+
+    async def execute_phase_1(
+        self,
+        company: str,
+        industry: Optional[str] = None,
+        frameworks: Optional[List[str]] = None,
+        depth: str = "quick"
+    ) -> Dict[str, Any]:
+        """Expose Phase 1 outputs for downstream agents (positioning, disruption, etc.)."""
+
+        request = AnalysisRequest(
+            company=company,
+            industry=industry,
+            frameworks=frameworks or ["porter", "swot"],
+            depth=depth,
+        )
+
+        phase1_results = await self._execute_parallel_phase(request)
+
+        if self.social_media_agent:
+            social_media_results = await self._execute_social_media_phase(request, phase1_results)
+            if social_media_results:
+                phase1_results["social_media"] = social_media_results
+
+        framework_results = await self._execute_framework_phase(request, phase1_results)
+
+        return {
+            "research_summary": phase1_results.get("research"),
+            "market_analysis": phase1_results.get("market"),
+            "financial_analysis": phase1_results.get("financial"),
+            "framework_analysis": framework_results.get("frameworks"),
+            "errors": phase1_results.get("errors", {}),
+            "social_signals": (phase1_results.get("social_media") or {}).get("summary"),
+        }
     
-    async def _safe_execute_agent(self, agent: Any, input_data: Dict[str, Any], agent_name: str) -> Optional[Dict[str, Any]]:
+    async def _safe_execute_agent(
+        self, 
+        agent: Any, 
+        input_data: Dict[str, Any], 
+        agent_name: str,
+        progress_tracker: Optional[Any] = None
+    ) -> Optional[Dict[str, Any]]:
         """
         Execute agent with error handling and logging
         
@@ -236,22 +333,35 @@ class AnalysisOrchestrator:
             agent: Agent instance to execute
             input_data: Input data for the agent
             agent_name: Name of the agent for logging
+            progress_tracker: Optional progress tracker for updates
         
         Returns:
             Agent result or None if execution failed
         """
+        if progress_tracker:
+            await progress_tracker.start_agent(agent_name)
         try:
             result = await agent.execute(input_data)
             logger.info(f"{agent_name} completed successfully")
+            if progress_tracker:
+                await progress_tracker.complete_agent(agent_name)
             return result
         except asyncio.TimeoutError as e:
             logger.error(f"{agent_name} timed out: {e}")
+            if progress_tracker:
+                await progress_tracker.complete_agent(agent_name)  # Mark as complete even on timeout
             return None
         except Exception as e:
             logger.error(f"{agent_name} failed: {e}", exc_info=True)
+            if progress_tracker:
+                await progress_tracker.complete_agent(agent_name)  # Mark as complete even on failure
             return None
     
-    async def _execute_parallel_phase(self, request: AnalysisRequest) -> Dict[str, Any]:
+    async def _execute_parallel_phase(
+        self, 
+        request: AnalysisRequest,
+        progress_tracker: Optional[Any] = None
+    ) -> Dict[str, Any]:
         """
         Execute Phase 1: Parallel data gathering with graceful degradation
         
@@ -276,22 +386,52 @@ class AnalysisOrchestrator:
         
         # Run agents in parallel with individual error handling
         research_task = self._safe_execute_agent(
-            self.research_agent, input_data, "research_agent"
+            self.research_agent, input_data, "ResearchAgent", progress_tracker
         )
         market_task = self._safe_execute_agent(
-            self.market_agent, input_data, "market_agent"
+            self.market_agent, input_data, "MarketAgent", progress_tracker
         )
         financial_task = self._safe_execute_agent(
-            self.financial_agent, input_data, "financial_agent"
+            self.financial_agent, input_data, "FinancialAgent", progress_tracker
         )
-        
-        research, market, financial = await asyncio.gather(
-            research_task,
-            market_task,
-            financial_task,
-            return_exceptions=False  # Errors already handled in _safe_execute_agent
-        )
-        
+
+        # Add social media agent to parallel execution
+        social_media_task = None
+        if self.social_media_agent:
+            # Build keywords for social media monitoring
+            keywords = [request.company]
+            if request.industry:
+                keywords.append(request.industry)
+
+            social_input = {
+                "company": request.company,
+                "keywords": keywords,
+                "competitors": [],  # Intentionally initialized empty here; will be populated in _execute_social_media_phase (or from phase1_results)
+                "days_back": 7,
+                "alert_threshold": 0.35,
+            }
+            social_media_task = self._safe_execute_agent(
+                self.social_media_agent, social_input, "SocialMediaAgent", progress_tracker
+            )
+
+        # Run all agents in parallel
+        if social_media_task:
+            research, market, financial, social_media = await asyncio.gather(
+                research_task,
+                market_task,
+                financial_task,
+                social_media_task,
+                return_exceptions=False  # Errors already handled in _safe_execute_agent
+            )
+        else:
+            research, market, financial = await asyncio.gather(
+                research_task,
+                market_task,
+                financial_task,
+                return_exceptions=False  # Errors already handled in _safe_execute_agent
+            )
+            social_media = None
+
         # Track which agents succeeded/failed
         errors = {}
         if research is None:
@@ -300,29 +440,122 @@ class AnalysisOrchestrator:
             errors["market"] = "Market agent failed or timed out"
         if financial is None:
             errors["financial"] = "Financial agent failed or timed out"
-        
+        if self.social_media_agent and social_media is None:
+            errors["social_media"] = "Social media agent failed or timed out"
+
         # Log warnings if any agents failed
         if errors:
             logger.warning(
                 f"Phase 1 completed with errors: {errors}. "
                 f"Continuing with partial results."
             )
-        
-        # Ensure at least one agent succeeded
+
+        # Ensure at least one core agent succeeded (social media is optional)
         if research is None and market is None and financial is None:
             raise Exception(
-                "All Phase 1 agents failed. Cannot proceed with analysis. "
+                "All core Phase 1 agents failed. Cannot proceed with analysis. "
                 "Please check API keys and network connectivity."
             )
-        
+
         return {
             "research": research,
             "market": market,
             "financial": financial,
+            "social_media": social_media,
             "errors": errors
         }
+
+    async def _execute_social_media_phase(
+        self,
+        request: AnalysisRequest,
+        phase1_results: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Collect Twitter + Reddit signals and synthesize summary."""
+
+        if not self.social_media_agent:
+            return None
+
+        keywords = self._build_social_keywords(
+            request.company,
+            phase1_results.get("research")
+        )
+        competitors = []
+        research = phase1_results.get("research")
+        if research and getattr(research, "key_competitors", None):
+            competitors = research.key_competitors[:5]
+
+        twitter_result = None
+        reddit_result = None
+
+        try:
+            twitter_result = await self.social_media_agent.execute({
+                "company": request.company,
+                "keywords": keywords,
+                "competitors": competitors,
+                "days_back": 7,
+                "alert_threshold": 0.35,
+            })
+        except Exception as exc:
+            logger.warning(f"Social media (Twitter) monitoring failed: {exc}")
+
+        try:
+            reddit_coro = getattr(self.social_media_agent, "_analyze_reddit", None)
+            if reddit_coro:
+                reddit_result = await reddit_coro(
+                    keywords=keywords,
+                    subreddits=None,
+                    days_back=7,
+                )
+        except Exception as exc:
+            logger.warning(f"Reddit monitoring failed: {exc}")
+
+        twitter_insight = None
+        if isinstance(twitter_result, dict) and twitter_result.get("success"):
+            twitter_insight = twitter_result.get("data")
+
+        summary = self.social_signal_synthesizer.summarize(
+            company=request.company,
+            twitter_insight=twitter_insight,
+            reddit_insight=reddit_result,
+        )
+
+        if not (twitter_insight or reddit_result or summary):
+            return None
+
+        return {
+            "twitter": twitter_insight,
+            "reddit": reddit_result,
+            "summary": summary,
+        }
+
+    def _build_social_keywords(
+        self,
+        company: str,
+        research: Optional[Any]
+    ) -> List[str]:
+        """Derive keywords for social monitoring from company research."""
+
+        keywords: Set[str] = {company}
+        if research:
+            if getattr(research, "company_name", None):
+                keywords.add(research.company_name)
+            for product in (getattr(research, "products_services", []) or [])[:3]:
+                keywords.add(product)
+            for kw in (getattr(research, "keywords", []) or [])[:5]:
+                if isinstance(kw, dict):
+                    text = kw.get("term") or kw.get("keyword")
+                    if text:
+                        keywords.add(text)
+                elif isinstance(kw, str):
+                    keywords.add(kw)
+        return [kw for kw in keywords if kw]
     
-    async def _execute_framework_phase(self, request: AnalysisRequest, phase1_results: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_framework_phase(
+        self, 
+        request: AnalysisRequest, 
+        phase1_results: Dict[str, Any],
+        progress_tracker: Optional[Any] = None
+    ) -> Dict[str, Any]:
         """
         Execute Phase 2: Framework analysis
         
@@ -341,7 +574,8 @@ class AnalysisOrchestrator:
             "frameworks": request.frameworks,
             "research": phase1_results.get("research"),
             "market": phase1_results.get("market"),
-            "financial": phase1_results.get("financial")
+            "financial": phase1_results.get("financial"),
+            "social_media": phase1_results.get("social_media")
         }
         
         # Note missing data in prompt if needed
@@ -357,7 +591,11 @@ class AnalysisOrchestrator:
             logger.info(f"Framework analysis proceeding with missing data: {missing_data}")
         
         try:
+            if progress_tracker:
+                await progress_tracker.start_agent("FrameworkAgent")
             framework_results = await self.framework_agent.execute(input_data)
+            if progress_tracker:
+                await progress_tracker.complete_agent("FrameworkAgent")
             return {
                 "frameworks": framework_results
             }
@@ -370,9 +608,13 @@ class AnalysisOrchestrator:
                 "errors": {"framework": str(e)}
             }
     
-    async def _execute_synthesis_phase(self, request: AnalysisRequest,
-                                       phase1_results: Dict[str, Any],
-                                       phase2_results: Dict[str, Any]) -> ExecutiveSummary:
+    async def _execute_synthesis_phase(
+        self, 
+        request: AnalysisRequest,
+        phase1_results: Dict[str, Any],
+        phase2_results: Dict[str, Any],
+        progress_tracker: Optional[Any] = None
+    ) -> ExecutiveSummary:
         """
         Execute Phase 3: Synthesis
 
@@ -390,10 +632,15 @@ class AnalysisOrchestrator:
             "research": phase1_results.get("research"),
             "market": phase1_results.get("market"),
             "financial": phase1_results.get("financial"),
+            "social_media": phase1_results.get("social_media"),
             "frameworks": phase2_results.get("frameworks")
         }
 
+        if progress_tracker:
+            await progress_tracker.start_agent("SynthesisAgent")
         synthesis = await self.synthesis_agent.execute(input_data)
+        if progress_tracker:
+            await progress_tracker.complete_agent("SynthesisAgent")
         return synthesis
 
     async def _execute_strategic_intelligence_phase(
@@ -425,7 +672,8 @@ class AnalysisOrchestrator:
             "financial_data": phase1_results.get("financial"),
             "research_data": phase1_results.get("research"),
             "competitors": [],  # TODO: Extract from research or pass separately
-            "historical_snapshots": []  # TODO: Fetch from monitoring system if available
+            "historical_snapshots": [],  # TODO: Fetch from monitoring system if available
+            "social_signals": (phase1_results.get("social_media") or {}).get("summary")
         }
 
         # Execute Positioning Agent (async)
@@ -585,15 +833,38 @@ class AnalysisOrchestrator:
             disruption = strategic_intelligence_results.get("disruption")
             systems = strategic_intelligence_results.get("systems")
 
+        social_summary = None
+        if phase1_results.get("social_media"):
+            social_summary = phase1_results["social_media"].get("summary")
+
+        # Ensure required sections exist even if upstream agents failed
+        financial_snapshot = phase1_results.get("financial")
+        if financial_snapshot is None:
+            try:
+                ticker = self._guess_ticker(request.company)
+            except Exception:
+                # Generate clearer fallback ticker: use full name if <= 5 chars, otherwise first 5 chars
+                company_clean = request.company.strip().upper()
+                if len(company_clean) >= 5:
+                    ticker = company_clean[:5]
+                else:
+                    ticker = company_clean  # Use full name for short company names like "IBM"
+            financial_snapshot = FinancialSnapshot(
+                ticker=ticker,
+                risk_assessment="Insufficient data: financial agent unavailable",
+                key_metrics={}
+            )
+
         # Create report (check if StrategicReport supports new fields)
         report = StrategicReport(
             executive_summary=synthesis,
             company_research=phase1_results.get("research"),
             market_trends=phase1_results.get("market"),
-            financial_snapshot=phase1_results.get("financial"),
+            financial_snapshot=financial_snapshot,
             framework_analysis=framework_analysis,
             recommendations=recommendations,
-            metadata=metadata
+            metadata=metadata,
+            social_signals=social_summary
         )
 
         # Add strategic intelligence fields if the model supports them

@@ -86,6 +86,7 @@ export const Alert: React.FC<AlertProps> = ({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [autoDismiss, handleClose]);
 
   if (!isVisible) return null;

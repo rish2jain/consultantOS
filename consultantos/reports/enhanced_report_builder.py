@@ -152,11 +152,19 @@ class EnhancedReportBuilder:
         analysis_scope = f"Comprehensive strategic analysis of {report.executive_summary.company_name} " \
                          f"in the {report.executive_summary.industry} industry using " \
                          f"{', '.join(frameworks_used)} frameworks."
+        if report.social_signals:
+            analysis_scope += " Live Reddit and Twitter pulse validated key findings."
         
         # Methodology note
         methodology_note = f"Analysis confidence: {report.executive_summary.confidence_score:.0%}. " \
                           f"Based on research data, market trends, financial analysis, and strategic frameworks. " \
                           f"Data sources include web research, market trends, and financial data."
+        if report.social_signals:
+            methodology_note += (
+                f" Social sentiment {report.social_signals.sentiment_label}"
+                f" (score {report.social_signals.sentiment_score:+.2f}) derived from"
+                f" {report.social_signals.twitter_volume} tweets and {report.social_signals.reddit_volume} Reddit mentions."
+            )
         
         # Visual dashboard data
         visual_dashboard = {
@@ -164,6 +172,15 @@ class EnhancedReportBuilder:
             "frameworks_applied": len(frameworks_used),
             "key_metrics": company_overview["key_metrics"]
         }
+        if report.social_signals:
+            visual_dashboard["social_pulse"] = {
+                "sentiment": report.social_signals.sentiment_score,
+                "label": report.social_signals.sentiment_label,
+                "momentum": report.social_signals.momentum,
+                "top_narratives": [n.topic for n in report.social_signals.narratives[:3]],
+                "risk_alerts": report.social_signals.risk_alerts[:2],
+                "opportunities": report.social_signals.opportunity_alerts[:2]
+            }
         
         # Safely get recommendations list (handle None or missing attribute)
         safe_recs = getattr(report, "recommendations", None) or []
@@ -217,6 +234,15 @@ class EnhancedReportBuilder:
                 "risk_assessment": report.financial_snapshot.risk_assessment if report.financial_snapshot else None
             }
         }
+        if report.social_signals:
+            supporting_data["social_media"] = {
+                "sentiment": report.social_signals.sentiment_score,
+                "momentum": report.social_signals.momentum,
+                "narratives": [n.model_dump() for n in report.social_signals.narratives],
+                "influencers": [i.model_dump() for i in report.social_signals.influencer_watchlist],
+                "risks": report.social_signals.risk_alerts,
+                "opportunities": report.social_signals.opportunity_alerts
+            }
         
         # Cross-framework insights
         cross_framework_insights = self._generate_cross_framework_insights(
@@ -409,7 +435,18 @@ class EnhancedReportBuilder:
             insights.append(
                 "SWOT opportunities can be pursued through Blue Ocean value innovation strategies."
             )
-        
+
+        if getattr(report, "social_signals", None):
+            social_label = report.social_signals.sentiment_label
+            if report.social_signals.risk_alerts:
+                insights.append(
+                    f"Social listening ({social_label}) flags community risks: {report.social_signals.risk_alerts[0]}"
+                )
+            if report.social_signals.opportunity_alerts:
+                insights.append(
+                    f"Leverage positive narratives to reinforce opportunities: {report.social_signals.opportunity_alerts[0]}"
+                )
+
         return insights
     
     def _assess_data_completeness(self, report: StrategicReport) -> float:
@@ -426,4 +463,3 @@ class EnhancedReportBuilder:
             completeness += 0.2
         
         return min(completeness, 1.0)
-

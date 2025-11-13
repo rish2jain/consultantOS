@@ -94,7 +94,7 @@ export function CompetitiveLandscape({
     ]
   );
 
-  const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null);
+  const [_selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null);
 
   // Prepare plot data
   const plotData = competitors.map((comp) => ({
@@ -229,7 +229,6 @@ export function CompetitiveLandscape({
             }}
             onClick={(data: any) => {
               if (data.points && data.points.length > 0) {
-                const pointIndex = data.points[0].pointIndex;
                 const curveNumber = data.points[0].curveNumber;
                 setSelectedCompetitor(competitors[curveNumber]);
               }

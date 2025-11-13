@@ -127,14 +127,14 @@ async def _check_monitor_async(monitor_id: str) -> Dict[str, Any]:
         Dict with check results
     """
     from consultantos.monitoring.intelligence_monitor import IntelligenceMonitor
-    from consultantos.orchestrator.analysis_orchestrator import get_orchestrator
-    from consultantos.database import get_database_service
-    from consultantos.cache import get_cache_service
+    from consultantos.orchestrator import AnalysisOrchestrator
+    from consultantos.database import get_db_service
+    from consultantos.cache import get_disk_cache
 
     # Initialize dependencies
-    orchestrator = get_orchestrator()
-    db_service = get_database_service()
-    cache_service = get_cache_service()
+    orchestrator = AnalysisOrchestrator()
+    db_service = get_db_service()
+    cache_service = get_disk_cache()
 
     intelligence_monitor = IntelligenceMonitor(
         orchestrator=orchestrator,
@@ -322,17 +322,17 @@ async def _process_alert_async(alert_dict: Dict[str, Any]) -> Dict[str, Any]:
         Dict with processing results
     """
     from consultantos.monitoring.intelligence_monitor import IntelligenceMonitor
-    from consultantos.orchestrator.analysis_orchestrator import get_orchestrator
-    from consultantos.database import get_database_service
-    from consultantos.cache import get_cache_service
+    from consultantos.orchestrator import AnalysisOrchestrator
+    from consultantos.database import get_db_service
+    from consultantos.cache import get_disk_cache
 
     # Reconstruct Alert object
     alert = Alert(**alert_dict)
 
     # Initialize dependencies
-    orchestrator = get_orchestrator()
-    db_service = get_database_service()
-    cache_service = get_cache_service()
+    orchestrator = AnalysisOrchestrator()
+    db_service = get_db_service()
+    cache_service = get_disk_cache()
 
     intelligence_monitor = IntelligenceMonitor(
         orchestrator=orchestrator,

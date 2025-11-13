@@ -9,7 +9,7 @@ This is the Hackathon MVP demo showcasing ConsultantOS's AI-powered competitive 
 - **Location**: Left panel of `/mvp-demo`
 - **Backend**: `POST /mvp/chat`
 - **Features**:
-  - Real-time AI responses powered by Google Gemini 1.5
+  - Real-time AI responses powered by Google Gemini 2.5 Flash
   - Conversation history tracking
   - Auto-scrolling message view
   - Loading states and error handling
@@ -150,7 +150,7 @@ Response: {
    - Point out confidence intervals
    - Highlight statistics (% change)
 4. Show responsive design (resize browser)
-5. Mention tech stack (Google Cloud Run, Gemini 1.5)
+5. Mention tech stack (Google Cloud Run, Gemini 2.5 Flash)
 
 ### Troubleshooting:
 - **Backend not connecting**: Ensure `python main.py` is running
@@ -184,7 +184,7 @@ Response: {
 - **Styling**: Tailwind CSS
 - **Charts**: Recharts
 - **Icons**: Lucide React
-- **Backend**: FastAPI, Python, Google Gemini 1.5
+- **Backend**: FastAPI, Python, Google Gemini 2.5 Flash
 - **Deployment**: Google Cloud Run
 
 ## Contact

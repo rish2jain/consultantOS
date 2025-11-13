@@ -60,16 +60,26 @@ class DashboardDataAgent(BaseAgent):
         if not db_service:
             raise Exception("Database service unavailable")
 
+        # Lazy import to avoid circular dependency issues
+        # Import AnalysisOrchestrator only when needed, inside try-except
+        monitor_service = None
         try:
-            from consultantos.orchestrator.analysis_orchestrator import get_orchestrator
-            from consultantos.cache import get_cache_service
+            # Use importlib to avoid circular import issues
+            import importlib
+            orchestrator_module = importlib.import_module('consultantos.orchestrator')
+            AnalysisOrchestrator = getattr(orchestrator_module, 'AnalysisOrchestrator', None)
+            
+            if AnalysisOrchestrator is None:
+                raise ImportError("AnalysisOrchestrator not found in orchestrator module")
+            
+            from consultantos.cache import get_disk_cache
             monitor_service = IntelligenceMonitor(
-                orchestrator=get_orchestrator(),
+                orchestrator=AnalysisOrchestrator(),
                 db_service=db_service,
-                cache_service=get_cache_service(),
+                cache_service=get_disk_cache(),
             )
         except Exception as e:
-            logger.warning(f"Failed to initialize monitor service: {e}")
+            logger.warning(f"Failed to initialize monitor service (orchestrator may be unavailable): {e}")
             monitor_service = None
 
         # Gather data in parallel using asyncio.gather

@@ -1,7 +1,7 @@
 """
 Social media data models for monitoring and analysis
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
@@ -113,7 +113,7 @@ class CrisisAlert(BaseModel):
     description: str = Field(..., description="Alert description")
     sentiment_shift: float = Field(..., description="Magnitude of sentiment shift")
     affected_topics: List[str] = Field(default_factory=list, description="Topics affected")
-    detected_at: datetime = Field(default_factory=datetime.now, description="Detection timestamp")
+    detected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Detection timestamp")
     requires_action: bool = Field(False, description="Whether immediate action is recommended")
 
     class Config:
@@ -346,5 +346,100 @@ class SocialMediaMonitorResponse(BaseModel):
                 },
                 "error": None,
                 "execution_time": 12.5
+            }
+        }
+
+
+class NarrativeSignal(BaseModel):
+    """Synthesized social narrative signal"""
+
+    topic: str = Field(..., description="Topic or storyline being discussed")
+    stance: str = Field(..., description="Supportive/Opposed/Neutral stance")
+    sentiment_score: float = Field(..., ge=-1.0, le=1.0, description="Average sentiment (-1 to 1)")
+    share_of_voice: float = Field(..., ge=0.0, le=100.0, description="% of total conversations")
+    momentum: str = Field(..., description="accelerating/cooling/stable")
+    platforms: List[str] = Field(default_factory=list, description="Platforms contributing to the narrative")
+    supporting_evidence: List[Dict[str, str]] = Field(
+        default_factory=list,
+        description="Sample links, posts, or quotes"
+    )
+    strategic_implication: str = Field(..., description="Why this matters strategically")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score based on data coverage")
+
+
+class InfluencerSignal(BaseModel):
+    """Influencer stance worth watching"""
+
+    handle: str = Field(..., description="Influencer or author handle")
+    platform: str = Field(..., description="Platform e.g. twitter/reddit")
+    reach: int = Field(..., description="Approximate follower/subscriber reach")
+    influence_score: float = Field(..., description="Raw influence score from connector")
+    stance: str = Field(..., description="Positive/Negative/Neutral stance")
+    message: str = Field(..., description="Key takeaway from influencer content")
+    link: Optional[str] = Field(None, description="Reference URL if available")
+
+
+class SocialSignalSummary(BaseModel):
+    """Aggregated social listening signals for reports"""
+
+    sentiment_score: float = Field(..., ge=-1.0, le=1.0, description="Blended sentiment score")
+    sentiment_label: str = Field(..., description="positive/negative/neutral")
+    momentum: str = Field(..., description="Tailwind/Headwind/Mixed momentum reading")
+    reddit_volume: int = Field(0, description="Posts + comments analyzed")
+    twitter_volume: int = Field(0, description="Tweets analyzed")
+    narratives: List[NarrativeSignal] = Field(default_factory=list, description="Top community narratives")
+    influencer_watchlist: List[InfluencerSignal] = Field(default_factory=list, description="Influencers to watch")
+    risk_alerts: List[str] = Field(default_factory=list, description="Social-driven risks")
+    opportunity_alerts: List[str] = Field(default_factory=list, description="Social-driven opportunities")
+    supporting_posts: List[Dict[str, str]] = Field(
+        default_factory=list,
+        description="Links to representative Reddit/Twitter content"
+    )
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Timestamp of synthesis")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "sentiment_score": 0.32,
+                "sentiment_label": "positive",
+                "momentum": "Tailwind",
+                "reddit_volume": 145,
+                "twitter_volume": 320,
+                "narratives": [
+                    {
+                        "topic": "AI copilots",
+                        "stance": "supportive",
+                        "sentiment_score": 0.58,
+                        "share_of_voice": 34.5,
+                        "momentum": "accelerating",
+                        "platforms": ["twitter", "reddit"],
+                        "supporting_evidence": [
+                            {"platform": "reddit", "title": "Copilots double output", "url": "https://reddit.com/..."}
+                        ],
+                        "strategic_implication": "Users expect AI copilots baked into roadmap",
+                        "confidence": 0.82
+                    }
+                ],
+                "influencer_watchlist": [
+                    {
+                        "handle": "@aiexpert",
+                        "platform": "twitter",
+                        "reach": 150000,
+                        "influence_score": 74500,
+                        "stance": "critical",
+                        "message": "Concerned about data privacy",
+                        "link": "https://twitter.com/..."
+                    }
+                ],
+                "risk_alerts": ["Privacy backlash brewing on r/privacy"],
+                "opportunity_alerts": ["Creators demanding workflow automation partnerships"],
+                "supporting_posts": [
+                    {
+                        "platform": "reddit",
+                        "title": "Users love ConsultantOS dashboards",
+                        "url": "https://reddit.com/r/...",
+                        "sentiment": "0.71"
+                    }
+                ]
             }
         }

@@ -7,7 +7,7 @@ context-aware alerts for users.
 
 import asyncio
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Any
 from uuid import uuid4
 
@@ -22,7 +22,11 @@ from consultantos.models.monitoring import (
     MonitorStatus,
 )
 import logging
-from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from consultantos.orchestrator.orchestrator import AnalysisOrchestrator
+
 from consultantos.database import DatabaseService
 # Cache is optional - use get_disk_cache() function if needed
 try:
@@ -66,7 +70,7 @@ class IntelligenceMonitor:
 
     def __init__(
         self,
-        orchestrator: AnalysisOrchestrator,
+        orchestrator: "AnalysisOrchestrator",
         db_service: DatabaseService,
         cache_service: Optional[Any] = None,
     ):
@@ -83,8 +87,8 @@ class IntelligenceMonitor:
         self.cache = cache_service
         self.logger = logging.getLogger(__name__)
 
-        # Initialize root cause analyzer (always enabled)
-        self.root_cause_analyzer = RootCauseAnalyzer()
+        # Initialize root cause analyzer (if available)
+        self.root_cause_analyzer = RootCauseAnalyzer() if RootCauseAnalyzer else None
 
     async def create_monitor(
         self,
@@ -143,10 +147,7 @@ class IntelligenceMonitor:
             await self._run_baseline_analysis(monitor)
         except Exception as e:
             self.logger.error(
-                "baseline_analysis_failed",
-                monitor_id=monitor_id,
-                company=company,
-                error=str(e),
+                f"baseline_analysis_failed: monitor_id={monitor_id}, company={company}, error={str(e)}"
             )
             # Don't fail monitor creation, just log error
             monitor.error_count = 1
@@ -154,10 +155,7 @@ class IntelligenceMonitor:
             await self.db.update_monitor(monitor)
 
         self.logger.info(
-            "monitor_created",
-            monitor_id=monitor_id,
-            company=company,
-            user_id=user_id,
+            f"monitor_created: monitor_id={monitor_id}, company={company}, user_id={user_id}"
         )
 
         return monitor
@@ -182,16 +180,12 @@ class IntelligenceMonitor:
 
         if monitor.status != MonitorStatus.ACTIVE:
             self.logger.info(
-                "monitor_not_active",
-                monitor_id=monitor_id,
-                status=monitor.status,
+                f"monitor_not_active: monitor_id={monitor_id}, status={monitor.status}"
             )
             return []
 
         self.logger.info(
-            "checking_monitor",
-            monitor_id=monitor_id,
-            company=monitor.company,
+            f"checking_monitor: monitor_id={monitor_id}, company={monitor.company}"
         )
 
         try:
@@ -228,10 +222,7 @@ class IntelligenceMonitor:
             await self.db.update_monitor(monitor)
 
             self.logger.info(
-                "monitor_check_completed",
-                monitor_id=monitor_id,
-                changes_detected=len(changes),
-                alerts_generated=len(alerts),
+                f"monitor_check_completed: monitor_id={monitor_id}, changes_detected={len(changes)}, alerts_generated={len(alerts)}"
             )
 
             return alerts
@@ -245,17 +236,13 @@ class IntelligenceMonitor:
             if monitor.error_count >= 5:
                 monitor.status = MonitorStatus.ERROR
                 self.logger.error(
-                    "monitor_paused_due_to_errors",
-                    monitor_id=monitor_id,
-                    error_count=monitor.error_count,
+                    f"monitor_paused_due_to_errors: monitor_id={monitor_id}, error_count={monitor.error_count}"
                 )
 
             await self.db.update_monitor(monitor)
 
             self.logger.error(
-                "monitor_check_failed",
-                monitor_id=monitor_id,
-                error=str(e),
+                f"monitor_check_failed: monitor_id={monitor_id}, error={str(e)}"
             )
 
             raise
@@ -362,7 +349,7 @@ class IntelligenceMonitor:
         monitor.status = MonitorStatus.DELETED
         await self.db.update_monitor(monitor)
 
-        self.logger.info("monitor_deleted", monitor_id=monitor_id)
+        self.logger.info(f"monitor_deleted: monitor_id={monitor_id}")
 
     # Private helper methods
 
@@ -382,7 +369,7 @@ class IntelligenceMonitor:
             Analysis snapshot with key metrics
         """
         # Run orchestrator analysis
-        result = await self.orchestrator.analyze(
+        result = await self.orchestrator.orchestrate_analysis(
             company=monitor.company,
             industry=monitor.industry,
             frameworks=monitor.config.frameworks,
@@ -397,28 +384,53 @@ class IntelligenceMonitor:
             industry=monitor.industry,
         )
 
+        # Convert result to dict if it's a Pydantic model
+        if hasattr(result, 'dict'):
+            result_dict = result.dict()
+        elif hasattr(result, 'model_dump'):
+            result_dict = result.model_dump()
+        else:
+            result_dict = result if isinstance(result, dict) else {}
+
         # Extract competitive forces (Porter)
-        if "porter" in monitor.config.frameworks and result.get("framework_analysis"):
-            porter_data = result["framework_analysis"].get("porter", {})
-            snapshot.competitive_forces = {
-                "competitive_rivalry": porter_data.get("competitive_rivalry", ""),
-                "supplier_power": porter_data.get("supplier_power", ""),
-                "buyer_power": porter_data.get("buyer_power", ""),
-                "threat_of_substitutes": porter_data.get("threat_of_substitutes", ""),
-                "threat_of_new_entrants": porter_data.get("threat_of_new_entrants", ""),
-            }
+        framework_analysis = result_dict.get("framework_analysis") or {}
+        if "porter" in monitor.config.frameworks and framework_analysis:
+            porter_data = framework_analysis.get("porter", {})
+            if isinstance(porter_data, dict):
+                snapshot.competitive_forces = {
+                    "competitive_rivalry": str(porter_data.get("competitive_rivalry", "")),
+                    "supplier_power": str(porter_data.get("supplier_power", "")),
+                    "buyer_power": str(porter_data.get("buyer_power", "")),
+                    "threat_of_substitutes": str(porter_data.get("threat_of_substitutes", "")),
+                    "threat_of_new_entrants": str(porter_data.get("threat_of_new_entrants", "")),
+                }
 
         # Extract market trends
-        if result.get("market_analysis"):
-            snapshot.market_trends = result["market_analysis"].get("trends", [])
+        market_trends = result_dict.get("market_trends")
+        if market_trends:
+            if hasattr(market_trends, 'trends'):
+                snapshot.market_trends = market_trends.trends if isinstance(market_trends.trends, list) else []
+            elif isinstance(market_trends, dict):
+                snapshot.market_trends = market_trends.get("trends", [])
+            elif isinstance(market_trends, list):
+                snapshot.market_trends = market_trends
 
         # Extract financial metrics
-        if result.get("financial_analysis"):
-            snapshot.financial_metrics = result["financial_analysis"].get("metrics", {})
+        financial_snapshot = result_dict.get("financial_snapshot")
+        if financial_snapshot:
+            if hasattr(financial_snapshot, 'dict'):
+                financial_dict = financial_snapshot.dict()
+            elif hasattr(financial_snapshot, 'model_dump'):
+                financial_dict = financial_snapshot.model_dump()
+            else:
+                financial_dict = financial_snapshot if isinstance(financial_snapshot, dict) else {}
+            snapshot.financial_metrics = financial_dict.get("metrics", {})
 
         # Extract strategic position (SWOT)
-        if "swot" in monitor.config.frameworks and result.get("framework_analysis"):
-            snapshot.strategic_position = result["framework_analysis"].get("swot", {})
+        if "swot" in monitor.config.frameworks and framework_analysis:
+            swot_data = framework_analysis.get("swot", {})
+            if isinstance(swot_data, dict):
+                snapshot.strategic_position = swot_data
 
         return snapshot
 
@@ -604,17 +616,19 @@ class IntelligenceMonitor:
 
         # Perform root cause analysis
         try:
-            enhanced_explanation = self.root_cause_analyzer.analyze_alert(
-                alert=alert,
-                historical_data=None  # TODO: Pass historical data when available
-            )
+            if self.root_cause_analyzer:
+                enhanced_explanation = self.root_cause_analyzer.analyze_alert(
+                    alert=alert,
+                    historical_data=None  # TODO: Pass historical data when available
+                )
 
-            # Convert to dict for storage
-            alert.root_cause_analysis = enhanced_explanation.dict()
+                # Convert to dict for storage
+                alert.root_cause_analysis = enhanced_explanation.dict()
 
-            # Optionally enhance alert title and summary with root cause insights
-            alert.title = f"🔔 {enhanced_explanation.root_cause_analysis.severity.upper()}: {monitor.company}"
-            alert.summary = enhanced_explanation.summary
+                # Optionally enhance alert title and summary with root cause insights
+                alert.title = f"🔔 {enhanced_explanation.root_cause_analysis.severity.upper()}: {monitor.company}"
+                alert.summary = enhanced_explanation.summary
+            # else: Skip root cause analysis if not available
 
         except Exception as e:
             self.logger.warning(
@@ -648,11 +662,29 @@ class IntelligenceMonitor:
         # Cache latest snapshot
         if self.cache:
             cache_key = f"snapshot:{snapshot.monitor_id}:latest"
-            await self.cache.set(cache_key, snapshot, ttl=86400)  # 24h
+            try:
+                # Try ttl parameter first (for async caches)
+                result = self.cache.set(cache_key, snapshot, ttl=86400)
+                # If it returns a coroutine, await it
+                if asyncio.iscoroutine(result):
+                    await result
+            except TypeError:
+                # Fall back to expire parameter (for sync caches)
+                try:
+                    result = self.cache.set(cache_key, snapshot, expire=86400)
+                    # If it returns a coroutine, await it
+                    if asyncio.iscoroutine(result):
+                        await result
+                except (TypeError, Exception) as e:
+                    self.logger.warning(f"Failed to cache snapshot: {e}")
+                    # Continue without caching
+            except Exception as e:
+                self.logger.warning(f"Failed to cache snapshot: {e}")
+                # Continue without caching
 
     def _calculate_next_check(self, frequency: MonitoringFrequency) -> datetime:
         """Calculate next scheduled check time."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         if frequency == MonitoringFrequency.HOURLY:
             return now + timedelta(hours=1)

@@ -13,6 +13,7 @@ import { Button } from "./Button";
 import { Badge } from "./Badge";
 import { Alert } from "./Alert";
 import { Send, Info } from "lucide-react";
+import { getApiKey } from "@/lib/auth";
 
 export interface AsyncAnalysisFormData {
   company: string;
@@ -70,17 +71,17 @@ const DEPTH_OPTIONS: Array<{
   {
     value: "quick",
     label: "Quick",
-    description: "Fast analysis with core insights (~5 min)",
+    description: "Fast analysis with core insights (~30 seconds)",
   },
   {
     value: "standard",
     label: "Standard",
-    description: "Balanced depth and speed (~15 min)",
+    description: "Balanced depth and speed (~1-2 minutes)",
   },
   {
     value: "deep",
     label: "Deep",
-    description: "Comprehensive analysis (~30 min)",
+    description: "Comprehensive analysis (~3-5 minutes)",
   },
 ];
 
@@ -136,11 +137,18 @@ export const AsyncAnalysisForm: React.FC<AsyncAnalysisFormProps> = ({
     setIsSubmitting(true);
 
     try {
+      const apiKey = getApiKey();
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (apiKey) {
+        headers["X-API-Key"] = apiKey;
+      }
+
       const response = await fetch(`${apiUrl}/analyze/async`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(formData),
       });
 
@@ -415,10 +423,10 @@ export const AsyncAnalysisForm: React.FC<AsyncAnalysisFormProps> = ({
             <Info className="w-4 h-4 inline mr-1" aria-hidden="true" />
             Estimated time:{" "}
             {formData.depth === "quick"
-              ? "5 min"
+              ? "~30 seconds"
               : formData.depth === "deep"
-              ? "30 min"
-              : "15 min"}
+              ? "~3-5 minutes"
+              : "~1-2 minutes"}
           </div>
           <Button
             type="submit"
@@ -434,3 +442,4 @@ export const AsyncAnalysisForm: React.FC<AsyncAnalysisFormProps> = ({
     </Card>
   );
 };
+export default AsyncAnalysisForm;

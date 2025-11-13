@@ -6,7 +6,7 @@ import { Button } from './Button';
 import { Badge } from './Badge';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from './Tabs';
 import { FileText, Copy, Calendar, User, Eye, GitFork } from 'lucide-react';
-import type { Template } from './TemplateCard';
+import type { Template } from '@/types/templates';
 
 export interface TemplateDetailProps {
   /** Template to display */
@@ -21,15 +21,19 @@ export interface TemplateDetailProps {
   onFork?: (template: Template) => void;
 }
 
-const categoryColors: Record<Template['category'], string> = {
+const categoryColors: Record<string, string> = {
   strategic: 'primary',
   financial: 'success',
   operational: 'info',
   market: 'warning',
   risk: 'danger',
+  porter: 'primary',
+  swot: 'warning',
+  pestel: 'info',
+  blue_ocean: 'success',
 };
 
-const frameworkLabels: Record<Template['framework_type'], string> = {
+const frameworkLabels: Record<string, string> = {
   porter: "Porter's 5 Forces",
   swot: 'SWOT Analysis',
   pestel: 'PESTEL Analysis',
@@ -67,7 +71,7 @@ export const TemplateDetail: React.FC<TemplateDetailProps> = ({
           </Button>
           {onFork && (
             <Button
-              variant="secondary"
+              variant="outline"
               leftIcon={<Copy className="w-4 h-4" />}
               onClick={() => {
                 onFork(template);
@@ -95,11 +99,11 @@ export const TemplateDetail: React.FC<TemplateDetailProps> = ({
       <div className="space-y-6">
         {/* Badges and Meta Info */}
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant={categoryColors[template.category]} size="md">
+          <Badge variant={(categoryColors[template.category] as any) || 'default'} size="md">
             {template.category}
           </Badge>
           <Badge variant="default" size="md">
-            {frameworkLabels[template.framework_type]}
+            {frameworkLabels[template.framework_type] || template.framework_type}
           </Badge>
           <Badge
             variant={template.visibility === 'public' ? 'success' : 'default'}
@@ -137,7 +141,7 @@ export const TemplateDetail: React.FC<TemplateDetailProps> = ({
             <GitFork className="w-5 h-5 text-gray-400 mt-0.5" aria-hidden="true" />
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase">Fork Count</p>
-              <p className="text-sm text-gray-900 mt-1">{template.fork_count}</p>
+              <p className="text-sm text-gray-900 mt-1">{template.fork_count ?? 0}</p>
             </div>
           </div>
 
@@ -219,7 +223,7 @@ export const TemplateDetail: React.FC<TemplateDetailProps> = ({
                   <li>
                     The form will be pre-filled with this template&apos;s configuration:
                     <ul>
-                      <li>Framework type: {frameworkLabels[template.framework_type]}</li>
+                      <li>Framework type: {frameworkLabels[template.framework_type] || template.framework_type}</li>
                       <li>Category: {template.category}</li>
                       {template.industry && <li>Industry: {template.industry}</li>}
                       {template.region && <li>Region: {template.region}</li>}
@@ -257,3 +261,4 @@ export const TemplateDetail: React.FC<TemplateDetailProps> = ({
     </Modal>
   );
 };
+export default TemplateDetail;

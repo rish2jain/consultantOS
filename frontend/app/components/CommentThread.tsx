@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { MessageSquare, ArrowUpDown } from "lucide-react";
 import { CommentCard, Comment } from "./CommentCard";
 import { CommentForm } from "./CommentForm";
@@ -241,6 +241,8 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
     </div>
   );
 };
+
+export default CommentThread;
 
 // Type extension to support parent_id for API integration
 declare module "./CommentCard" {

@@ -38,7 +38,22 @@ export const Tooltip: React.FC<TooltipProps> = ({
   const timeoutRef = useRef<NodeJS.Timeout>();
   const tooltipId = useId();
 
-  const calculatePosition = () => {
+  const showTooltip = () => {
+    if (disabled) return;
+
+    timeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+    }, delay);
+  };
+
+  const hideTooltip = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setIsVisible(false);
+  };
+
+  const memoizedCalculatePosition = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
@@ -83,26 +98,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
     }
 
     setTooltipPosition({ top, left });
-  };
-
-  const showTooltip = () => {
-    if (disabled) return;
-
-    timeoutRef.current = setTimeout(() => {
-      setIsVisible(true);
-    }, delay);
-  };
-
-  const hideTooltip = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    setIsVisible(false);
-  };
-
-  const memoizedCalculatePosition = useCallback(() => {
-    calculatePosition();
-  }, []); // Add any dependencies used inside calculatePosition
+  }, [placement]);
 
   useEffect(() => {
     if (isVisible) {
@@ -117,6 +113,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
         window.removeEventListener('scroll', memoizedCalculatePosition);
       };
     }
+    return undefined;
   }, [isVisible, memoizedCalculatePosition]);
 
   useEffect(() => {

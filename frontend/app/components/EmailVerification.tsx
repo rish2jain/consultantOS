@@ -91,7 +91,7 @@ export const EmailVerification: React.FC<EmailVerificationProps> = ({
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      await response.json();
       setSuccessMessage("Email verified successfully! Redirecting...");
       setTimeout(() => {
         onSuccess?.();
@@ -149,7 +149,7 @@ export const EmailVerification: React.FC<EmailVerificationProps> = ({
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      await response.json();
       setSuccessMessage("Verification code sent! Please check your email.");
       setResendCountdown(60);
     } catch (error) {

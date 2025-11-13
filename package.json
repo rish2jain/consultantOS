@@ -9,7 +9,21 @@
     "install:frontend": "cd frontend && npm install",
     "test": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e --watch=false",
     "test:e2e": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e --watch=false",
-    "test:smoke": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e/smoke-test.test.js --watch=false"
+    "test:smoke": "jest --config jest.e2e.config.js --testPathPatterns=tests/e2e/smoke-test.test.js --watch=false",
+    "test:playwright": "jest --config jest.e2e.config.js tests/e2e/scenario1-playwright-poc.test.js --watch=false",
+    "test:video-views": "node test_video_views.js",
+    "record:demo": "node record_demo_playwright.js",
+    "record:demo-video": "node record_demo_video.js",
+    "record:demo-verified": "node record_demo_verified.js",
+    "record:demo-main": "node record_demo_verified.js main",
+    "record:demo-advanced": "node record_demo_verified.js advanced",
+    "record:demo-tour": "node record_demo_verified.js tour",
+    "create:video": "node create_video_from_screenshots.js",
+    "create:video-main": "node create_video_from_screenshots.js demo_screenshots/main_demo",
+    "create:video-advanced": "node create_video_from_screenshots.js demo_screenshots/advanced_features",
+    "create:video-tour": "node create_video_from_screenshots.js demo_screenshots/quick_tour",
+    "full:demo": "npm run record:demo-video && npm run create:video",
+    "full:demo-verified": "npm run record:demo-verified && npm run create:video-main && npm run create:video-advanced && npm run create:video-tour"
   },
   "devDependencies": {
     "axios": "^1.6.0",
@@ -17,6 +31,7 @@
     "fkill-cli": "^8.0.0",
     "jest": "^30.2.0",
     "jest-environment-node": "^30.2.0",
+    "playwright": "^1.40.0",
     "puppeteer": "^24.29.1"
   }
 }

@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     # API Keys - LLM Providers
     gemini_api_key: Optional[str] = None
-    gemini_model: Optional[str] = "gemini-1.5-flash-002"
+    gemini_model: Optional[str] = "gemini-2.5-flash"  # Updated: gemini-1.5-flash-002 is no longer available
 
     # API Keys - Billing
     stripe_secret_key: Optional[str] = None
@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # Frontend Configuration
     frontend_url: str = "http://localhost:3000"
-    cors_origins: str = "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080"
+    cors_origins: str = "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080,https://consultantos-frontend-187550875653.us-central1.run.app"
 
     # Stripe Price IDs (configure these with actual Stripe Price IDs from dashboard)
     stripe_price_id_pro: str = "price_pro_monthly"
@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     enable_metrics: bool = True
     enable_tracing: bool = False
     metrics_port: int = 9090
+
+    # Feature flags
+    enable_advanced_sentiment: bool = False  # Heavy transformers sentiment pipeline
 
     # Operational
     health_check_timeout: int = 5
@@ -162,6 +165,6 @@ if not settings.session_secret:
         if settings.environment == "development" or settings.environment == "test":
             import secrets
             settings.session_secret = secrets.token_urlsafe(32)
-            _config_logger.warning("SESSION_SECRET not configured. Generated temporary session secret for development. Set SESSION_SECRET for production.")
+            _config_logger.info("SESSION_SECRET not configured. Generated temporary session secret for development. Set SESSION_SECRET for production.")
         else:
             raise RuntimeError("SESSION_SECRET is required for production. Set it via environment variable or Secret Manager.")

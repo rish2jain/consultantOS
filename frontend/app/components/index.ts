@@ -24,6 +24,12 @@ export type { ModalProps } from "./Modal";
 export { Badge } from "./Badge";
 export type { BadgeProps } from "./Badge";
 
+export { AlertCard } from "./AlertCard";
+export type { AlertCardProps } from "./AlertCard";
+
+export { MonitorRow } from "./MonitorRow";
+export type { MonitorRowProps } from "./MonitorRow";
+
 export { Dropdown, useDropdown } from "./Dropdown";
 export type { DropdownProps, DropdownItem } from "./Dropdown";
 
@@ -61,6 +67,8 @@ export type {
   LoadingOverlayProps,
   InlineLoadingProps,
 } from "./Spinner";
+
+export { ProgressBar } from "./LoadingStates";
 
 // Analysis Request Form Components
 export { FrameworkSelector } from "./FrameworkSelector";
@@ -202,7 +210,7 @@ export type { VersionRestoreProps } from "./VersionRestore";
 
 // User Management Components
 export { RegistrationForm } from "./RegistrationForm";
-export type { RegistrationFormProps, RegistrationData } from "./RegistrationForm";
+export type { RegistrationFormProps } from "./RegistrationForm";
 
 export { EmailVerification } from "./EmailVerification";
 export type { EmailVerificationProps } from "./EmailVerification";
@@ -214,11 +222,15 @@ export { PasswordResetConfirm } from "./PasswordResetConfirm";
 export type { PasswordResetConfirmProps } from "./PasswordResetConfirm";
 
 export { ProfileSettings } from "./ProfileSettings";
-export type { ProfileSettingsProps, ProfileData } from "./ProfileSettings";
+export type { ProfileSettingsProps } from "./ProfileSettings";
 
 // Layout Components
 export { Navigation } from "./Navigation";
 export { KeyboardShortcuts } from "./KeyboardShortcuts";
+export { Breadcrumb } from "./Breadcrumb";
+export type { BreadcrumbProps, BreadcrumbItem } from "./Breadcrumb";
+export { PageLoading, SimplePageLoading } from "./PageLoading";
+export type { PageLoadingProps } from "./PageLoading";
 
 // Advanced Visualization Components
 export { default as CompetitivePositioningMap } from './CompetitivePositioningMap';

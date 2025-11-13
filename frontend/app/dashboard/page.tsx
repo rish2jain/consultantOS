@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { monitoringAPI } from '@/lib/api';
+import { MetricCard, AlertCard, MonitorRow } from '@/app/components';
+import { Activity, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 
 // Types matching backend models
 interface MonitoringConfig {
@@ -222,9 +225,9 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900">
               Intelligence Dashboard
             </h1>
             <button
@@ -246,32 +249,43 @@ export default function DashboardPage() {
 
         {/* Stats Overview */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500">Total Monitors</div>
-              <div className="text-3xl font-bold text-gray-900 mt-2">
-                {stats.total_monitors}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500">Active Monitors</div>
-              <div className="text-3xl font-bold text-green-600 mt-2">
-                {stats.active_monitors}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500">Unread Alerts</div>
-              <div className="text-3xl font-bold text-orange-600 mt-2">
-                {stats.unread_alerts}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="text-sm text-gray-500">Alerts (24h)</div>
-              <div className="text-3xl font-bold text-blue-600 mt-2">
-                {stats.total_alerts_24h}
-              </div>
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          >
+            <MetricCard
+              title="Total Monitors"
+              value={stats.total_monitors}
+              icon={<Activity className="w-6 h-6" />}
+              color="blue"
+              trend="neutral"
+            />
+            <MetricCard
+              title="Active Monitors"
+              value={stats.active_monitors}
+              icon={<CheckCircle2 className="w-6 h-6" />}
+              color="green"
+              trend="up"
+              trendValue={`${stats.active_monitors}/${stats.total_monitors}`}
+            />
+            <MetricCard
+              title="Unread Alerts"
+              value={stats.unread_alerts}
+              icon={<AlertCircle className="w-6 h-6" />}
+              color="orange"
+              trend={stats.unread_alerts > 0 ? 'up' : 'neutral'}
+              subtitle={stats.unread_alerts > 0 ? 'Requires attention' : 'All caught up'}
+            />
+            <MetricCard
+              title="Alerts (24h)"
+              value={stats.total_alerts_24h}
+              icon={<Clock className="w-6 h-6" />}
+              color="blue"
+              trend="neutral"
+            />
+          </motion.div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -284,92 +298,33 @@ export default function DashboardPage() {
                 </h2>
               </div>
 
-              <div className="divide-y divide-gray-200">
+              <div>
                 {monitors.length === 0 ? (
-                  <div className="px-6 py-12 text-center">
-                    <p className="text-gray-500">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="px-6 py-12 text-center"
+                  >
+                    <p className="text-gray-500 mb-4">
                       No monitors yet. Create your first monitor to start
                       tracking companies.
                     </p>
                     <button
                       onClick={() => router.push('/monitors/new')}
-                      className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       Create Monitor
                     </button>
-                  </div>
+                  </motion.div>
                 ) : (
-                  monitors.map((monitor) => (
-                    <div key={monitor.id} className="px-6 py-4 hover:bg-gray-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-lg font-medium text-gray-900">
-                              {monitor.company}
-                            </h3>
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                monitor.status === 'active'
-                                  ? 'bg-green-100 text-green-800'
-                                  : monitor.status === 'paused'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {monitor.status}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {monitor.industry}
-                          </p>
-
-                          <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
-                            <span>
-                              {monitor.config.frequency} checks
-                            </span>
-                            <span>
-                              {monitor.total_alerts} alerts
-                            </span>
-                            {monitor.last_check && (
-                              <span>
-                                Last check: {formatDate(monitor.last_check)}
-                              </span>
-                            )}
-                          </div>
-
-                          {monitor.error_count > 0 && monitor.last_error && (
-                            <div className="mt-2 p-2 bg-red-50 rounded text-sm text-red-700">
-                              {monitor.last_error}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            onClick={() => handleManualCheck(monitor.id)}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
-                          >
-                            Check Now
-                          </button>
-
-                          {monitor.status === 'active' ? (
-                            <button
-                              onClick={() => handlePauseMonitor(monitor.id)}
-                              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
-                            >
-                              Pause
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleResumeMonitor(monitor.id)}
-                              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                            >
-                              Resume
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                  monitors.map((monitor, index) => (
+                    <MonitorRow
+                      key={monitor.id}
+                      monitor={monitor}
+                      onPause={() => handlePauseMonitor(monitor.id)}
+                      onResume={() => handleResumeMonitor(monitor.id)}
+                      onCheckNow={() => handleManualCheck(monitor.id)}
+                    />
                   ))
                 )}
               </div>
@@ -385,44 +340,42 @@ export default function DashboardPage() {
                 </h2>
               </div>
 
-              <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+              <div className="max-h-[600px] overflow-y-auto p-4 space-y-3">
                 {recentAlerts.length === 0 ? (
-                  <div className="px-6 py-8 text-center text-gray-500">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
                     No alerts yet
-                  </div>
+                  </motion.div>
                 ) : (
-                  recentAlerts.map((alert) => (
-                    <div
+                  recentAlerts.map((alert, index) => (
+                    <motion.div
                       key={alert.id}
-                      className={`px-6 py-4 hover:bg-gray-50 cursor-pointer ${
-                        !alert.read ? 'bg-blue-50' : ''
-                      }`}
-                      onClick={() => handleMarkAlertRead(alert.id)}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            {alert.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {alert.summary}
-                          </p>
-
-                          <div className="mt-2 flex items-center gap-3">
-                            <span className="text-xs text-gray-500">
-                              {formatDate(alert.created_at)}
-                            </span>
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {(alert.confidence * 100).toFixed(0)}% confidence
-                            </span>
-                          </div>
-                        </div>
-
-                        {!alert.read && (
-                          <div className="w-2 h-2 bg-blue-600 rounded-full ml-2"></div>
-                        )}
-                      </div>
-                    </div>
+                      <AlertCard
+                        title={alert.title}
+                        summary={alert.summary}
+                        severity={
+                          alert.confidence > 0.8
+                            ? 'critical'
+                            : alert.confidence > 0.6
+                            ? 'warning'
+                            : 'info'
+                        }
+                        confidence={alert.confidence}
+                        timestamp={alert.created_at}
+                        unread={!alert.read}
+                        changes={alert.changes_detected}
+                        sourceUrls={alert.changes_detected?.[0]?.source_urls}
+                        onMarkRead={() => handleMarkAlertRead(alert.id)}
+                        expandable={true}
+                      />
+                    </motion.div>
                   ))
                 )}
               </div>

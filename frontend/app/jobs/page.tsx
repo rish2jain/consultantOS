@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 // Force dynamic rendering to avoid static generation issues with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -9,11 +10,6 @@ import Link from 'next/link';
 import {
   JobQueue,
   JobHistory,
-  Tabs,
-  TabList,
-  Tab,
-  TabPanels,
-  TabPanel,
   Card,
   CardHeader,
   CardTitle,
@@ -107,9 +103,11 @@ function JobDetailsModal({ job, isOpen, onClose, onCancel }: JobDetailsModalProp
             Progress
           </label>
           <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${job.progress}%` }}
+            <motion.div
+              className="bg-blue-600 h-2.5 rounded-full"
+              initial={false}
+              animate={{ width: `${job.progress}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
             />
           </div>
           <p className="text-sm text-gray-600 mt-1">{job.progress}%</p>
@@ -217,7 +215,6 @@ function JobsPageContent() {
   const searchParams = useSearchParams();
   const jobId = searchParams.get('id');
 
-  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   const [activeJobs, setActiveJobs] = useState<Job[]>([]);
   const [jobHistory, setJobHistory] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -234,19 +231,40 @@ function JobsPageContent() {
         status: 'pending,running',
         limit: 50,
       });
-      // Handle different response formats
+      // Handle different response formats and transform to Job interface
+      let jobs: Job[] = [];
       if (Array.isArray(response)) {
-        setActiveJobs(response);
+        jobs = response;
       } else if (response?.jobs) {
-        setActiveJobs(response.jobs);
-      } else {
-        setActiveJobs([]);
+        jobs = response.jobs;
       }
+      
+      // Transform jobs to match Job interface (id -> job_id mapping)
+      const transformedJobs: Job[] = jobs.map((job: any) => ({
+        id: job.job_id || job.id,
+        status: job.status,
+        progress: job.progress || 0,
+        result: job.result,
+        error: job.error,
+        created_at: job.created_at,
+        updated_at: job.updated_at || job.created_at,
+        company: job.company,
+        industry: job.industry,
+        frameworks: job.frameworks || [],
+      }));
+      
+      setActiveJobs(transformedJobs);
       setError(null);
     } catch (err: any) {
       console.error('Failed to fetch active jobs:', err);
-      // Don't show error if it's just an empty result
-      if (err.status !== 404) {
+      // Handle network errors and connection refused
+      if (err.message?.includes('Failed to fetch') || 
+          err.message?.includes('NetworkError') ||
+          err.message?.includes('ERR_CONNECTION_REFUSED') ||
+          err.name === 'TypeError') {
+        setError('Unable to connect to backend server. Please ensure the backend is running at ' + (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'));
+        setActiveJobs([]);
+      } else if (err.status !== 404) {
         setError(err.message || 'Failed to load active jobs');
       } else {
         setActiveJobs([]);
@@ -262,19 +280,40 @@ function JobsPageContent() {
         status: 'completed,failed,cancelled',
         limit: 100,
       });
-      // Handle different response formats
+      // Handle different response formats and transform to Job interface
+      let jobs: Job[] = [];
       if (Array.isArray(response)) {
-        setJobHistory(response);
+        jobs = response;
       } else if (response?.jobs) {
-        setJobHistory(response.jobs);
-      } else {
-        setJobHistory([]);
+        jobs = response.jobs;
       }
+      
+      // Transform jobs to match Job interface (id -> job_id mapping)
+      const transformedJobs: Job[] = jobs.map((job: any) => ({
+        id: job.job_id || job.id,
+        status: job.status,
+        progress: job.progress || (job.status === 'completed' ? 100 : 0),
+        result: job.result,
+        error: job.error,
+        created_at: job.created_at,
+        updated_at: job.updated_at || job.created_at,
+        company: job.company,
+        industry: job.industry,
+        frameworks: job.frameworks || [],
+      }));
+      
+      setJobHistory(transformedJobs);
       setError(null);
     } catch (err: any) {
       console.error('Failed to fetch job history:', err);
-      // Don't show error if it's just an empty result
-      if (err.status !== 404) {
+      // Handle network errors and connection refused
+      if (err.message?.includes('Failed to fetch') || 
+          err.message?.includes('NetworkError') ||
+          err.message?.includes('ERR_CONNECTION_REFUSED') ||
+          err.name === 'TypeError') {
+        setError('Unable to connect to backend server. Please ensure the backend is running at ' + (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'));
+        setJobHistory([]);
+      } else if (err.status !== 404) {
         setError(err.message || 'Failed to load job history');
       } else {
         setJobHistory([]);
@@ -283,12 +322,28 @@ function JobsPageContent() {
     }
   }, []);
 
-  // Initial load
+  // Initial load with timeout
   useEffect(() => {
     const loadJobs = async () => {
       setIsLoading(true);
-      await Promise.all([fetchActiveJobs(), fetchJobHistory()]);
-      setIsLoading(false);
+      
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        setIsLoading(false);
+        if (activeJobs.length === 0 && jobHistory.length === 0 && !error) {
+          setError('Request timed out. Please check if the backend server is running.');
+        }
+      }, 10000); // 10 second timeout
+      
+      try {
+        await Promise.all([fetchActiveJobs(), fetchJobHistory()]);
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+      } catch (err) {
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+        // Error is already handled in fetchActiveJobs/fetchJobHistory
+      }
     };
 
     loadJobs();
@@ -296,11 +351,9 @@ function JobsPageContent() {
 
   // Auto-refresh active jobs every 5 seconds
   useEffect(() => {
-    if (activeTab === 'active') {
-      const interval = setInterval(fetchActiveJobs, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [activeTab, fetchActiveJobs]);
+    const interval = setInterval(fetchActiveJobs, 5000);
+    return () => clearInterval(interval);
+  }, [fetchActiveJobs]);
 
   // Cleanup success message timeout on unmount
   useEffect(() => {
@@ -317,16 +370,22 @@ function JobsPageContent() {
     if (jobId) {
       const loadJobDetails = async () => {
         try {
-          const job = await api.jobs.getStatus(jobId);
+          const jobData = await api.jobs.getStatus(jobId);
+          // Transform to Job interface
+          const job: Job = {
+            id: jobData.job_id || jobData.id || jobId,
+            status: jobData.status,
+            progress: jobData.progress || 0,
+            result: jobData.result,
+            error: jobData.error,
+            created_at: jobData.created_at,
+            updated_at: jobData.updated_at || jobData.created_at,
+            company: jobData.company,
+            industry: jobData.industry,
+            frameworks: jobData.frameworks || [],
+          };
           setSelectedJob(job);
           setIsModalOpen(true);
-
-          // Auto-select correct tab based on job status
-          if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
-            setActiveTab('history');
-          } else {
-            setActiveTab('active');
-          }
         } catch (err: any) {
           console.error('Failed to load job details:', err);
           setError(`Failed to load job ${jobId}: ${err.message}`);
@@ -340,8 +399,24 @@ function JobsPageContent() {
   // Handle job selection
   const handleJobClick = async (job: Job) => {
     try {
-      // Fetch full details
-      const fullJob = await api.jobs.getStatus(job.id);
+      // Fetch full details - use job_id if available, otherwise use id
+      const jobId = (job as any).job_id || job.id;
+      const fullJobData = await api.jobs.getStatus(jobId);
+      
+      // Transform to Job interface
+      const fullJob: Job = {
+        id: fullJobData.job_id || fullJobData.id || jobId,
+        status: fullJobData.status,
+        progress: fullJobData.progress || 0,
+        result: fullJobData.result,
+        error: fullJobData.error,
+        created_at: fullJobData.created_at,
+        updated_at: fullJobData.updated_at || fullJobData.created_at,
+        company: fullJobData.company,
+        industry: fullJobData.industry,
+        frameworks: fullJobData.frameworks || [],
+      };
+      
       setSelectedJob(fullJob);
       setIsModalOpen(true);
     } catch (err: any) {
@@ -389,23 +464,34 @@ function JobsPageContent() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="container mx-auto px-4 py-8 max-w-7xl"
+    >
       {/* Page Header */}
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6"
+      >
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Job Queue</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Job Queue</h1>
+            <p className="text-base text-gray-600">
               Monitor and manage your analysis jobs
             </p>
           </div>
           <Link href="/analysis">
-            <Button>
-              Create New Analysis
-            </Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button>
+                Create New Analysis
+              </Button>
+            </motion.div>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {/* Alerts */}
       {error && (
@@ -464,92 +550,110 @@ function JobsPageContent() {
           </CardContent>
         </Card>
       ) : (
-        /* Tabbed Interface */
-        <Tabs
-          defaultTab={activeTab === 'active' ? 0 : 1}
-          onChange={(index) => setActiveTab(index === 0 ? 'active' : 'history')}
-        >
-          <TabList>
-            <Tab>
-              Active Jobs
-              {activeJobs.length > 0 && (
-                <Badge className="ml-2 bg-blue-100 text-blue-800">
-                  {activeJobs.length}
-                </Badge>
-              )}
-            </Tab>
-            <Tab>
-              Job History
-              {jobHistory.length > 0 && (
-                <Badge className="ml-2 bg-gray-100 text-gray-800">
-                  {jobHistory.length}
-                </Badge>
-              )}
-            </Tab>
-          </TabList>
-
-          <TabPanels>
-            {/* Active Jobs Tab */}
-            <TabPanel>
-              <Card>
-                <CardHeader>
+        <div className="space-y-6">
+          {/* Active Jobs Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
                   <CardTitle>Running and Pending Jobs</CardTitle>
                   <CardDescription>
                     Jobs are automatically refreshed every 5 seconds
                   </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <JobQueue
-                    jobs={activeJobs}
-                    onJobClick={handleJobClick}
-                    onCancelJob={handleCancelJob}
-                    autoRefresh={true}
-                    refreshInterval={5000}
-                  />
+                </div>
+                {activeJobs.length > 0 && (
+                  <Badge className="bg-blue-100 text-blue-800">
+                    {activeJobs.length} active
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <JobQueue
+                jobs={activeJobs.map(job => ({
+                  job_id: job.id,
+                  status: job.status as "pending" | "running" | "completed" | "failed",
+                  progress: job.progress,
+                  created_at: job.created_at,
+                  updated_at: job.updated_at,
+                  company: job.company,
+                  industry: job.industry,
+                  frameworks: job.frameworks,
+                  result: job.result,
+                  error: job.error,
+                }))}
+                onJobClick={(jobStatus) => {
+                  // Find the corresponding Job from activeJobs
+                  const job = activeJobs.find(j => j.id === jobStatus.job_id);
+                  if (job) {
+                    handleJobClick(job);
+                  }
+                }}
+                onCancelJob={handleCancelJob}
+                autoRefresh={true}
+                refreshInterval={5000}
+              />
 
-                  {activeJobs.length === 0 && (
-                    <div className="text-center py-12">
-                      <p className="text-gray-700 font-medium">No active jobs</p>
-                      <Link href="/analysis">
-                        <Button className="mt-4">
-                          Create New Analysis
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabPanel>
+              {activeJobs.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-gray-700 font-medium">No active jobs</p>
+                  <Link href="/analysis">
+                    <Button className="mt-4">
+                      Create New Analysis
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-            {/* Job History Tab */}
-            <TabPanel>
-              <Card>
-                <CardHeader>
+          {/* Job History Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
                   <CardTitle>Completed Jobs</CardTitle>
                   <CardDescription>
                     View past completed, failed, and cancelled jobs
                   </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <JobHistory
-                    pageSize={20}
-                    allowDelete={true}
-                    onJobDeleted={(jobId) => {
-                      // Refresh job history after deletion
-                      fetchJobHistory();
-                    }}
-                    onDownload={(jobId, result) => {
-                      // Handle download - navigate to report if available
-                      if (result?.report_id) {
-                        router.push(`/reports/${result.report_id}`);
-                      }
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
+                </div>
+                {jobHistory.length > 0 && (
+                  <Badge className="bg-gray-100 text-gray-800">
+                    {jobHistory.length} total
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <JobHistory
+                jobs={jobHistory.map(job => ({
+                  job_id: job.id,
+                  status: job.status as "pending" | "running" | "completed" | "failed",
+                  progress: job.progress,
+                  created_at: job.created_at,
+                  updated_at: job.updated_at,
+                  company: job.company,
+                  industry: job.industry,
+                  frameworks: job.frameworks,
+                  result: job.result,
+                  error: job.error,
+                }))}
+                pageSize={20}
+                allowDelete={true}
+                onJobDeleted={(jobId) => {
+                  // Refresh job history after deletion
+                  fetchJobHistory();
+                }}
+                onDownload={(jobId, result) => {
+                  // Handle download - navigate to report if available
+                  if (result?.report_id) {
+                    router.push(`/reports/${result.report_id}`);
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Job Details Modal */}
@@ -559,7 +663,7 @@ function JobsPageContent() {
         onClose={handleModalClose}
         onCancel={handleCancelJob}
       />
-    </div>
+    </motion.div>
   );
 }
 

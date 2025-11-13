@@ -109,23 +109,116 @@ async def register(request: RegisterRequest):
 @router.post("/login")
 async def login(request: LoginRequest):
     """Authenticate user and return API key"""
-    user_info = authenticate_user(request.email, request.password)
+    import logging
+    logger = logging.getLogger(__name__)
     
-    if not user_info:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
-    
-    # Generate API key for the user (or return existing)
+    try:
+        user_info = authenticate_user(request.email, request.password)
+        
+        if not user_info:
+            logger.warning(f"Login failed for email: {request.email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        # Generate API key for the user (or return existing)
+        try:
+            from consultantos.auth import create_api_key
+            api_key = create_api_key(user_info["user_id"], "Login API key")
+        except Exception as e:
+            logger.error(f"Failed to create API key for user {user_info['user_id']}: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create API key. Please try again."
+            )
+        
+        logger.info(f"User {user_info['user_id']} logged in successfully")
+        return {
+            "access_token": api_key,  # In production, use JWT tokens
+            "token_type": "bearer",
+            "user": user_info
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error for {request.email}: {e}", exc_info=True)
+        # Provide more specific error messages
+        error_str = str(e).lower()
+        if "database" in error_str or "connection" in error_str or "firestore" in error_str:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Database service temporarily unavailable. Please try again later."
+            )
+        elif "timeout" in error_str:
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail="Request timed out. Please try again."
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An error occurred during login. Please try again."
+            )
+
+
+@router.post("/demo-mode")
+async def create_demo_session():
+    """Create a demo user session without registration"""
+    import logging
+    from datetime import datetime, timedelta
     from consultantos.auth import create_api_key
-    api_key = create_api_key(user_info["user_id"], "Login API key")
     
-    return {
-        "access_token": api_key,  # In production, use JWT tokens
-        "token_type": "bearer",
-        "user": user_info
-    }
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Use deterministic demo user credentials for reuse
+        demo_user_id = "demo_user"
+        demo_email = "demo@consultantos.com"
+        
+        from consultantos.database import get_db_service, UserAccount
+        db_service = get_db_service()
+        
+        # Check if demo user already exists (reuse if available)
+        existing_demo = db_service.get_user_by_email(demo_email)
+        if existing_demo:
+            demo_user_id = existing_demo.user_id
+            demo_email = existing_demo.email
+            # TODO: Check if demo session has expired (24 hours) and cleanup if needed
+            # For now, we reuse the existing demo user
+        else:
+            # Create demo user account
+            demo_user = UserAccount(
+                user_id=demo_user_id,
+                email=demo_email,
+                name="Demo User",
+                subscription_tier="free"
+            )
+            db_service.create_user(demo_user, password_hash=None)  # No password for demo
+        
+        # Generate API key for demo user (using the actual user_id)
+        api_key = create_api_key(demo_user_id, "Demo mode API key")
+        
+        logger.info(f"Demo session created for user: {demo_user_id}")
+        
+        return {
+            "access_token": api_key,
+            "token_type": "bearer",
+            "user": {
+                "user_id": demo_user_id,
+                "email": demo_email,
+                "name": "Demo User",
+                "subscription_tier": "free",
+                "is_demo": True
+            },
+            "message": "Demo mode activated. Your session will expire after 24 hours."
+        }
+    except Exception as e:
+        logger.error(f"Demo mode creation error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create demo session. Please try again."
+        )
 
 
 @router.post("/verify-email")

@@ -9,6 +9,8 @@ import asyncio
 import statistics
 import importlib
 
+from consultantos.config import settings
+
 logger = logging.getLogger(__name__)
 
 # NOTE: Importing transformers/torch eagerly makes application startup hang on systems
@@ -27,6 +29,11 @@ def _ensure_transformers_loaded() -> bool:
     """Lazy-load heavy transformers/torch dependencies exactly once."""
     global pipeline, AutoTokenizer, AutoModelForSequenceClassification
     global torch, TRANSFORMERS_AVAILABLE, _transformers_checked
+
+    if not getattr(settings, "enable_advanced_sentiment", False):
+        logger.info("Advanced sentiment disabled in settings; skipping transformers import")
+        _transformers_checked = True
+        return False
 
     if TRANSFORMERS_AVAILABLE:
         return True
@@ -85,27 +92,14 @@ class SentimentAnalyzer:
         self.model_name = model_name
         self.pipeline = None
         self.use_gpu = False
+        self._prefer_gpu = bool(use_gpu)
+        self._pipeline_failed = False
+        self._pipeline_lock = threading.Lock()
 
-        if _ensure_transformers_loaded():
-            self.use_gpu = bool(use_gpu and torch and torch.cuda.is_available())
-            try:
-                # Initialize sentiment analysis pipeline lazily
-                device = 0 if self.use_gpu else -1
-                self.pipeline = pipeline(
-                    "sentiment-analysis",
-                    model=model_name,
-                    device=device,
-                    truncation=True,
-                    max_length=512
-                )
-                logger.info(
-                    "Loaded sentiment model %s (GPU=%s) after lazy transformers import",
-                    model_name,
-                    self.use_gpu,
-                )
-            except Exception as e:
-                logger.warning(f"Failed to load BERT model, using fallback: {e}")
-                self.pipeline = None
+        # NOTE: We intentionally avoid loading transformers/torch here because creating
+        # the huggingface pipeline pulls in TensorFlow on macOS, which can hang startup
+        # (see issue documented in tests/e2e/MUTEX_DEADLOCK_FIX.md). The heavy imports
+        # now happen only when a sentiment call is actually executed.
 
     async def analyze_text(self, text: str) -> Dict[str, Any]:
         """
@@ -125,6 +119,9 @@ class SentimentAnalyzer:
             }
 
         # Try BERT-based analysis
+        if self.pipeline is None and not self._pipeline_failed:
+            self._ensure_pipeline_ready()
+
         if self.pipeline:
             try:
                 result = await asyncio.to_thread(
@@ -202,6 +199,39 @@ class SentimentAnalyzer:
             "label": self._score_to_label(score),
             "confidence": round(min(total / 5, 1.0), 3)  # Rough confidence estimate
         }
+
+    def _ensure_pipeline_ready(self) -> None:
+        """Load the transformers pipeline on first use without blocking import time."""
+        if self.pipeline is not None or self._pipeline_failed:
+            return
+
+        with self._pipeline_lock:
+            if self.pipeline is not None or self._pipeline_failed:
+                return
+
+            if not _ensure_transformers_loaded():
+                self._pipeline_failed = True
+                return
+
+            self.use_gpu = bool(self._prefer_gpu and torch and torch.cuda.is_available())
+            try:
+                device = 0 if self.use_gpu else -1
+                self.pipeline = pipeline(
+                    "sentiment-analysis",
+                    model=self.model_name,
+                    device=device,
+                    truncation=True,
+                    max_length=512
+                )
+                logger.info(
+                    "Loaded sentiment model %s (GPU=%s) after deferred import",
+                    self.model_name,
+                    self.use_gpu,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to load BERT model, using fallback: {e}")
+                self.pipeline = None
+                self._pipeline_failed = True
 
     def _score_to_label(self, score: float) -> str:
         """Convert sentiment score to label"""

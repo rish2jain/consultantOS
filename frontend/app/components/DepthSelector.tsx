@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Zap, Gauge, Microscope } from "lucide-react";
+import { Zap, Gauge, Microscope, HelpCircle } from "lucide-react";
+import { Tooltip } from "@/app/components";
 
 export interface DepthOption {
   id: "quick" | "standard" | "deep";
@@ -27,21 +28,21 @@ const depthOptions: DepthOption[] = [
     id: "quick",
     name: "Quick Analysis",
     description: "High-level overview with key insights",
-    estimatedTime: "~10 minutes",
+    estimatedTime: "~30 seconds",
     icon: <Zap className="w-5 h-5" />,
   },
   {
     id: "standard",
     name: "Standard Analysis",
     description: "Balanced depth with comprehensive coverage",
-    estimatedTime: "~20 minutes",
+    estimatedTime: "~1-2 minutes",
     icon: <Gauge className="w-5 h-5" />,
   },
   {
     id: "deep",
     name: "Deep Analysis",
     description: "Thorough investigation with detailed insights",
-    estimatedTime: "~30 minutes",
+    estimatedTime: "~3-5 minutes",
     icon: <Microscope className="w-5 h-5" />,
   },
 ];
@@ -68,12 +69,36 @@ export const DepthSelector: React.FC<DepthSelectorProps> = ({
 
   return (
     <div>
-      <label
-        id={`${selectorId}-label`}
-        className="block text-sm font-medium text-gray-700 mb-2"
-      >
-        Analysis Depth
-      </label>
+      <div className="flex items-center gap-2 mb-2">
+        <label
+          id={`${selectorId}-label`}
+          className="block text-sm font-medium text-gray-700"
+        >
+          Analysis Depth
+        </label>
+        <Tooltip
+          content={
+            <div className="space-y-1">
+              <p className="font-semibold">Analysis Depth</p>
+              <p className="text-xs">
+                Choose how thorough you want the analysis to be:
+              </p>
+              <ul className="text-xs list-disc list-inside mt-1 space-y-0.5">
+                <li><strong>Quick:</strong> Fast overview with key insights (~30 seconds)</li>
+                <li><strong>Standard:</strong> Balanced depth and coverage (~1-2 minutes)</li>
+                <li><strong>Deep:</strong> Comprehensive investigation (~3-5 minutes)</li>
+              </ul>
+              <p className="text-xs mt-1 text-gray-300">
+                Deeper analysis provides more detailed insights but takes longer to generate.
+              </p>
+            </div>
+          }
+          placement="right"
+          maxWidth="300px"
+        >
+          <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" aria-label="Help: Analysis Depth" />
+        </Tooltip>
+      </div>
 
       <div
         role="radiogroup"

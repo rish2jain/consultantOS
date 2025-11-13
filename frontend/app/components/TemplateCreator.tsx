@@ -8,7 +8,7 @@ import { Dropdown, DropdownItem } from './Dropdown';
 import { Save, X, Eye } from 'lucide-react';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from './Tabs';
 import { Alert } from './Alert';
-import type { Template } from './TemplateCard';
+import type { Template } from '@/types/templates';
 
 export interface TemplateFormData {
   name: string;
@@ -377,3 +377,4 @@ export const TemplateCreator: React.FC<TemplateCreatorProps> = ({
     </Modal>
   );
 };
+export default TemplateCreator;

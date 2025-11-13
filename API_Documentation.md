@@ -1,7 +1,7 @@
 # ConsultantOS - API Documentation
 
 **Version**: 0.3.0  
-**Base URL**: `http://localhost:8080` (development) or `https://consultantos-api-bdndyf33xa-uc.a.run.app` (production)  
+**Base URL**: `http://localhost:8080` (development) or `https://consultantos-api-187550875653.us-central1.run.app` (production)  
 **API Documentation**: Interactive docs available at `/docs` (Swagger UI) and `/redoc` (ReDoc)
 
 ---
@@ -98,6 +98,15 @@ Generate strategic analysis report for a company.
 - `frameworks` (array, optional): List of frameworks to apply. Options: `porter`, `swot`, `pestel`, `blue_ocean`. Default: all frameworks
 - `depth` (string, optional): Analysis depth. Options: `quick`, `standard`, `deep`. Default: `standard`
 
+**Response Time**: 2-5 minutes (typical: 2-3.5 minutes)
+- Phase 1 (Data Gathering): ~30-60s (parallel agents)
+- Phase 2 (Framework Analysis): ~30-60s
+- Phase 3 (Synthesis): ~40-90s (bottleneck)
+
+**Progress Tracking**: 
+- Connect to `GET /analyze/{report_id}/progress` for real-time progress updates via Server-Sent Events (SSE)
+- Progress shows current phase, active agents, progress percentage, and estimated time remaining
+
 **Response**:
 ```json
 {
@@ -114,11 +123,45 @@ Generate strategic analysis report for a company.
     "strategic_recommendation": "Focus on international expansion...",
     "confidence_score": 0.85
   },
-  "execution_time_seconds": 45.2
+  "execution_time_seconds": 120.5,
+  "generated_at": "2024-01-01T12:02:00"
 }
 ```
 
-**Response Time**: 30-60 seconds (may timeout for complex analyses)
+**Progress Tracking**:
+```bash
+GET /analyze/{report_id}/progress
+```
+
+Stream real-time progress updates via Server-Sent Events (SSE).
+
+**Example**:
+```javascript
+const eventSource = new EventSource('/analyze/Tesla_20240101120000/progress');
+eventSource.onmessage = (event) => {
+  const update = JSON.parse(event.data);
+  console.log(`Phase: ${update.phase_name}, Progress: ${update.progress}%`);
+  console.log(`Active: ${update.current_agents.join(', ')}`);
+  console.log(`Estimated: ${update.estimated_seconds_remaining}s remaining`);
+};
+```
+
+**Progress Response Format**:
+```json
+{
+  "status": "running",
+  "phase": "phase_2",
+  "phase_name": "Framework Analysis",
+  "phase_num": 2,
+  "total_phases": 3,
+  "progress": 55,
+  "current_agents": ["FrameworkAgent"],
+  "completed_agents": ["ResearchAgent", "MarketAgent", "FinancialAgent"],
+  "message": "Analyzing business frameworks...",
+  "estimated_seconds_remaining": 45,
+  "timestamp": "2024-01-01T12:01:15"
+}
+```
 
 ---
 

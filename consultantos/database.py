@@ -4,7 +4,7 @@ Database layer for ConsultantOS using Firestore
 import logging
 import threading
 from typing import Optional, Dict, List, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass, asdict
 
 try:
@@ -137,6 +137,9 @@ class InMemoryDatabaseService:
         self._subscriptions: Dict[str, Dict] = {}
         self._promo_codes: Dict[str, Dict] = {}
         self._billing_events: Dict[str, Dict] = {}
+        self._monitors: Dict[str, Dict] = {}
+        self._alerts: Dict[str, Dict] = {}
+        self._snapshots: Dict[str, Dict] = {}
         self._lock = threading.Lock()
         logger.info("Using in-memory database (Firestore not available)")
     
@@ -450,6 +453,131 @@ class InMemoryDatabaseService:
             if framework:
                 patterns = [p for p in patterns if p.framework == framework]
             return patterns
+
+    # Monitor Operations
+    async def create_monitor(self, monitor) -> bool:
+        """Create monitor record"""
+        with self._lock:
+            self._monitors[monitor.id] = monitor.dict() if hasattr(monitor, 'dict') else monitor.model_dump()
+        return True
+
+    async def get_monitor(self, monitor_id: str):
+        """Get monitor by ID"""
+        from consultantos.models.monitoring import Monitor
+        with self._lock:
+            data = self._monitors.get(monitor_id)
+            return Monitor(**data) if data else None
+
+    async def get_monitor_by_company(self, user_id: str, company: str):
+        """Get monitor by user_id and company"""
+        from consultantos.models.monitoring import Monitor
+        with self._lock:
+            for data in self._monitors.values():
+                if data.get("user_id") == user_id and data.get("company") == company:
+                    return Monitor(**data)
+        return None
+
+    async def get_user_monitors(self, user_id: str, status=None):
+        """Get all monitors for a user, optionally filtered by status"""
+        from consultantos.models.monitoring import Monitor
+        with self._lock:
+            monitors = []
+            for data in self._monitors.values():
+                if data.get("user_id") == user_id:
+                    if status is None or data.get("status") == (status.value if hasattr(status, 'value') else str(status)):
+                        monitors.append(Monitor(**data))
+            return monitors
+
+    async def update_monitor(self, monitor) -> bool:
+        """Update monitor record"""
+        with self._lock:
+            if monitor.id in self._monitors:
+                self._monitors[monitor.id] = monitor.dict() if hasattr(monitor, 'dict') else monitor.model_dump()
+                return True
+        return False
+
+    async def create_alert(self, alert) -> bool:
+        """Create alert record"""
+        with self._lock:
+            self._alerts[alert.id] = alert.dict() if hasattr(alert, 'dict') else alert.model_dump()
+        return True
+
+    async def get_monitor_alerts(self, monitor_id: str, limit: int = 50):
+        """Get alerts for a monitor"""
+        from consultantos.models.monitoring import Alert
+        with self._lock:
+            alerts = []
+            for data in self._alerts.values():
+                if data.get("monitor_id") == monitor_id:
+                    alerts.append(Alert(**data))
+            # Sort by created_at descending
+            alerts.sort(key=lambda a: a.created_at if hasattr(a, 'created_at') else "", reverse=True)
+            return alerts[:limit]
+
+    async def create_snapshot(self, snapshot) -> bool:
+        """Create snapshot record"""
+        with self._lock:
+            snapshot_id = f"{snapshot.monitor_id}_{snapshot.timestamp.isoformat()}"
+            self._snapshots[snapshot_id] = snapshot.dict() if hasattr(snapshot, 'dict') else snapshot.model_dump()
+        return True
+
+    async def get_latest_snapshot(self, monitor_id: str):
+        """Get latest snapshot for a monitor"""
+        from consultantos.models.monitoring import MonitorAnalysisSnapshot
+        with self._lock:
+            snapshots = []
+            for data in self._snapshots.values():
+                if data.get("monitor_id") == monitor_id:
+                    snapshots.append(MonitorAnalysisSnapshot(**data))
+            if snapshots:
+                snapshots.sort(key=lambda s: s.timestamp if hasattr(s, 'timestamp') else "", reverse=True)
+                return snapshots[0]
+        return None
+
+    async def get_monitoring_stats(self, user_id: str):
+        """Get monitoring statistics for a user"""
+        from consultantos.models.monitoring import MonitoringStats
+        monitors = await self.get_user_monitors(user_id)
+        with self._lock:
+            active_monitors = sum(1 for m in monitors if m.status.value == "active")
+            paused_monitors = sum(1 for m in monitors if m.status.value == "paused")
+            # Count alerts
+            alerts_24h = []
+            unread_count = 0
+            yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+            for data in self._alerts.values():
+                alert_time = None
+                created_at = data.get("created_at")
+                if created_at:
+                    try:
+                        if isinstance(created_at, str):
+                            alert_time = datetime.fromisoformat(created_at)
+                        elif isinstance(created_at, datetime):
+                            alert_time = created_at
+                        else:
+                            continue
+                        # Normalize to UTC if naive
+                        if alert_time.tzinfo is None:
+                            alert_time = alert_time.replace(tzinfo=timezone.utc)
+                        else:
+                            alert_time = alert_time.astimezone(timezone.utc)
+                    except (ValueError, TypeError):
+                        # Skip alerts with invalid timestamps
+                        continue
+                if alert_time and alert_time >= yesterday:
+                    alerts_24h.append(data)
+                if not data.get("read", False):
+                    unread_count += 1
+            avg_confidence = sum(float(a.get("confidence", 0)) for a in alerts_24h) / len(alerts_24h) if alerts_24h else 0.0
+            return MonitoringStats(
+                total_monitors=len(monitors),
+                active_monitors=active_monitors,
+                paused_monitors=paused_monitors,
+                total_alerts_24h=len(alerts_24h),
+                unread_alerts=unread_count,
+                avg_alert_confidence=avg_confidence,
+                top_change_types=[]
+            )
 
 
 class DatabaseService:
@@ -965,6 +1093,207 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Failed to get learning patterns: {e}")
             return []
+
+    # Monitor Operations
+    async def create_monitor(self, monitor) -> bool:
+        """Create monitor record"""
+        from consultantos.models.monitoring import Monitor
+        try:
+            monitors_collection = self.db.collection("monitors")
+            doc_ref = monitors_collection.document(monitor.id)
+            # Convert Pydantic model to dict
+            monitor_dict = monitor.dict() if hasattr(monitor, 'dict') else monitor.model_dump()
+            # Convert datetime objects to ISO strings
+            for key, value in monitor_dict.items():
+                if isinstance(value, datetime):
+                    monitor_dict[key] = value.isoformat()
+            doc_ref.set(monitor_dict)
+            logger.info(f"Created monitor: {monitor.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create monitor: {e}")
+            return False
+
+    async def get_monitor(self, monitor_id: str):
+        """Get monitor by ID"""
+        from consultantos.models.monitoring import Monitor
+        try:
+            monitors_collection = self.db.collection("monitors")
+            doc_ref = monitors_collection.document(monitor_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                data = doc.to_dict()
+                return Monitor(**data)
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get monitor: {e}")
+            return None
+
+    async def get_monitor_by_company(self, user_id: str, company: str):
+        """Get monitor by user_id and company"""
+        from consultantos.models.monitoring import Monitor
+        try:
+            monitors_collection = self.db.collection("monitors")
+            query = monitors_collection.where("user_id", "==", user_id).where("company", "==", company).limit(1)
+            docs = list(query.stream())
+            if docs:
+                return Monitor(**docs[0].to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get monitor by company: {e}")
+            return None
+
+    async def get_user_monitors(self, user_id: str, status=None):
+        """Get all monitors for a user, optionally filtered by status"""
+        from consultantos.models.monitoring import Monitor, MonitorStatus
+        try:
+            monitors_collection = self.db.collection("monitors")
+            query = monitors_collection.where("user_id", "==", user_id)
+            if status:
+                query = query.where("status", "==", status.value if hasattr(status, 'value') else str(status))
+            docs = query.stream()
+            return [Monitor(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get user monitors: {e}")
+            return []
+
+    async def update_monitor(self, monitor) -> bool:
+        """Update monitor record"""
+        try:
+            monitors_collection = self.db.collection("monitors")
+            doc_ref = monitors_collection.document(monitor.id)
+            # Convert Pydantic model to dict
+            monitor_dict = monitor.dict() if hasattr(monitor, 'dict') else monitor.model_dump()
+            # Convert datetime objects to ISO strings
+            for key, value in monitor_dict.items():
+                if isinstance(value, datetime):
+                    monitor_dict[key] = value.isoformat()
+            doc_ref.set(monitor_dict, merge=True)
+            logger.info(f"Updated monitor: {monitor.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update monitor: {e}")
+            return False
+
+    async def create_alert(self, alert) -> bool:
+        """Create alert record"""
+        from consultantos.models.monitoring import Alert
+        try:
+            alerts_collection = self.db.collection("alerts")
+            doc_ref = alerts_collection.document(alert.id)
+            alert_dict = alert.dict() if hasattr(alert, 'dict') else alert.model_dump()
+            # Convert datetime objects to ISO strings
+            for key, value in alert_dict.items():
+                if isinstance(value, datetime):
+                    alert_dict[key] = value.isoformat()
+            doc_ref.set(alert_dict)
+            logger.info(f"Created alert: {alert.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create alert: {e}")
+            return False
+
+    async def get_monitor_alerts(self, monitor_id: str, limit: int = 50):
+        """Get alerts for a monitor"""
+        from consultantos.models.monitoring import Alert
+        try:
+            alerts_collection = self.db.collection("alerts")
+            query = alerts_collection.where("monitor_id", "==", monitor_id)
+            query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
+            query = query.limit(limit)
+            docs = query.stream()
+            return [Alert(**doc.to_dict()) for doc in docs]
+        except Exception as e:
+            logger.error(f"Failed to get monitor alerts: {e}")
+            return []
+
+    async def create_snapshot(self, snapshot) -> bool:
+        """Create snapshot record"""
+        from consultantos.models.monitoring import MonitorAnalysisSnapshot
+        try:
+            snapshots_collection = self.db.collection("snapshots")
+            snapshot_id = f"{snapshot.monitor_id}_{snapshot.timestamp.isoformat()}"
+            doc_ref = snapshots_collection.document(snapshot_id)
+            snapshot_dict = snapshot.dict() if hasattr(snapshot, 'dict') else snapshot.model_dump()
+            # Convert datetime objects to ISO strings
+            for key, value in snapshot_dict.items():
+                if isinstance(value, datetime):
+                    snapshot_dict[key] = value.isoformat()
+            doc_ref.set(snapshot_dict)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create snapshot: {e}")
+            return False
+
+    async def get_latest_snapshot(self, monitor_id: str):
+        """Get latest snapshot for a monitor"""
+        from consultantos.models.monitoring import MonitorAnalysisSnapshot
+        try:
+            snapshots_collection = self.db.collection("snapshots")
+            query = snapshots_collection.where("monitor_id", "==", monitor_id)
+            query = query.order_by("timestamp", direction=firestore.Query.DESCENDING)
+            query = query.limit(1)
+            docs = list(query.stream())
+            if docs:
+                return MonitorAnalysisSnapshot(**docs[0].to_dict())
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get latest snapshot: {e}")
+            return None
+
+    async def get_monitoring_stats(self, user_id: str):
+        """Get monitoring statistics for a user"""
+        from consultantos.models.monitoring import MonitoringStats
+        try:
+            monitors = await self.get_user_monitors(user_id)
+            alerts_collection = self.db.collection("alerts")
+            
+            # Count monitors by status
+            total_monitors = len(monitors)
+            active_monitors = sum(1 for m in monitors if m.status.value == "active")
+            paused_monitors = sum(1 for m in monitors if m.status.value == "paused")
+            
+            # Get alerts from last 24 hours
+            yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+            alerts_query = alerts_collection.where("created_at", ">=", yesterday.isoformat())
+            recent_alerts = list(alerts_query.stream())
+            total_alerts_24h = len(recent_alerts)
+            
+            # Count unread alerts
+            unread_query = alerts_collection.where("read", "==", False)
+            unread_alerts = list(unread_query.stream())
+            unread_count = len(unread_alerts)
+            
+            # Calculate average confidence
+            if recent_alerts:
+                avg_confidence = sum(float(a.to_dict().get("confidence", 0)) for a in recent_alerts) / len(recent_alerts)
+            else:
+                avg_confidence = 0.0
+            
+            # Get top change types (simplified)
+            top_change_types = []
+            
+            return MonitoringStats(
+                total_monitors=total_monitors,
+                active_monitors=active_monitors,
+                paused_monitors=paused_monitors,
+                total_alerts_24h=total_alerts_24h,
+                unread_alerts=unread_count,
+                avg_alert_confidence=avg_confidence,
+                top_change_types=top_change_types
+            )
+        except Exception as e:
+            logger.error(f"Failed to get monitoring stats: {e}")
+            # Return default stats on error
+            return MonitoringStats(
+                total_monitors=0,
+                active_monitors=0,
+                paused_monitors=0,
+                total_alerts_24h=0,
+                unread_alerts=0,
+                avg_alert_confidence=0.0,
+                top_change_types=[]
+            )
 
 
 # Global database service instance

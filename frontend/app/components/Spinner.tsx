@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { motion } from 'framer-motion';
 
 export interface SpinnerProps {
   /** Spinner size */
@@ -52,20 +53,28 @@ export const Spinner: React.FC<SpinnerProps> = ({
 }) => {
   if (variant === 'circular') {
     return (
-      <div
+      <motion.div
         role="status"
         aria-label={label}
         className={`${sizeClasses[size]} ${className}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
       >
-        <div
+        <motion.div
           className={`
             w-full h-full rounded-full border-2 border-gray-200
             ${colorClasses[color]} border-t-transparent
-            animate-spin
           `}
+          animate={{ rotate: 360 }}
+          transition={{
+            duration: 1,
+            repeat: Infinity,
+            ease: "linear"
+          }}
         />
         <span className="sr-only">{label}</span>
-      </div>
+      </motion.div>
     );
   }
 

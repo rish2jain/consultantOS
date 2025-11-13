@@ -33,6 +33,15 @@ Multi-agent AI platform that continuously monitors companies and industries, det
 - **Multi-level Caching**: Disk + semantic caching for performance
 - **Cloud Run Deployment**: Serverless, auto-scaling deployment on Google Cloud
 
+## Live Demo
+
+**🌐 Production Dashboard**: https://consultantos-frontend-187550875653.us-central1.run.app
+**📚 API Documentation**: https://consultantos-api-187550875653.us-central1.run.app/docs
+
+Try the live system now - no installation required!
+
+---
+
 ## Quick Start
 
 ### Local Development
@@ -60,8 +69,27 @@ http://localhost:8080/docs
 
 ### Deploy to Cloud Run
 
+**Quick Deploy (Automated):**
 ```bash
-gcloud run deploy consultantos \
+# Set environment variables
+export GCP_PROJECT_ID="your-project-id"
+export GCP_REGION="us-central1"
+
+# Run deployment script
+./scripts/deploy.sh
+```
+
+**Manual Deployment:**
+See [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md) for comprehensive deployment guide including:
+- Backend API deployment
+- Frontend dashboard deployment
+- Security configuration
+- Monitoring setup
+- Cost optimization
+
+**Quick Start (Backend Only):**
+```bash
+gcloud run deploy consultantos-api \
   --source . \
   --region us-central1 \
   --allow-unauthenticated \
@@ -246,13 +274,21 @@ See [Frontend README](frontend/README.md) for more details.
 
 ## Documentation
 
-- **[Quick Start Guide](QUICK_START.md)** - Get started quickly
-- **[Setup Guide](SETUP.md)** - Detailed setup instructions
+### Core Documentation
+- **[Setup Guide](SETUP.md)** - Detailed setup and installation instructions
 - **[API Documentation](API_Documentation.md)** - Complete API reference and examples
-- **[User Testing Guide](USER_TESTING_GUIDE.md)** - Testing procedures and scenarios
-- **[Product Strategy & Technical Design](docs/PRODUCT_STRATEGY.md)** - Product vision, requirements, and technical architecture
-- **[Implementation History](docs/IMPLEMENTATION_HISTORY.md)** - Development history and enhancement tracking
+- **[Architecture](ARCHITECTURE.md)** - Comprehensive system architecture
+- **[Deployment Plan](DEPLOYMENT_PLAN.md)** - ⭐ **Complete Cloud Run deployment guide**
+- **[Deployment Quick Start](DEPLOYMENT_QUICK_START.md)** - Quick deployment reference
+
+### Additional Resources
+- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - 📚 **Complete index of all documentation**
+- **[Frontend Architecture](FRONTEND_ARCHITECTURE.md)** - Frontend tech stack and architecture
+- **[Frontend Deployment](frontend/DEPLOYMENT.md)** - Frontend-specific deployment guide
 - **[Frontend Dashboard](frontend/README.md)** - Dashboard setup and features
+- **[Decision Intelligence Usage](DECISION_INTELLIGENCE_USAGE.md)** - Decision Intelligence Engine guide
+- **[Product Strategy](docs/PRODUCT_STRATEGY.md)** - Product vision, requirements, and technical architecture
+- **[Best Practices](best_practices.md)** - Coding guidelines and project standards
 
 ## License
 

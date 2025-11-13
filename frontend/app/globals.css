@@ -16,14 +16,39 @@
   }
 }
 
+html {
+  font-size: 16px; /* Ensure base is 16px for better readability */
+}
+
 body {
   color: rgb(var(--foreground-rgb));
+  font-size: 1rem; /* 16px */
+  line-height: 1.6; /* Improved readability - was likely 1.4 or 1.5 */
   background: linear-gradient(
       to bottom,
       transparent,
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+/* Text color uses CSS variables for theme support */
+/* Removed hardcoded color to allow dark mode and component-specific styling */
+
+/* Better line height for paragraphs */
+p {
+  line-height: 1.7;
+}
+
+/* Heading hierarchy with proper font weights */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600; /* Semibold for better hierarchy */
+  line-height: 1.2; /* Tighter for headings */
+  color: rgb(17, 24, 39); /* Even darker for headings - gray-900 */
+}
+
+h1 {
+  font-weight: 700; /* Bold for H1 */
 }
 
 /* Ensure table text is visible with theme support */

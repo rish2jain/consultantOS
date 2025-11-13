@@ -12,9 +12,7 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   Search,
-  Settings,
   HelpCircle,
   BarChart3,
   Sparkles,
@@ -121,27 +119,28 @@ export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
             </Link>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden md:ml-8 md:flex md:space-x-1">
+            <nav className="hidden md:ml-8 md:flex md:space-x-1" aria-label="Main navigation">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  href={link.href as any}
                   className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive(link.href)
                       ? 'text-blue-600 bg-blue-50'
                       : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                   }`}
+                  aria-current={isActive(link.href) ? 'page' : undefined}
                 >
-                  <span className="mr-2">{link.icon}</span>
+                  <span className="mr-2" aria-hidden="true">{link.icon}</span>
                   {link.label}
                   {link.badge !== undefined && link.badge > 0 && (
-                    <Badge variant="primary" className="ml-2">
+                    <Badge variant="primary" className="ml-2" aria-label={`${link.badge} notifications`}>
                       {link.badge}
                     </Badge>
                   )}
                 </Link>
               ))}
-            </div>
+            </nav>
           </div>
 
           {/* Right side - New Analysis button, Notifications and user menu */}
@@ -169,11 +168,6 @@ export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
             {user && (
               <NotificationCenter
                 userId={user.email}
-                onNotificationClick={(notification) => {
-                  if (notification.link) {
-                    router.push(notification.link);
-                  }
-                }}
               />
             )}
 
@@ -221,7 +215,7 @@ export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
                       {userMenuItems.map((item) => (
                         <Link
                           key={item.href}
-                          href={item.href}
+                          href={item.href as any}
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
@@ -259,28 +253,29 @@ export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200">
-          <div className="px-2 pt-2 pb-3 space-y-1">
+        <div className="md:hidden border-t border-gray-200" role="navigation" aria-label="Mobile navigation">
+          <nav className="px-2 pt-2 pb-3 space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                href={link.href as any}
                 className={`flex items-center px-3 py-2 text-base font-medium rounded-md ${
                   isActive(link.href)
                     ? 'text-blue-600 bg-blue-50'
                     : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                 }`}
+                aria-current={isActive(link.href) ? 'page' : undefined}
               >
-                <span className="mr-3">{link.icon}</span>
+                <span className="mr-3" aria-hidden="true">{link.icon}</span>
                 {link.label}
                 {link.badge !== undefined && link.badge > 0 && (
-                  <Badge variant="primary" className="ml-auto">
+                  <Badge variant="primary" className="ml-auto" aria-label={`${link.badge} notifications`}>
                     {link.badge}
                   </Badge>
                 )}
               </Link>
             ))}
-          </div>
+          </nav>
 
           {/* Mobile user section */}
           <div className="border-t border-gray-200 pt-4 pb-3">
@@ -302,7 +297,7 @@ export const Navigation: React.FC<NavigationProps> = ({ className = '' }) => {
               {userMenuItems.map((item) => (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={item.href as any}
                   className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
                 >
                   <span className="mr-3 text-gray-400">{item.icon}</span>

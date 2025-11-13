@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { getApiKey } from '@/lib/auth';
 import {
   BarChart,
@@ -229,13 +230,22 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-gray-50 p-6"
+    >
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-between items-center"
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-            <p className="text-gray-700 mt-1">Comprehensive insights into your ConsultantOS usage</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Analytics Dashboard</h1>
+            <p className="text-base text-gray-600">Comprehensive insights into your ConsultantOS usage</p>
           </div>
           <div className="flex gap-2">
             <select
@@ -248,9 +258,11 @@ export default function AnalyticsPage() {
               <option value={90}>Last 90 days</option>
               <option value={365}>Last year</option>
             </select>
-            <Button onClick={loadAnalytics}>Refresh</Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button onClick={loadAnalytics}>Refresh</Button>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
 
         {error && (
           <Alert
@@ -293,8 +305,14 @@ export default function AnalyticsPage() {
         )}
 
         {/* Quick Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4 cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/analysis')}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-4 gap-4"
+        >
+          <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+            <Card className="p-4 cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/analysis')}>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Zap className="h-6 w-6 text-blue-600" />
@@ -317,8 +335,10 @@ export default function AnalyticsPage() {
           </div>
             </div>
           </Card>
+          </motion.div>
 
-          <Card className="p-4 cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/reports')}>
+          <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+            <Card className="p-4 cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/reports')}>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
                 <FileText className="h-6 w-6 text-green-600" />
@@ -341,12 +361,19 @@ export default function AnalyticsPage() {
           </div>
             </div>
           </Card>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Productivity Metrics */}
         {productivity && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-4"
+          >
+            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-700">Total Reports</p>
@@ -355,8 +382,10 @@ export default function AnalyticsPage() {
                 <FileText className="h-8 w-8 text-blue-600" />
               </div>
             </Card>
+            </motion.div>
 
-            <Card className="p-6">
+            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-700">Templates Used</p>
@@ -370,8 +399,10 @@ export default function AnalyticsPage() {
                 <Target className="h-8 w-8 text-green-600" />
               </div>
             </Card>
+            </motion.div>
 
-            <Card className="p-6">
+            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-700">Time Saved</p>
@@ -381,8 +412,10 @@ export default function AnalyticsPage() {
                 <Clock className="h-8 w-8 text-yellow-600" />
               </div>
             </Card>
+            </motion.div>
 
-            <Card className="p-6">
+            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-700">Avg Processing</p>
@@ -395,7 +428,8 @@ export default function AnalyticsPage() {
                 <Zap className="h-8 w-8 text-purple-600" />
               </div>
             </Card>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {/* AI Insights */}
@@ -518,7 +552,7 @@ export default function AnalyticsPage() {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {analysisTypeData.map((entry, index) => (
+                    {analysisTypeData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
@@ -588,7 +622,7 @@ export default function AnalyticsPage() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {frameworksData.map((entry, index) => (
+                  {frameworksData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
@@ -622,7 +656,7 @@ export default function AnalyticsPage() {
           </Card>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

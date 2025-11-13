@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
   TemplateLibrary,
   TemplateCreator,
@@ -206,14 +207,23 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-gray-50"
+    >
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white border-b border-gray-200"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Template Library</h1>
-              <p className="mt-2 text-gray-600">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">Template Library</h1>
+              <p className="text-base text-gray-600">
                 Browse and use pre-configured analysis templates to get started faster
               </p>
             </div>
@@ -258,7 +268,7 @@ export default function TemplatesPage() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Alert */}
       {alert && (
@@ -279,10 +289,8 @@ export default function TemplatesPage() {
           </div>
         ) : (
           <TemplateLibrary
-            templates={templates}
+            apiEndpoint={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/templates`}
             onUseTemplate={handleUseTemplate}
-            onForkTemplate={handleForkTemplate}
-            onViewDetails={handleViewDetails}
           />
         )}
       </div>
@@ -421,6 +429,6 @@ export default function TemplatesPage() {
           </div>
         </Modal>
       )}
-    </div>
+    </motion.div>
   );
 }

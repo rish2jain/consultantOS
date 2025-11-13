@@ -585,3 +585,4 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     </div>
   );
 };
+export default NotificationSettings;

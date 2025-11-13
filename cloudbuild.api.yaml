@@ -41,8 +41,6 @@ steps:
       - "2"
       - "--timeout"
       - "300"
-      - "--startup-timeout"
-      - "120"
       - "--min-instances"
       - "0"
       - "--max-instances"
@@ -50,7 +48,7 @@ steps:
       - "--set-env-vars"
       - "GCP_PROJECT_ID=$PROJECT_ID,CLOUD_TASKS_LOCATION=us-central1,CLOUD_TASKS_QUEUE=analysis-queue,ENVIRONMENT=production"
       - "--set-secrets"
-      - "GEMINI_API_KEY=gemini-api-key:1,TAVILY_API_KEY=tavily-api-key:1"
+      - "GEMINI_API_KEY=GEMINI_API_KEY:1,TAVILY_API_KEY=TAVILY_API_KEY:1"
 
 images:
   - "gcr.io/$PROJECT_ID/consultantos-api:$BUILD_ID"

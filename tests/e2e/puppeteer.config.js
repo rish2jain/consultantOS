@@ -10,8 +10,8 @@ module.exports = {
   
   // Test credentials (will be created during tests)
   testUser: {
-    email: `test-${Date.now()}@consultantos.test`,
-    password: 'TestPassword123!',
+    email: process.env.TEST_USER_EMAIL || 'testuser@example.com',
+    password: process.env.TEST_USER_PASSWORD || 'TestPassword123!',
     name: 'Test User'
   },
   

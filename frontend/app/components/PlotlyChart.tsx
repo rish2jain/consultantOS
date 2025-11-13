@@ -25,3 +25,4 @@ export function PlotlyChart({ title, figure }: PlotlyChartProps) {
     </div>
   )
 }
+export default PlotlyChart;

@@ -109,12 +109,13 @@ export const Input: React.FC<InputProps> = ({
           maxLength={maxLength}
           className={inputClasses}
           aria-invalid={hasError}
+          aria-required={props.required}
           aria-describedby={
-            hasError
-              ? `${inputId}-error`
-              : helperText
-              ? `${inputId}-helper`
-              : undefined
+            [
+              hasError ? `${inputId}-error` : null,
+              helperText ? `${inputId}-helper` : null,
+              showCounter && maxLength ? `${inputId}-counter` : null,
+            ].filter(Boolean).join(' ') || undefined
           }
           onChange={handleValueChange}
           {...props}
@@ -176,8 +177,12 @@ export const Input: React.FC<InputProps> = ({
         </div>
 
         {showCounter && maxLength && (
-          <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
-            {(value || '').length}/{maxLength}
+          <span 
+            id={`${inputId}-counter`}
+            className="text-xs text-gray-400 ml-2 whitespace-nowrap"
+            aria-live={value && maxLength && typeof value === 'string' && (value.length / maxLength) > 0.8 ? "polite" : "off"}
+          >
+            {typeof value === 'string' ? value.length : 0}/{maxLength}
           </span>
         )}
       </div>

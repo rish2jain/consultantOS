@@ -9,9 +9,12 @@ import {
   Radar,
   ResponsiveContainer,
   Tooltip,
-  Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from 'recharts';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 /**
  * Individual disruption threat details
@@ -235,7 +238,7 @@ export default function DisruptionRadar({
                 />
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
-                  labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                  labelFormatter={(value: any) => new Date(value).toLocaleDateString()}
                 />
                 <Line
                   type="monotone"

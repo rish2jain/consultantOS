@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageSquare, Edit2, Trash2, User } from "lucide-react";
+import { MessageSquare, Edit2, Trash2 } from "lucide-react";
 import { Button } from "./Button";
 
 export interface Comment {
@@ -186,3 +186,5 @@ export const CommentCard: React.FC<CommentCardProps> = ({
     </article>
   );
 };
+
+export default CommentCard;

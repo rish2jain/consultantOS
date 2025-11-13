@@ -17,6 +17,25 @@ from consultantos.models import (
 )
 
 
+def _make_exec_summary(**overrides) -> ExecutiveSummary:
+    """Helper to build a compliant ExecutiveSummary for tests."""
+    base = {
+        "company_name": "Tesla",
+        "industry": "Electric Vehicles",
+        "key_findings": ["Finding 1", "Finding 2", "Finding 3"],
+        "strategic_recommendation": "Invest in supply chain resilience",
+        "confidence_score": 0.85,
+        "supporting_evidence": ["https://example.com/a", "https://example.com/b"],
+        "next_steps": [
+            "Expand battery partnerships",
+            "Strengthen manufacturing QA",
+            "Invest in charging network"
+        ],
+    }
+    base.update(overrides)
+    return ExecutiveSummary(**base)
+
+
 @pytest.fixture
 def mock_research_result():
     """Create mock research result"""
@@ -40,7 +59,12 @@ def mock_market_result():
         market_size_billions=500.0,
         key_trends=["Rapid EV adoption", "Battery improvements"],
         regional_insights={"North America": "Strong growth", "Europe": "Policy support"},
-        future_outlook="Continued expansion expected"
+        future_outlook="Continued expansion expected",
+        search_interest_trend="growing",
+        interest_data={"2024-01": 70, "2024-02": 72},
+        geographic_distribution={"North America": 0.45, "Europe": 0.35},
+        related_searches=["EV demand", "battery manufacturing"],
+        competitive_comparison={"Tesla": 0.5, "Rivian": 0.2, "Lucid": 0.1}
     )
 
 
@@ -77,18 +101,29 @@ def mock_framework_result():
 @pytest.fixture
 def mock_executive_summary():
     """Create mock executive summary"""
-    return ExecutiveSummary(
-        key_findings=["Finding 1", "Finding 2", "Finding 3"],
-        strategic_recommendations=["Recommendation 1", "Recommendation 2"],
-        confidence_score=0.85,
-        sources=["https://example.com"]
-    )
+    return _make_exec_summary()
 
 
 @pytest.fixture
 def orchestrator():
-    """Create orchestrator instance"""
-    return AnalysisOrchestrator()
+    """Create orchestrator instance backed by lightweight mock agents."""
+
+    def _mock_agent():
+        agent = MagicMock()
+        agent.execute = AsyncMock()
+        return agent
+
+    return AnalysisOrchestrator(
+        research_agent=_mock_agent(),
+        market_agent=_mock_agent(),
+        financial_agent=_mock_agent(),
+        framework_agent=_mock_agent(),
+        synthesis_agent=_mock_agent(),
+        decision_intelligence=_mock_agent(),
+        positioning_agent=None,
+        disruption_agent=None,
+        systems_agent=None,
+    )
 
 
 class TestGracefulDegradation:
@@ -108,11 +143,8 @@ class TestGracefulDegradation:
         orchestrator.framework_agent.execute = AsyncMock(return_value={
             "porter": {"analysis": {}, "insights": [], "recommendations": []}
         })
-        orchestrator.synthesis_agent.execute = AsyncMock(return_value=ExecutiveSummary(
-            key_findings=["Finding 1"],
-            strategic_recommendations=["Recommendation 1"],
-            confidence_score=0.75,  # Reduced confidence due to missing data
-            sources=["https://example.com"]
+        orchestrator.synthesis_agent.execute = AsyncMock(return_value=_make_exec_summary(
+            confidence_score=0.75
         ))
 
         request = AnalysisRequest(
@@ -170,11 +202,8 @@ class TestGracefulDegradation:
             return results
 
         orchestrator.framework_agent.execute = AsyncMock(side_effect=framework_side_effect)
-        orchestrator.synthesis_agent.execute = AsyncMock(return_value=ExecutiveSummary(
-            key_findings=["Finding 1"],
-            strategic_recommendations=["Recommendation 1"],
-            confidence_score=0.70,
-            sources=["https://example.com"]
+        orchestrator.synthesis_agent.execute = AsyncMock(return_value=_make_exec_summary(
+            confidence_score=0.70
         ))
 
         request = AnalysisRequest(
@@ -264,21 +293,17 @@ class TestCacheScenarios:
         )
 
         cached_report = StrategicReport(
-            company="Tesla",
-            industry="Electric Vehicles",
-            generated_at="2024-01-01T00:00:00",
-            frameworks=["porter"],
-            executive_summary=ExecutiveSummary(
-                key_findings=["Cached finding"],
-                strategic_recommendations=["Cached recommendation"],
+            executive_summary=_make_exec_summary(
+                key_findings=["Cached finding A", "Cached finding B", "Cached finding C"],
+                strategic_recommendation="Cached recommendation",
                 confidence_score=0.90,
-                sources=["https://example.com"]
             ),
-            research=Mock(),
+            company_research=Mock(),
             market_trends=Mock(),
             financial_snapshot=Mock(),
-            framework_analyses={},
-            appendix={}
+            framework_analysis=Mock(),
+            recommendations=["Rec 1", "Rec 2", "Rec 3"],
+            metadata={"source": "cache"}
         )
 
         with patch('consultantos.orchestrator.orchestrator.semantic_cache_lookup', return_value=cached_report):
@@ -309,12 +334,7 @@ class TestCacheScenarios:
         orchestrator.framework_agent.execute = AsyncMock(return_value={
             "porter": {"analysis": {}, "insights": [], "recommendations": []}
         })
-        orchestrator.synthesis_agent.execute = AsyncMock(return_value=ExecutiveSummary(
-            key_findings=["Finding 1"],
-            strategic_recommendations=["Recommendation 1"],
-            confidence_score=0.85,
-            sources=["https://example.com"]
-        ))
+        orchestrator.synthesis_agent.execute = AsyncMock(return_value=_make_exec_summary())
 
         store_called = False
 
@@ -357,12 +377,7 @@ class TestCacheScenarios:
                 orchestrator.market_agent.execute = AsyncMock(return_value=Mock())
                 orchestrator.financial_agent.execute = AsyncMock(return_value=Mock())
                 orchestrator.framework_agent.execute = AsyncMock(return_value={})
-                orchestrator.synthesis_agent.execute = AsyncMock(return_value=ExecutiveSummary(
-                    key_findings=["Finding"],
-                    strategic_recommendations=["Recommendation"],
-                    confidence_score=0.85,
-                    sources=["https://example.com"]
-                ))
+                orchestrator.synthesis_agent.execute = AsyncMock(return_value=_make_exec_summary())
 
                 await orchestrator.execute(request)
 
@@ -385,12 +400,7 @@ class TestConcurrentRequests:
         orchestrator.framework_agent.execute = AsyncMock(return_value={
             "porter": {"analysis": {}, "insights": [], "recommendations": []}
         })
-        orchestrator.synthesis_agent.execute = AsyncMock(return_value=ExecutiveSummary(
-            key_findings=["Finding"],
-            strategic_recommendations=["Recommendation"],
-            confidence_score=0.85,
-            sources=["https://example.com"]
-        ))
+        orchestrator.synthesis_agent.execute = AsyncMock(return_value=_make_exec_summary())
 
         requests = [
             AnalysisRequest(
@@ -430,12 +440,7 @@ class TestConcurrentRequests:
         orchestrator.market_agent.execute = AsyncMock(return_value=Mock())
         orchestrator.financial_agent.execute = AsyncMock(return_value=Mock())
         orchestrator.framework_agent.execute = AsyncMock(return_value={})
-        orchestrator.synthesis_agent.execute = AsyncMock(return_value=ExecutiveSummary(
-            key_findings=["Finding"],
-            strategic_recommendations=["Recommendation"],
-            confidence_score=0.85,
-            sources=["https://example.com"]
-        ))
+        orchestrator.synthesis_agent.execute = AsyncMock(return_value=_make_exec_summary())
 
         requests = [
             AnalysisRequest(
@@ -472,12 +477,7 @@ class TestFrameworkSelection:
         orchestrator.framework_agent.execute = AsyncMock(return_value={
             "porter": {"analysis": {}, "insights": [], "recommendations": []}
         })
-        orchestrator.synthesis_agent.execute = AsyncMock(return_value=ExecutiveSummary(
-            key_findings=["Finding"],
-            strategic_recommendations=["Recommendation"],
-            confidence_score=0.85,
-            sources=["https://example.com"]
-        ))
+        orchestrator.synthesis_agent.execute = AsyncMock(return_value=_make_exec_summary())
 
         request = AnalysisRequest(
             company="Tesla",
@@ -504,12 +504,7 @@ class TestFrameworkSelection:
             "swot": {"analysis": {}, "insights": [], "recommendations": []},
             "pestel": {"analysis": {}, "insights": [], "recommendations": []}
         })
-        orchestrator.synthesis_agent.execute = AsyncMock(return_value=ExecutiveSummary(
-            key_findings=["Finding"],
-            strategic_recommendations=["Recommendation"],
-            confidence_score=0.85,
-            sources=["https://example.com"]
-        ))
+        orchestrator.synthesis_agent.execute = AsyncMock(return_value=_make_exec_summary())
 
         request = AnalysisRequest(
             company="Tesla",

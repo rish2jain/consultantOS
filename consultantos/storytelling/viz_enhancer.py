@@ -36,13 +36,13 @@ class VisualizationEnhancer:
         """Initialize visualization enhancer."""
         genai.configure(api_key=settings.gemini_api_key)
         gemini_model = genai.GenerativeModel(
-            model_name=settings.gemini_model or "gemini-1.5-flash-002"
+            model_name=settings.gemini_model or "gemini-2.5-flash"  # Updated: gemini-1.5-flash-002 is no longer available
         )
         self.client = instructor.from_gemini(
             client=gemini_model,
             mode=instructor.Mode.GEMINI_JSON,
         )
-        self.model = settings.gemini_model or "gemini-1.5-flash-002"
+        self.model = settings.gemini_model or "gemini-2.5-flash"  # Updated: gemini-1.5-flash-002 is no longer available
 
     async def enhance_visualizations(
         self,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
   ProfileSettings,
   NotificationSettings,
@@ -266,11 +267,20 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-gray-50 py-8"
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Profile & Settings</h1>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Profile & Settings</h1>
           {profile && (
             <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-2">
@@ -284,7 +294,7 @@ export default function ProfilePage() {
               </span>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Global Alerts */}
         {success && (
@@ -514,7 +524,11 @@ export default function ProfilePage() {
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Reports Created */}
-                        <div className="bg-blue-50 rounded-lg p-4">
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                          className="bg-blue-50 rounded-lg p-4"
+                        >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-blue-900">
                               Reports Created
@@ -527,10 +541,14 @@ export default function ProfilePage() {
                           <p className="text-xs text-blue-700 mt-1">
                             of {usageStats.monthly_limit} this month
                           </p>
-                        </div>
+                        </motion.div>
 
                         {/* API Calls */}
-                        <div className="bg-green-50 rounded-lg p-4">
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                          className="bg-green-50 rounded-lg p-4"
+                        >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-green-900">
                               API Calls
@@ -543,10 +561,14 @@ export default function ProfilePage() {
                           <p className="text-xs text-green-700 mt-1">
                             this month
                           </p>
-                        </div>
+                        </motion.div>
 
                         {/* Storage Used */}
-                        <div className="bg-purple-50 rounded-lg p-4">
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                          className="bg-purple-50 rounded-lg p-4"
+                        >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-purple-900">
                               Storage Used
@@ -559,7 +581,7 @@ export default function ProfilePage() {
                           <p className="text-xs text-purple-700 mt-1">
                             of 1 GB available
                           </p>
-                        </div>
+                        </motion.div>
                       </div>
                     </CardContent>
                   </Card>
@@ -725,6 +747,6 @@ export default function ProfilePage() {
           </div>
         </Modal>
       </div>
-    </div>
+    </motion.div>
   );
 }

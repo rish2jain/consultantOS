@@ -503,3 +503,4 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     </div>
   );
 };
+export default ProfileSettings;

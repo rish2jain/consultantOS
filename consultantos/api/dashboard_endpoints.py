@@ -73,6 +73,27 @@ class RunScenarioRequest(BaseModel):
 
 # Dashboard Management Endpoints
 
+@router.get("", response_model=List[LiveDashboard])
+async def list_dashboards(
+    user_id: str = Depends(get_current_user),
+    service: DashboardService = Depends(get_dashboard_service)
+):
+    """
+    List all dashboards for the authenticated user.
+    
+    Returns dashboards sorted by last updated time (most recent first).
+    """
+    try:
+        dashboards = await service.list_dashboards(user_id)
+        return dashboards
+    except Exception as e:
+        logger.error(
+            "Failed to list dashboards",
+            extra={"user_id": user_id, "error": str(e)}
+        )
+        raise HTTPException(status_code=500, detail="Failed to list dashboards")
+
+
 @router.post("", response_model=LiveDashboard, status_code=201)
 async def create_dashboard(
     request: CreateDashboardRequest,
@@ -174,8 +195,23 @@ async def dashboard_websocket(
     }
     """
     try:
+        # Accept WebSocket connection first
+        await websocket.accept()
+        
         api_key = websocket.headers.get("x-api-key") or websocket.query_params.get("api_key")
-        user_info = validate_api_key(api_key) if api_key else None
+        user_info = None
+        
+        if api_key:
+            try:
+                user_info = validate_api_key(api_key)
+            except Exception as e:
+                logger.error(
+                    "WebSocket authentication error",
+                    extra={"dashboard_id": dashboard_id, "error": str(e)}
+                )
+                await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Authentication failed")
+                return
+        
         if not user_info:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Authentication required")
             return

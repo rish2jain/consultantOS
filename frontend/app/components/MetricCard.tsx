@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown } from 'lucide-react';
 import { Card } from './Card';
 
 export interface MetricCardProps {
@@ -104,48 +105,75 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     );
   }
 
+  // Respect user's reduced motion preference
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   return (
-    <Card
-      padding="md"
-      hoverable={!!onClick}
-      clickable={!!onClick}
-      onClick={onClick}
-      className="group"
+    <motion.div
+      whileHover={prefersReducedMotion ? {} : { y: -4 }}
+      transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 400, damping: 25 }}
+      className="h-full"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-600 truncate">
-            {title}
-          </p>
-          <div className="flex items-baseline mt-2 gap-2">
-            <p className="text-2xl font-bold text-gray-900 transition-all duration-200 group-hover:scale-105">
-              {value}
+      <Card
+        padding="md"
+        hoverable={!!onClick}
+        clickable={!!onClick}
+        onClick={onClick}
+        className="group h-full shadow-sm hover:shadow-md transition-shadow duration-200"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-600 truncate mb-1">
+              {title}
             </p>
-            {trend && TrendIcon && (
-              <div className={`flex items-center gap-1 ${trendColors[trend]}`}>
-                <TrendIcon className="w-4 h-4" />
-                {trendValue && (
-                  <span className="text-sm font-medium">{trendValue}</span>
-                )}
-              </div>
+            <div className="flex items-baseline mt-2 gap-2">
+              <motion.p
+                initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.9 }}
+                animate={prefersReducedMotion ? {} : { opacity: 1, scale: 1 }}
+                transition={prefersReducedMotion ? {} : { duration: 0.3 }}
+                className="text-2xl font-bold text-gray-900"
+              >
+                {value}
+              </motion.p>
+              {trend && TrendIcon && (
+                <motion.div
+                  initial={prefersReducedMotion ? false : { opacity: 0, x: -10 }}
+                  animate={prefersReducedMotion ? {} : { opacity: 1, x: 0 }}
+                  transition={prefersReducedMotion ? {} : { delay: 0.1 }}
+                  className={`flex items-center gap-1 ${trendColors[trend]}`}
+                >
+                  {trend === 'up' ? (
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  ) : trend === 'down' ? (
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  ) : (
+                    <Minus className="w-3.5 h-3.5" />
+                  )}
+                  {trendValue && (
+                    <span className="text-xs font-semibold">{trendValue}</span>
+                  )}
+                </motion.div>
+              )}
+            </div>
+            {subtitle && (
+              <p className="text-xs text-gray-500 mt-2 truncate">
+                {subtitle}
+              </p>
             )}
           </div>
-          {subtitle && (
-            <p className="text-xs text-gray-500 mt-1 truncate">
-              {subtitle}
-            </p>
+
+          {icon && (
+            <motion.div
+              whileHover={prefersReducedMotion ? {} : { scale: 1.1, rotate: 3 }}
+              transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 400, damping: 25 }}
+              className={`${colors.bg} text-white p-3 rounded-lg shadow-sm`}
+            >
+              {icon}
+            </motion.div>
           )}
         </div>
-
-        {icon && (
-          <div
-            className={`${colors.bg} text-white p-3 rounded-lg transition-all duration-200 group-hover:scale-110 group-hover:rotate-3`}
-          >
-            {icon}
-          </div>
-        )}
-      </div>
-    </Card>
+      </Card>
+    </motion.div>
   );
 };
 

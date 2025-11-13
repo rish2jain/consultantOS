@@ -14,6 +14,9 @@ Market data:
 Financial data:
 {financial_summary}
 
+Social media signals:
+{social_media_summary}
+
 Evaluate each force on a 1-5 scale (1=weak, 5=strong):
 
 **1. SUPPLIER POWER** (1-5 score)
@@ -75,6 +78,7 @@ Based on:
 - Research: {research_summary}
 - Market: {market_summary}
 - Financial: {financial_summary}
+- Social Media: {social_media_summary}
 
 **STRENGTHS** (Internal, Positive)
 Identify 3-5 strengths with SPECIFIC EVIDENCE:
@@ -121,6 +125,12 @@ For each SWOT element, consider:
 PESTEL_PROMPT_TEMPLATE = """
 Analyze macro environment for {company_name} using PESTEL framework.
 
+Based on available data:
+- Research: {research_summary}
+- Market: {market_summary}
+- Financial: {financial_summary}
+- Social Media: {social_media_summary}
+
 **POLITICAL**: Government policies, regulations, trade
 **ECONOMIC**: GDP, inflation, interest rates, consumer spending
 **SOCIAL**: Demographics, cultural trends, consumer behavior
@@ -150,6 +160,12 @@ Apply Blue Ocean Strategy's Four Actions Framework to {company_name}.
 
 Industry: {industry}
 Current competitors: {competitors}
+
+Based on data:
+- Research: {research_summary}
+- Market: {market_summary}
+- Financial: {financial_summary}
+- Social Media: {social_media_summary}
 
 **ELIMINATE**: Which industry factors should be eliminated?
 (Factors the industry competes on but add no value)
@@ -181,27 +197,66 @@ For each action, also provide:
 """
 
 SYNTHESIS_PROMPT_TEMPLATE = """
-Create executive summary synthesizing all analysis:
+Create evidence-based executive summary synthesizing all analysis:
 
 **Research Findings**: {research_summary}
 **Market Trends**: {market_summary}
 **Financial Performance**: {financial_summary}
+**Social Media Signals**: {social_media_summary}
 **Porter's 5 Forces**: {porter_summary}
 **SWOT**: {swot_summary}
 
-Your task:
-1. Identify 3-5 KEY FINDINGS across all frameworks
-2. Provide ONE PRIMARY STRATEGIC RECOMMENDATION
-3. List 3-5 SUPPORTING EVIDENCE points
-4. Suggest 3 NEXT STEPS for the company
+## CRITICAL EVIDENCE REQUIREMENTS
 
-Requirements:
-- **Integrate across frameworks**: Show how insights connect
-- **Prioritize**: Focus on highest-impact insights
-- **Actionable**: Recommendations must be implementable
-- **Confident**: Assess your confidence level (0-1) based on data quality
+**For Market Position**:
+- Provide SPECIFIC metric (market share %, revenue rank, user base)
+- Include comparison to competitors or industry average
+- State the time period and source
 
-Format as professional executive summary suitable for C-suite presentation.
+**For Each Key Finding**:
+1. State the specific insight (min 30 words)
+2. Confidence level (0-1) based on data quality
+3. At least 2 supporting metrics with actual values/percentages
+4. Which frameworks support this finding
+5. Strategic implication (what action this drives)
+
+**For Primary Recommendation**:
+- Specific action to take (not generic "improve operations")
+- Priority level with justification
+- At least 2 rationale points with evidence
+- Expected impact with quantified metric
+- Implementation timeline (specific months/quarters)
+- Resources required (budget range, team size, etc.)
+- 2+ success metrics (KPIs with target values)
+- At least 1 risk with likelihood (0-1) and impact (1-10)
+
+**For Secondary Recommendations** (at least 2):
+- Same structure as primary but can be more concise
+- Must be distinct from primary recommendation
+
+**For Data Quality Assessment**:
+Rate each source 0-1:
+- Research: Based on completeness of company info
+- Market: Based on trend data availability
+- Financial: Based on metrics coverage
+- Frameworks: Based on analysis depth
+- Social Media: Based on sentiment and engagement data
+
+**UNACCEPTABLE GENERIC STATEMENTS TO AVOID**:
+❌ "Strong market position" → ✅ "#2 in market with 28% share"
+❌ "Growing revenue" → ✅ "Revenue grew 45% YoY to $1.2B"
+❌ "Competitive threats exist" → ✅ "3 new entrants captured 12% share in 6 months"
+❌ "Improve operations" → ✅ "Reduce fulfillment time by 2 days using automated warehouses"
+❌ "Monitor competition" → ✅ "Track competitor pricing weekly, respond within 48 hours"
+
+**Confidence Score Calculation**:
+- 0.8-1.0: All data sources robust, consistent findings, high specificity
+- 0.6-0.79: Most data available, some specifics, minor gaps
+- 0.4-0.59: Moderate data, mixed specificity, notable gaps
+- 0.2-0.39: Limited data, mostly generic, significant gaps
+- 0.0-0.19: Minimal data, highly speculative
+
+Format as data-driven executive briefing with evidence for every claim.
 """
 
 

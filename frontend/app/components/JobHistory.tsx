@@ -10,6 +10,8 @@ import { CheckCircle, XCircle, Download, Trash2, ChevronLeft, ChevronRight, File
 import { JobStatus } from './JobStatusIndicator';
 
 export interface JobHistoryProps {
+  /** Optional: Pre-provided jobs array (if not provided, component will fetch) */
+  jobs?: JobStatus[];
   /** API base URL */
   apiUrl?: string;
   /** Jobs per page */
@@ -25,6 +27,7 @@ export interface JobHistoryProps {
 }
 
 export const JobHistory: React.FC<JobHistoryProps> = ({
+  jobs: jobsProp,
   apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
   pageSize = 10,
   allowDelete = true,
@@ -32,22 +35,37 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
   onDownload,
   className = '',
 }) => {
-  const [jobs, setJobs] = useState<JobStatus[]>([]);
+  // Use provided jobs if available, otherwise manage state internally
+  const [internalJobs, setInternalJobs] = useState<JobStatus[]>([]);
+  const jobs = jobsProp ?? internalJobs;
+  const isControlled = jobsProp !== undefined;
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!isControlled);
   const [error, setError] = useState<string | null>(null);
   const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
 
-  const totalPages = Math.ceil(totalJobs / pageSize);
+  // Calculate pagination for provided jobs
+  const paginatedJobs = isControlled 
+    ? jobs.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    : jobs;
+  const totalPages = isControlled 
+    ? Math.ceil(jobs.length / pageSize)
+    : Math.ceil(totalJobs / pageSize);
 
   const fetchJobHistory = useCallback(async () => {
+    if (isControlled) {
+      // Don't fetch if jobs are provided
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // Note: This endpoint would need to be implemented in the backend
       const offset = (currentPage - 1) * pageSize;
       const response = await fetch(
-        `${apiUrl}/jobs?status=completed,failed&limit=${pageSize}&offset=${offset}`
+        `${apiUrl}/jobs?status=completed,failed,cancelled&limit=${pageSize}&offset=${offset}`
       );
 
       if (!response.ok) {
@@ -58,10 +76,10 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
 
       // Assuming API returns { jobs: JobStatus[], total: number }
       if (Array.isArray(data)) {
-        setJobs(data);
+        setInternalJobs(data);
         setTotalJobs(data.length);
       } else {
-        setJobs(data.jobs || []);
+        setInternalJobs(data.jobs || []);
         setTotalJobs(data.total || 0);
       }
 
@@ -72,7 +90,7 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [apiUrl, currentPage, pageSize]);
+  }, [apiUrl, currentPage, pageSize, isControlled]);
 
   const deleteJob = async (jobId: string) => {
     setDeletingJobId(jobId);
@@ -85,8 +103,12 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
         throw new Error(`Failed to delete job: ${response.statusText}`);
       }
 
-      setJobs(prev => prev.filter(job => job.job_id !== jobId));
-      setTotalJobs(prev => prev - 1);
+      if (!isControlled) {
+        setInternalJobs(prev => prev.filter(job => job.job_id !== jobId));
+        setTotalJobs(prev => prev - 1);
+      }
+      // Note: In controlled mode, the parent component must update the jobs prop
+      // and adjust totals via the provided callback
       onJobDeleted?.(jobId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -100,9 +122,15 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
     onDownload?.(job.job_id, job.result);
   };
 
+  // Initial fetch (only if uncontrolled)
   useEffect(() => {
+    if (!isControlled) {
     fetchJobHistory();
-  }, [fetchJobHistory]);
+    } else {
+      setIsLoading(false);
+      setTotalJobs(jobs.length);
+    }
+  }, [fetchJobHistory, isControlled, jobs.length]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -133,8 +161,8 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
       <CardHeader>
         <CardTitle>Job History</CardTitle>
         <CardDescription>
-          {totalJobs > 0
-            ? `${totalJobs} completed job${totalJobs !== 1 ? 's' : ''}`
+          {jobs.length > 0
+            ? `${jobs.length} completed job${jobs.length !== 1 ? 's' : ''}`
             : 'No completed jobs'}
         </CardDescription>
       </CardHeader>
@@ -156,7 +184,7 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
             <Spinner size="lg" />
             <span className="ml-3 text-sm text-gray-600">Loading history...</span>
           </div>
-        ) : jobs.length === 0 ? (
+        ) : paginatedJobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <FileText className="w-12 h-12 text-gray-400 mb-3" aria-hidden="true" />
             <p className="text-sm font-medium text-gray-900">No completed jobs</p>
@@ -191,7 +219,7 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {jobs.map((job) => (
+                  {paginatedJobs.map((job) => (
                     <tr
                       key={job.job_id}
                       className="hover:bg-gray-50 transition-colors"
@@ -296,3 +324,4 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
     </Card>
   );
 };
+export default JobHistory;

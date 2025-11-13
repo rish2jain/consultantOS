@@ -7,11 +7,13 @@ from consultantos.api.main import app
 
 
 @pytest.fixture
-async def client():
-    """Create a test client"""
+async def client(test_api_key):
+    """Create a test client with default authentication headers."""
+    headers = {"X-API-Key": test_api_key}
     async with AsyncClient(
         transport=ASGITransport(app=app),
-        base_url="http://test"
+        base_url="http://test",
+        headers=headers
     ) as ac:
         yield ac
 
@@ -98,7 +100,7 @@ class TestAuthentication:
     @pytest.mark.asyncio
     async def test_endpoint_without_api_key_public(self, client):
         """Test that public endpoints work without API key"""
-        response = await client.get("/health")
+        response = await client.get("/health", headers={})
         assert response.status_code == 200
 
     @pytest.mark.asyncio
@@ -131,7 +133,8 @@ class TestAuthentication:
                 "industry": "Electric Vehicles",
                 "frameworks": ["porter"],
                 "depth": "standard"
-            }
+            },
+            headers={}
         )
         assert response.status_code in [200, 500]  # Not 401/403
 
@@ -140,7 +143,7 @@ class TestAuthentication:
         """Test that protected endpoints require API key"""
         # Assuming user-specific endpoints require auth
         # This is a placeholder - adjust based on actual protected endpoints
-        response = await client.get("/reports/user/test_user")
+        response = await client.get("/reports/user/test_user", headers={})
         # Must return 401/403 if auth is required, or 404 if endpoint doesn't exist
         # Must NOT return 200 when no API key is provided
         assert response.status_code in [401, 403, 404]

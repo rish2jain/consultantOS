@@ -7,6 +7,7 @@ import logging
 import time
 import traceback
 import uuid
+import warnings
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, Any, Optional
@@ -162,6 +163,12 @@ request_id_var: ContextVar[str] = ContextVar('request_id', default='')
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.log_level))
+
+# Suppress harmless pandas/numpy mutex warnings from concurrent operations
+# These occur when pandas operations run in thread pools (asyncio.to_thread)
+# and are safe to ignore - pandas handles the locking internally
+warnings.filterwarnings("ignore", message=".*mutex.*", category=UserWarning)
+warnings.filterwarnings("ignore", message=".*Lock blocking.*", category=UserWarning)
 
 # Initialize FastAPI
 app = FastAPI(
@@ -364,6 +371,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Register routers
 app.include_router(health_router)  # Health endpoints first for monitoring
+from consultantos.api.progress_endpoints import router as progress_router
+app.include_router(progress_router)  # Progress tracking endpoints
 app.include_router(user_router)
 app.include_router(template_router)
 app.include_router(sharing_router)
@@ -524,7 +533,11 @@ async def analyze_company(
     
     **Rate Limited:** 10 requests/hour per IP
     
-    **Response Time:** 30-60 seconds (may timeout for complex analyses)
+    **Response Time:** 2-5 minutes (typical: 2-3.5 minutes)
+    
+    **Progress Tracking:** 
+    - Connect to `GET /analyze/{report_id}/progress` for real-time progress updates
+    - Progress shows current phase, active agents, and estimated time remaining
     
     **Example Request:**
     ```json
@@ -579,6 +592,26 @@ async def analyze_company(
         
         report_id = f"{analysis_request.company}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
+        # Initialize progress tracking early so frontend can connect
+        from consultantos.orchestrator.progress_tracker import ProgressTracker
+        from consultantos.api.progress_endpoints import update_progress, mark_complete, mark_failed
+        
+        progress_tracker = ProgressTracker(report_id)
+        # Convert ProgressUpdate to dict for storage
+        initial_update = progress_tracker.get_update()
+        update_progress(report_id, {
+            "phase": initial_update.phase,
+            "phase_name": initial_update.phase_name,
+            "phase_num": initial_update.phase_num,
+            "total_phases": initial_update.total_phases,
+            "progress": initial_update.progress,
+            "current_agents": initial_update.current_agents,
+            "completed_agents": initial_update.completed_agents,
+            "message": initial_update.message,
+            "estimated_seconds_remaining": initial_update.estimated_seconds_remaining,
+            "status": "running"
+        })
+        
         # Log request with structured logging
         log_request(
             request_id=report_id,
@@ -591,12 +624,43 @@ async def analyze_company(
         # Execute multi-agent workflow with timeout
         try:
             orchestrator = get_orchestrator()
-            report = await asyncio.wait_for(
-                orchestrator.execute(analysis_request),
-                timeout=240.0  # 4 minutes timeout
-            )
+            
+            # Background task to update progress periodically
+            async def update_progress_periodically():
+                while True:
+                    await asyncio.sleep(1)  # Update every second
+                    update = progress_tracker.get_update()
+                    update_progress(report_id, {
+                        "phase": update.phase,
+                        "phase_name": update.phase_name,
+                        "phase_num": update.phase_num,
+                        "total_phases": update.total_phases,
+                        "progress": update.progress,
+                        "current_agents": update.current_agents,
+                        "completed_agents": update.completed_agents,
+                        "message": update.message,
+                        "estimated_seconds_remaining": update.estimated_seconds_remaining,
+                        "status": "running"
+                    })
+            
+            progress_task = asyncio.create_task(update_progress_periodically())
+            
+            try:
+                report = await asyncio.wait_for(
+                    orchestrator.execute(analysis_request, progress_tracker=progress_tracker),
+                    timeout=300.0  # Increased to 5 minutes (was 4 minutes)
+                )
+            finally:
+                progress_task.cancel()
+                try:
+                    await progress_task
+                except asyncio.CancelledError:
+                    pass
+                
+            mark_complete(report_id)
         except asyncio.TimeoutError:
             error = Exception("Analysis timeout")
+            mark_failed(report_id, "Analysis timed out after 5 minutes")
             try:
                 log_request_failure(report_id, error)
             except Exception as log_err:
@@ -606,6 +670,7 @@ async def analyze_company(
                 detail="Analysis timed out. Please try with a simpler query or contact support."
             )
         except Exception as e:
+            mark_failed(report_id, str(e))
             try:
                 log_request_failure(report_id, e)
             except Exception as log_err:

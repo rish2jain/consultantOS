@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -16,8 +16,8 @@ async def test_dashboard_repository_roundtrip(tmp_path):
         company="TestCo",
         industry="Technology",
         template="executive_summary",
-        created_at=datetime.utcnow(),
-        last_updated=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        last_updated=datetime.now(timezone.utc),
         user_id="user-123",
         sections=[],
         alerts=[],

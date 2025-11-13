@@ -8,7 +8,7 @@
  * - Improves Core Web Vitals (LCP, FID)
  */
 import React, { lazy, Suspense, Component, ReactNode } from 'react';
-import Spinner from './Spinner';
+import { Spinner } from './Spinner';
 
 // Analysis & Reports (Heavy components)
 export const AnalysisPage = lazy(() => import('../analysis/page'));
@@ -127,7 +127,7 @@ export function LazyWrapper({ children }: { children: ReactNode }) {
       <Suspense
         fallback={
           <div className="flex items-center justify-center min-h-screen">
-            <Spinner size="large" />
+            <Spinner size="xl" />
           </div>
         }
       >

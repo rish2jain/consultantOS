@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
   AnalysisRequestForm,
   AsyncAnalysisForm,
@@ -19,8 +20,9 @@ import {
   Badge,
   Button,
   JobStatusIndicator,
+  Breadcrumb,
 } from '@/app/components';
-import { api } from '@/lib/api';
+import { getApiKey } from '@/lib/auth';
 import {
   Rocket,
   Clock,
@@ -48,7 +50,6 @@ export default function AnalysisPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [recentAnalyses, setRecentAnalyses] = useState<RecentAnalysis[]>([]);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [reportId, setReportId] = useState<string | null>(null);
 
   // Load recent analyses from localStorage
   useEffect(() => {
@@ -93,7 +94,6 @@ export default function AnalysisPage() {
   // Handle sync analysis success
   const handleSyncSuccess = (reportData: any) => {
     const reportId = reportData.report_id || reportData.id;
-    setReportId(reportId);
     setSuccessMessage(`Analysis completed successfully! Redirecting to report...`);
     setErrorMessage('');
 
@@ -158,22 +158,49 @@ export default function AnalysisPage() {
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   };
 
+  const breadcrumbItems = [
+    { label: 'Create Analysis' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8"
+    >
       <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Breadcrumb items={breadcrumbItems} />
+        </motion.div>
+        
         {/* Page Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-            <Rocket className="w-8 h-8 text-primary-600" aria-hidden="true" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-4"
+        >
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full">
+              <Rocket className="w-6 h-6 text-primary-600" aria-hidden="true" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                Request Strategic Analysis
+              </h1>
+              <p className="text-base text-gray-600">
+                Generate professional-grade business framework analyses powered by AI.
+                Choose between instant analysis or background processing for complex reports.
+              </p>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Request Strategic Analysis
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Generate professional-grade business framework analyses powered by AI.
-            Choose between instant analysis or background processing for complex reports.
-          </p>
-        </div>
+        </motion.div>
 
         {/* Global Success/Error Messages */}
         {successMessage && (
@@ -228,6 +255,7 @@ export default function AnalysisPage() {
                     </Alert>
                   </div>
                   <AnalysisRequestForm
+                    apiKey={getApiKey() || undefined}
                     onSuccess={handleSyncSuccess}
                     onError={handleSyncError}
                     async={false}
@@ -245,6 +273,7 @@ export default function AnalysisPage() {
                   </div>
 
                   <AsyncAnalysisForm
+                    apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}
                     onJobSubmitted={handleAsyncJobSubmitted}
                     onError={handleAsyncError}
                   />
@@ -261,7 +290,12 @@ export default function AnalysisPage() {
           </div>
 
           {/* Right Column - Recent Analyses & Tips */}
-          <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-6"
+          >
             {/* Recent Analyses */}
             <Card>
               <CardHeader>
@@ -285,8 +319,12 @@ export default function AnalysisPage() {
                 ) : (
                   <ul className="space-y-3" role="list">
                     {recentAnalyses.map((analysis, index) => (
-                      <li
+                      <motion.li
                         key={`${analysis.id}-${index}`}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        whileHover={{ x: 4 }}
                         className="border-l-4 border-primary-500 pl-4 py-2 hover:bg-gray-50 transition-colors cursor-pointer rounded-r"
                         onClick={() => {
                           if (analysis.status === 'completed') {
@@ -308,7 +346,7 @@ export default function AnalysisPage() {
                                   {analysis.frameworks.slice(0, 2).map((framework: string) => (
                                     <Badge
                                       key={framework}
-                                      variant="secondary"
+                                      variant="default"
                                       size="sm"
                                     >
                                       {framework}
@@ -340,7 +378,7 @@ export default function AnalysisPage() {
                             </span>
                           </div>
                         </div>
-                      </li>
+                      </motion.li>
                     ))}
                   </ul>
                 )}
@@ -435,9 +473,9 @@ export default function AnalysisPage() {
                 </ul>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
